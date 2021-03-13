@@ -45,6 +45,7 @@ from distrax._src.distributions.logistic import Logistic
 from distrax._src.distributions.mixture_same_family import MixtureSameFamily
 from distrax._src.distributions.multinomial import Multinomial
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
+from distrax._src.distributions.mvn_linear_operator import MultivariateNormalLinearOperator
 from distrax._src.distributions.normal import Normal
 from distrax._src.distributions.one_hot_categorical import OneHotCategorical
 from distrax._src.distributions.quantized import Quantized
@@ -96,6 +97,7 @@ __all__ = (
     "Multinomial",
     "multiply_no_nan",
     "MultivariateNormalDiag",
+    "MultivariateNormalLinearOperator",
     "Normal",
     "OneHotCategorical",
     "Quantized",
