@@ -15,6 +15,7 @@
 """Distribution abstract base class."""
 
 import abc
+import collections.abc
 import contextlib
 import functools
 import operator
@@ -43,7 +44,6 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """Returns `n` samples."""
-    pass
 
   def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
     """Returns `n` samples and their log probs.
@@ -75,7 +75,6 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
     Returns:
       The log probability log P(value).
     """
-    pass
 
   def prob(self, value: Array) -> Array:
     """Calculates the probability of an event.
@@ -92,7 +91,6 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""
-    pass
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
@@ -237,7 +235,7 @@ def convert_seed_and_sample_shape(
 ) -> Tuple[PRNGKey, Tuple[int, ...]]:
   """Shared functionality to ensure that seeds and shapes are the right type."""
 
-  if not isinstance(sample_shape, Sequence):
+  if not isinstance(sample_shape, collections.abc.Sequence):
     sample_shape = (sample_shape,)
   sample_shape = tuple(map(int, sample_shape))
 

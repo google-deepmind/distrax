@@ -162,6 +162,7 @@ class SplitCoupling(base.Bijector):
     return jnp.concatenate([x1, x2], self._split_axis)
 
   def _inner_bijector(self, params: BijectorParams) -> base.Bijector:
+    """Returns an inner bijector for the passed params."""
     bijector = conversion.as_bijector(self._bijector(params))
     if bijector.event_ndims_in != bijector.event_ndims_out:
       raise ValueError(

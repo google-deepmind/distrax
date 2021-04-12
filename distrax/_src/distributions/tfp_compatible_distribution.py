@@ -122,8 +122,7 @@ def tfp_compatible_distribution(
     def sample(self,
                sample_shape: Union[IntLike, Sequence[IntLike]] = (),
                seed: Optional[Union[int, tfp.util.SeedStream]] = None,
-               name: str = 'sample',
-               **kwargs) -> Array:
+               **unused_kwargs) -> Array:
       """See `Distribution.sample`."""
       if not np.isscalar(sample_shape):
         sample_shape = tuple(sample_shape)

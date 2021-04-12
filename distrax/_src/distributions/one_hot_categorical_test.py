@@ -301,16 +301,14 @@ class OneHotCategoricalTest(
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('from 2d logits',
-       'cdf',
-       {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
-       [[0, 1, 0], [1, 0, 0]]),
-      ('from 2d probs',
-       'cdf',
-       {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
-       [[0, 1, 0], [1, 0, 0]]),
+      ('from 2d logits', {
+          'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]],
+      }, [[0, 1, 0], [1, 0, 0]]),
+      ('from 2d probs', {
+          'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]],
+      }, [[0, 1, 0], [1, 0, 0]]),
   )
-  def test_cdf(self, function_string, distr_params, values):
+  def test_cdf(self, distr_params, values):
     distr_params = {k: jnp.asarray(v) for k, v in distr_params.items()}
     values = np.array(values)
     dist = self.distrax_cls(**distr_params)

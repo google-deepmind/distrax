@@ -135,7 +135,6 @@ class Bijector(jittable.Jittable, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
-    pass
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""

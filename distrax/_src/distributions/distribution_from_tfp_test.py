@@ -35,6 +35,7 @@ RTOL = 1e-4
 
 
 class DistributionFromTfpNormal(parameterized.TestCase):
+  """Tests for normal distribution."""
 
   def setUp(self):
     super().setUp()
@@ -71,6 +72,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
         self.variant(sample_fn)(self._key),
         self.base_dist.sample(sample_shape=self._sample_shape, seed=self._key))
 
+  @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('mean', 'mean'),
       ('mode', 'mode'),
@@ -80,6 +82,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       ('entropy', 'entropy'),
   )
   def test_method(self, method):
+    self.variant(lambda: None)  # To avoid variants usage error.
     try:
       expected_result = getattr(self.base_dist, method)()
     except NotImplementedError:
@@ -89,6 +92,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     result = getattr(self.wrapped_dist, method)()
     self.assertion_fn(result, expected_result)
 
+  @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('log_prob', 'log_prob'),
       ('prob', 'prob'),
@@ -96,9 +100,15 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       ('cdf', 'cdf'),
   )
   def test_method_with_value(self, method):
+    self.variant(lambda: None)  # To avoid variants usage error.
+
+    if (isinstance(self.base_dist, tfd.Categorical) and
+        method in ('cdf', 'log_cdf')):
+      # TODO(budden): make .cdf() and .log_cdf() from tfp.Categorical jittable.
+      return
+
     try:
-      expected_result = self.variant(
-          getattr(self.base_dist, method))(self.values)
+      expected_result = getattr(self.base_dist, method)(self.values)
     except NotImplementedError:
       return
     except AttributeError:
@@ -159,6 +169,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
 
 
 class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
+  """Tests for multivariate normal distribution."""
 
   def setUp(self):
     super().setUp()
@@ -171,6 +182,7 @@ class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
 
 
 class DistributionFromTfpCategorical(DistributionFromTfpNormal):
+  """Tests for categorical distribution."""
 
   def setUp(self):
     super().setUp()
@@ -181,6 +193,7 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
 
 
 class DistributionFromTfpTransformed(DistributionFromTfpNormal):
+  """Tests for transformed distributions."""
 
   def setUp(self):
     super().setUp()

@@ -109,18 +109,18 @@ class Bernoulli(distribution.Distribution):
         key=key, shape=new_shape, dtype=probs.dtype, minval=0., maxval=1.)
     return jnp.less(uniform, probs).astype(self._dtype)
 
-  def log_prob(self, event: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     log_probs0, log_probs1 = self._log_probs_parameter()
-    return (math.multiply_no_nan(log_probs0, 1 - event) +
-            math.multiply_no_nan(log_probs1, event))
+    return (math.multiply_no_nan(log_probs0, 1 - value) +
+            math.multiply_no_nan(log_probs1, value))
 
-  def prob(self, event: Array) -> Array:
+  def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""
     probs1 = self.probs
     probs0 = 1 - probs1
-    return (math.multiply_no_nan(probs0, 1 - event) +
-            math.multiply_no_nan(probs1, event))
+    return (math.multiply_no_nan(probs0, 1 - value) +
+            math.multiply_no_nan(probs1, value))
 
   def entropy(self) -> Array:
     """See `Distribution.entropy`."""

@@ -86,16 +86,16 @@ class Uniform(distribution.Distribution):
     log_prob = jnp.repeat(log_prob[None], n, axis=0)
     return samples, log_prob
 
-  def log_prob(self, event: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
-    return jnp.log(self.prob(event))
+    return jnp.log(self.prob(value))
 
-  def prob(self, event: Array) -> Array:
+  def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""
     return jnp.where(
-        jnp.logical_or(event < self.low, event > self.high),
-        jnp.zeros_like(event),
-        jnp.ones_like(event) / self.range)
+        jnp.logical_or(value < self.low, value > self.high),
+        jnp.zeros_like(value),
+        jnp.ones_like(value) / self.range)
 
   def entropy(self) -> Array:
     """Calculates the entropy."""
@@ -117,17 +117,17 @@ class Uniform(distribution.Distribution):
     """Calculates the median."""
     return self.mean()
 
-  def cdf(self, event: Array) -> Array:
+  def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
     ones = jnp.ones_like(self.range)
     zeros = jnp.zeros_like(ones)
     result_if_not_big = jnp.where(
-        event < self.low, zeros, (event - self.low) / self.range)
-    return jnp.where(event > self.high, ones, result_if_not_big)
+        value < self.low, zeros, (value - self.low) / self.range)
+    return jnp.where(value > self.high, ones, result_if_not_big)
 
-  def log_cdf(self, event: Array) -> Array:
+  def log_cdf(self, value: Array) -> Array:
     """See `Distribution.log_cdf`."""
-    return jnp.log(self.cdf(event))
+    return jnp.log(self.cdf(value))
 
 
 def _kl_divergence_uniform_uniform(

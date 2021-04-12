@@ -51,6 +51,7 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
 
   def _make_tfp_categorical(self, logits, probs):
     """Categorical distribution for tfp reference mixture."""
+    del probs
     return tfd.Categorical(logits=logits)
 
   def _make_tfp_components(self, key_loc, key_scale):
@@ -215,6 +216,7 @@ class TFPProbsCategoricalTFPMultivariateComponents(
     TFPLogitsCategoricalTFPMultivariateComponents):
 
   def _make_categorical(self, logits, probs):
+    del logits
     return tfd.Categorical(probs=probs)
 
 
@@ -222,6 +224,7 @@ class DistraxLogitsCategoricalTFPMultivariateComponents(
     TFPLogitsCategoricalTFPMultivariateComponents):
 
   def _make_categorical(self, logits, probs):
+    del probs
     return Categorical(logits=logits)
 
 
@@ -229,6 +232,7 @@ class DistraxProbsCategoricalTFPMultivariateComponents(
     TFPLogitsCategoricalTFPMultivariateComponents):
 
   def _make_categorical(self, logits, probs):
+    del logits
     return Categorical(probs=probs)
 
 
@@ -236,6 +240,7 @@ class DistraxLogitsCategoricalTFPUnivariateComponents(
     TFPLogitsCategoricalTFPUnivariateComponents):
 
   def _make_categorical(self, logits, probs):
+    del probs
     return Categorical(logits=logits)
 
 

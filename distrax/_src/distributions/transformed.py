@@ -126,9 +126,9 @@ class Transformed(dist_base.Distribution):
       self._infer_shapes_and_dtype()
     return self._batch_shape
 
-  def log_prob(self, y: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
-    x, ildj_y = self.bijector.inverse_and_log_det(y)
+    x, ildj_y = self.bijector.inverse_and_log_det(value)
     lp_x = self.distribution.log_prob(x)
     lp_y = lp_x + ildj_y
     return lp_y
@@ -177,7 +177,9 @@ class Transformed(dist_base.Distribution):
           "because its bijector's Jacobian determinant is not known to be "
           "constant.")
 
-  def entropy(self, input_hint: Optional[Array] = None) -> Array:
+  def entropy(  # pylint: disable=arguments-differ
+      self,
+      input_hint: Optional[Array] = None) -> Array:
     """Calculates the Shannon entropy (in Nats).
 
     Only works for bijectors with constant Jacobian determinant.
@@ -190,6 +192,10 @@ class Transformed(dist_base.Distribution):
 
     Returns:
       the entropy of the distribution.
+
+    Raises:
+      NotImplementedError: if bijector's Jacobian determinant is not known to be
+                           constant.
     """
     if self.bijector.is_constant_log_det:
       if input_hint is None:

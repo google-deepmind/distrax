@@ -95,15 +95,15 @@ class Categorical(distribution.Distribution):
         key=key, logits=self.logits, axis=-1, shape=new_shape)
     return draws.astype(self._dtype)
 
-  def log_prob(self, event: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
-    event_one_hot = jax.nn.one_hot(event, self.num_categories)
-    return jnp.sum(math.multiply_no_nan(self.logits, event_one_hot), axis=-1)
+    value_one_hot = jax.nn.one_hot(value, self.num_categories)
+    return jnp.sum(math.multiply_no_nan(self.logits, value_one_hot), axis=-1)
 
-  def prob(self, event: Array) -> Array:
+  def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""
-    event_one_hot = jax.nn.one_hot(event, self.num_categories)
-    return jnp.sum(math.multiply_no_nan(self.probs, event_one_hot), axis=-1)
+    value_one_hot = jax.nn.one_hot(value, self.num_categories)
+    return jnp.sum(math.multiply_no_nan(self.probs, value_one_hot), axis=-1)
 
   def entropy(self) -> Array:
     """See `Distribution.entropy`."""
@@ -131,15 +131,15 @@ class Categorical(distribution.Distribution):
     parameter = self._probs if self._logits is None else self._logits
     return jnp.argmax(parameter, axis=-1).astype(self._dtype)
 
-  def cdf(self, event: Array) -> Array:
+  def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
-    # For event < 0 the output should be zero because support = {0, ..., K-1}.
-    should_be_zero = event < 0
-    # Will use event as an index below, so clip it to {0, ..., K-1}.
-    event = jnp.clip(event, 0, self.num_categories - 1)
-    event_one_hot = jax.nn.one_hot(event, self.num_categories)
+    # For value < 0 the output should be zero because support = {0, ..., K-1}.
+    should_be_zero = value < 0
+    # Will use value as an index below, so clip it to {0, ..., K-1}.
+    value = jnp.clip(value, 0, self.num_categories - 1)
+    value_one_hot = jax.nn.one_hot(value, self.num_categories)
     cdf = jnp.sum(math.multiply_no_nan(
-        jnp.cumsum(self.probs, axis=-1), event_one_hot), axis=-1)
+        jnp.cumsum(self.probs, axis=-1), value_one_hot), axis=-1)
     return jnp.where(should_be_zero, jnp.array(0.), cdf)
 
   def logits_parameter(self) -> Array:

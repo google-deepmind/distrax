@@ -27,6 +27,7 @@ RTOL = 1e-2
 
 
 class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
+  """Logistic tests."""
 
   def setUp(self):
     # pylint: disable=too-many-function-args

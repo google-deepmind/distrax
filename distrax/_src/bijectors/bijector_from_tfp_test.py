@@ -24,41 +24,52 @@ import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfb = tfp.bijectors
-
-
-def _batched_chain():
-  return tfb.Chain([
-      tfb.Shift(jnp.zeros((4, 2, 3))),
-      tfb.ScaleMatvecDiag([[1., 2., 3.], [4., 5., 6.]])
-  ])
 
 
 class BijectorFromTFPTest(parameterized.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    bjs = {}
+    bjs['BatchedChain'] = tfb.Chain([
+        tfb.Shift(jnp.zeros((4, 2, 3))),
+        tfb.ScaleMatvecDiag([[1., 2., 3.], [4., 5., 6.]])
+    ])
+    bjs['Square'] = tfb.Square()
+    bjs['ScaleScalar'] = tfb.Scale(2.)
+    bjs['ScaleMatrix'] = tfb.Scale(2. * jnp.ones((3, 2)))
+    bjs['Reshape'] = tfb.Reshape((2, 3), (6,))
+
+    # To parallelize pytest runs.
+    # See https://github.com/pytest-dev/pytest-xdist/issues/432.
+    for name, bij in bjs.items():
+      bij.__repr__ = lambda _, name_=name: name_
+
+    self._test_bijectors = bjs
+
   @chex.all_variants
   @parameterized.parameters(
-      (tfb.Square, (), (), (), ()),
-      (tfb.Square, (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2.), (), (), (), ()),
-      (lambda: tfb.Scale(2.), (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (), (), (3, 2), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (2,), (), (3, 2), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (1, 1), (), (3, 2), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 1, 1), (), (4, 3, 2), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 3, 2), (), (4, 3, 2), ()),
-      (lambda: tfb.Reshape((2, 3), (6,)), (), (6,), (), (2, 3)),
-      (lambda: tfb.Reshape((2, 3), (6,)), (10,), (6,), (10,), (2, 3)),
-      (_batched_chain, (), (3,), (4, 2), (3,)),
-      (_batched_chain, (2,), (3,), (4, 2), (3,)),
-      (_batched_chain, (4, 1), (3,), (4, 2), (3,)),
-      (_batched_chain, (5, 1, 2), (3,), (5, 4, 2), (3,)),
+      ('Square', (), (), (), ()),
+      ('Square', (2, 3), (), (2, 3), ()),
+      ('ScaleScalar', (), (), (), ()),
+      ('ScaleScalar', (2, 3), (), (2, 3), ()),
+      ('ScaleMatrix', (), (), (3, 2), ()),
+      ('ScaleMatrix', (2,), (), (3, 2), ()),
+      ('ScaleMatrix', (1, 1), (), (3, 2), ()),
+      ('ScaleMatrix', (4, 1, 1), (), (4, 3, 2), ()),
+      ('ScaleMatrix', (4, 3, 2), (), (4, 3, 2), ()),
+      ('Reshape', (), (6,), (), (2, 3)),
+      ('Reshape', (10,), (6,), (10,), (2, 3)),
+      ('BatchedChain', (), (3,), (4, 2), (3,)),
+      ('BatchedChain', (2,), (3,), (4, 2), (3,)),
+      ('BatchedChain', (4, 1), (3,), (4, 2), (3,)),
+      ('BatchedChain', (5, 1, 2), (3,), (5, 4, 2), (3,)),
   )
-  def test_forward_methods_are_correct(self, tfp_bij,
-                                       batch_shape_in, event_shape_in,
-                                       batch_shape_out, event_shape_out):
-    tfp_bij = tfp_bij()
+  def test_forward_methods_are_correct(self, tfp_bij_name, batch_shape_in,
+                                       event_shape_in, batch_shape_out,
+                                       event_shape_out):
+    tfp_bij = self._test_bijectors[tfp_bij_name]
     bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
     key = jax.random.PRNGKey(42)
     x = jax.random.uniform(key, batch_shape_in + event_shape_in)
@@ -76,26 +87,26 @@ class BijectorFromTFPTest(parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.parameters(
-      (tfb.Square, (), (), (), ()),
-      (tfb.Square, (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2.), (), (), (), ()),
-      (lambda: tfb.Scale(2.), (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (3, 2), (), (), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (3, 2), (), (2,), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (3, 2), (), (1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 3, 2), (), (4, 1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 3, 2), (), (4, 3, 2), ()),
-      (lambda: tfb.Reshape((2, 3), (6,)), (), (6,), (), (2, 3)),
-      (lambda: tfb.Reshape((2, 3), (6,)), (10,), (6,), (10,), (2, 3)),
-      (_batched_chain, (4, 2), (3,), (), (3,)),
-      (_batched_chain, (4, 2), (3,), (2,), (3,)),
-      (_batched_chain, (4, 2), (3,), (4, 1), (3,)),
-      (_batched_chain, (5, 4, 2), (3,), (5, 1, 2), (3,)),
+      ('Square', (), (), (), ()),
+      ('Square', (2, 3), (), (2, 3), ()),
+      ('ScaleScalar', (), (), (), ()),
+      ('ScaleScalar', (2, 3), (), (2, 3), ()),
+      ('ScaleMatrix', (3, 2), (), (), ()),
+      ('ScaleMatrix', (3, 2), (), (2,), ()),
+      ('ScaleMatrix', (3, 2), (), (1, 1), ()),
+      ('ScaleMatrix', (4, 3, 2), (), (4, 1, 1), ()),
+      ('ScaleMatrix', (4, 3, 2), (), (4, 3, 2), ()),
+      ('Reshape', (), (6,), (), (2, 3)),
+      ('Reshape', (10,), (6,), (10,), (2, 3)),
+      ('BatchedChain', (4, 2), (3,), (), (3,)),
+      ('BatchedChain', (4, 2), (3,), (2,), (3,)),
+      ('BatchedChain', (4, 2), (3,), (4, 1), (3,)),
+      ('BatchedChain', (5, 4, 2), (3,), (5, 1, 2), (3,)),
   )
-  def test_inverse_methods_are_correct(self, tfp_bij,
-                                       batch_shape_in, event_shape_in,
-                                       batch_shape_out, event_shape_out):
-    tfp_bij = tfp_bij()
+  def test_inverse_methods_are_correct(self, tfp_bij_name, batch_shape_in,
+                                       event_shape_in, batch_shape_out,
+                                       event_shape_out):
+    tfp_bij = self._test_bijectors[tfp_bij_name]
     bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
     key = jax.random.PRNGKey(42)
     y = jax.random.uniform(key, batch_shape_out + event_shape_out)
@@ -113,27 +124,28 @@ class BijectorFromTFPTest(parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.parameters(
-      (tfb.Square, (), (), (), ()),
-      (tfb.Square, (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2.), (), (), (), ()),
-      (lambda: tfb.Scale(2.), (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (), (), (), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (2,), (), (2,), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (1, 1), (), (1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 1, 1), (), (4, 1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 3, 2), (), (4, 3, 2), ()),
-      (lambda: tfb.Reshape((2, 3), (6,)), (), (6,), (), (2, 3)),
-      (lambda: tfb.Reshape((2, 3), (6,)), (10,), (6,), (10,), (2, 3)),
-      (_batched_chain, (), (3,), (), (3,)),
-      (_batched_chain, (2,), (3,), (2,), (3,)),
-      (_batched_chain, (4, 1), (3,), (4, 1), (3,)),
-      (_batched_chain, (5, 1, 2), (3,), (5, 1, 2), (3,)),
+      ('Square', (), (), (), ()),
+      ('Square', (2, 3), (), (2, 3), ()),
+      ('ScaleScalar', (), (), (), ()),
+      ('ScaleScalar', (2, 3), (), (2, 3), ()),
+      ('ScaleMatrix', (), (), (), ()),
+      ('ScaleMatrix', (2,), (), (2,), ()),
+      ('ScaleMatrix', (1, 1), (), (1, 1), ()),
+      ('ScaleMatrix', (4, 1, 1), (), (4, 1, 1), ()),
+      ('ScaleMatrix', (4, 3, 2), (), (4, 3, 2), ()),
+      ('Reshape', (), (6,), (), (2, 3)),
+      ('Reshape', (10,), (6,), (10,), (2, 3)),
+      ('BatchedChain', (), (3,), (), (3,)),
+      ('BatchedChain', (2,), (3,), (2,), (3,)),
+      ('BatchedChain', (4, 1), (3,), (4, 1), (3,)),
+      ('BatchedChain', (5, 1, 2), (3,), (5, 1, 2), (3,)),
   )
-  def test_composite_methods_are_consistent(self, tfp_bij,
-                                            batch_shape_in, event_shape_in,
-                                            batch_shape_out, event_shape_out):
+  def test_composite_methods_are_consistent(self, tfp_bij_name, batch_shape_in,
+                                            event_shape_in, batch_shape_out,
+                                            event_shape_out):
     key1, key2 = jax.random.split(jax.random.PRNGKey(42))
-    bij = bijector_from_tfp.BijectorFromTFP(tfp_bij())
+    tfp_bij = self._test_bijectors[tfp_bij_name]
+    bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
 
     # Forward methods.
     x = jax.random.uniform(key1, batch_shape_in + event_shape_in)
@@ -157,26 +169,26 @@ class BijectorFromTFPTest(parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.parameters(
-      (tfb.Square, (), (), (), ()),
-      (tfb.Square, (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2.), (), (), (), ()),
-      (lambda: tfb.Scale(2.), (2, 3), (), (2, 3), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (), (), (), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (2,), (), (2,), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (1, 1), (), (1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 1, 1), (), (4, 1, 1), ()),
-      (lambda: tfb.Scale(2. * jnp.ones((3, 2))), (4, 3, 2), (), (4, 3, 2), ()),
-      (lambda: tfb.Reshape((2, 3), (6,)), (), (6,), (), (2, 3)),
-      (lambda: tfb.Reshape((2, 3), (6,)), (10,), (6,), (10,), (2, 3)),
-      (_batched_chain, (), (3,), (), (3,)),
-      (_batched_chain, (2,), (3,), (2,), (3,)),
-      (_batched_chain, (4, 1), (3,), (4, 1), (3,)),
-      (_batched_chain, (5, 1, 2), (3,), (5, 1, 2), (3,)),
+      ('Square', (), (), (), ()),
+      ('Square', (2, 3), (), (2, 3), ()),
+      ('ScaleScalar', (), (), (), ()),
+      ('ScaleScalar', (2, 3), (), (2, 3), ()),
+      ('ScaleMatrix', (), (), (), ()),
+      ('ScaleMatrix', (2,), (), (2,), ()),
+      ('ScaleMatrix', (1, 1), (), (1, 1), ()),
+      ('ScaleMatrix', (4, 1, 1), (), (4, 1, 1), ()),
+      ('ScaleMatrix', (4, 3, 2), (), (4, 3, 2), ()),
+      ('Reshape', (), (6,), (), (2, 3)),
+      ('Reshape', (10,), (6,), (10,), (2, 3)),
+      ('BatchedChain', (), (3,), (), (3,)),
+      ('BatchedChain', (2,), (3,), (2,), (3,)),
+      ('BatchedChain', (4, 1), (3,), (4, 1), (3,)),
+      ('BatchedChain', (5, 1, 2), (3,), (5, 1, 2), (3,)),
   )
-  def test_works_with_tfp_caching(self, tfp_bij,
-                                  batch_shape_in, event_shape_in,
-                                  batch_shape_out, event_shape_out):
-    tfp_bij = tfp_bij()
+  def test_works_with_tfp_caching(self, tfp_bij_name, batch_shape_in,
+                                  event_shape_in, batch_shape_out,
+                                  event_shape_out):
+    tfp_bij = self._test_bijectors[tfp_bij_name]
     bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
     key1, key2 = jax.random.split(jax.random.PRNGKey(42))
 
@@ -203,7 +215,7 @@ class BijectorFromTFPTest(parameterized.TestCase):
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-8)
 
   def test_access_properties_tfp_bijector(self):
-    tfp_bij = _batched_chain()
+    tfp_bij = self._test_bijectors['BatchedChain']
     bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
     # Access the attribute `bijectors`
     np.testing.assert_allclose(
@@ -212,6 +224,7 @@ class BijectorFromTFPTest(parameterized.TestCase):
         bij.bijectors[1].scale.diag, tfp_bij.bijectors[1].scale.diag, atol=1e-8)
 
   def test_jittable(self):
+
     @jax.jit
     def f(x, b):
       return b.forward(x)

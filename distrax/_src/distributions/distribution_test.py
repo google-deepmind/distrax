@@ -25,20 +25,22 @@ import numpy as np
 
 
 class DummyUnivariateDist(distribution.Distribution):
+  """Dummy univariate distribution for testing."""
 
   def _sample_n(self, key, n):
     return jax.random.uniform(key, shape=(n,))
 
   def log_prob(self, value):
     """Log probability density/mass function."""
-    pass
 
+  @property
   def event_shape(self):
     """Shape of the events."""
     return jnp.shape([])
 
 
 class DummyMultivariateDist(distribution.Distribution):
+  """Dummy multivariate distribution for testing."""
 
   def __init__(self, dimension):
     super().__init__()
@@ -49,8 +51,8 @@ class DummyMultivariateDist(distribution.Distribution):
 
   def log_prob(self, value):
     """Log probability density/mass function."""
-    pass
 
+  @property
   def event_shape(self):
     """Shape of the events."""
     return (self._dimension,)

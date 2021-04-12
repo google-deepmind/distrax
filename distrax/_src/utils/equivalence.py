@@ -73,8 +73,8 @@ def get_tfp_equiv(distrax_cls):
 class EquivalenceTest(absltest.TestCase):
   """Provides comparison assertions for TFP and Distrax distributions."""
 
-  def setUp(self, distrax_cls):
-    super(EquivalenceTest, self).setUp()
+  def setUp(self, distrax_cls):  # pylint:disable=arguments-differ
+    super().setUp()
     self.key = jax.random.PRNGKey(1234)
     self.distrax_cls = distrax_cls
     if hasattr(distrax_cls, 'equiv_tfp_cls'):

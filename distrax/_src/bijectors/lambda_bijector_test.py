@@ -54,7 +54,7 @@ def _with_base_dists(*all_named_parameters):
 class LambdaTest(parameterized.TestCase):
 
   def setUp(self):
-    super(LambdaTest, self).setUp()
+    super().setUp()
     self.seed = jax.random.PRNGKey(1234)
 
   @parameterized.named_parameters(_with_base_dists(

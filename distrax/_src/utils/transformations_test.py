@@ -35,7 +35,7 @@ RTOL = 1e-2
 class TransformationsTest(parameterized.TestCase):
 
   def setUp(self):
-    super(TransformationsTest, self).setUp()
+    super().setUp()
     self.seed = jax.random.PRNGKey(1234)
 
   @chex.all_variants

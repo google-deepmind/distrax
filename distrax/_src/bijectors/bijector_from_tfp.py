@@ -64,6 +64,7 @@ class BijectorFromTFP(base.Bijector):
                           event_ndims_out: int,
                           forward_fn: Callable[[Array], Array],
                           x: Array) -> Array:
+    """Broadcasts logdet to the batch shape as required."""
     if self._tfp_bijector.is_constant_jacobian:
       # If the Jacobian is constant, TFP may return a log det that doesn't have
       # full batch shape, but is broadcastable to it. Distrax assumes that the

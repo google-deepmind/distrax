@@ -107,10 +107,10 @@ def register_inverse(primitive, inverse_left, inverse_right=None):
     _inverse_registry[primitive] = (inverse_left, inverse_right)
 
 
-def inv(f):
-  """Returns the inverse of `f` such that (inv(f) o f)(x) = x."""
-  jaxpr_fn = _invertible_jaxpr_and_constants(f)
-  @jax.api.wraps(f)
+def inv(fun):
+  """Returns the inverse of `fun` such that (inv(fun) o fun)(x) = x."""
+  jaxpr_fn = _invertible_jaxpr_and_constants(fun)
+  @jax.api.wraps(fun)  # pylint: disable=no-value-for-parameter
   def wrapped(*args, **kwargs):
     jaxpr, consts = jaxpr_fn(*args, **kwargs)
     out = _interpret_inverse(jaxpr, consts, *args)
@@ -175,10 +175,10 @@ def _dependent_variables(jaxpr, dependent=None):
     # If primitive is an xla_call, get subexpressions and evaluate recursively
     call_jaxpr, _ = jax.core.extract_call_jaxpr(eqn.primitive, eqn.params)
     if call_jaxpr:
-      to_name = {k: v for k, v in zip(eqn.invars, call_jaxpr.invars)}
+      to_name = dict(zip(eqn.invars, call_jaxpr.invars))
       arg_dependence = set(to_name[v] for v in eqn.invars if v in dependent)
       subjaxpr_dependent = _dependent_variables(call_jaxpr, arg_dependence)
-      from_name = {k: v for k, v in zip(call_jaxpr.outvars, eqn.outvars)}
+      from_name = dict(zip(call_jaxpr.outvars, eqn.outvars))
       dependent.update(from_name[v] for v in call_jaxpr.outvars
                        if v in subjaxpr_dependent)
     else:
@@ -193,7 +193,7 @@ def _invertible_jaxpr_and_constants(fun):
   """Returns a transformation from function invocation to invertible jaxpr."""
   jaxpr_maker = jax.make_jaxpr(fun)
 
-  @jax.api.wraps(fun)
+  @jax.api.wraps(fun)  # pylint: disable=no-value-for-parameter
   def jaxpr_const_maker(*args, **kwargs):
     typed_jaxpr = jaxpr_maker(*args, **kwargs)
     return typed_jaxpr.jaxpr, typed_jaxpr.literals
@@ -293,7 +293,7 @@ def _interpret_inverse(jaxpr, consts, *args):
     else:
       write(eqn.invars[var_idx], outvals)
 
-  if any([v not in env for v in jaxpr.invars]):
+  if any(v not in env for v in jaxpr.invars):
     raise ValueError("Expression appears to contain no variables and therefore "
                      "cannot be inverted.")
 

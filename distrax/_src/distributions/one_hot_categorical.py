@@ -63,13 +63,13 @@ class OneHotCategorical(categorical.Categorical):
     draws_one_hot = jax.nn.one_hot(draws, num_classes=self.num_categories)
     return draws_one_hot.astype(self._dtype)
 
-  def log_prob(self, event: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
-    return jnp.sum(math.multiply_no_nan(self.logits, event), axis=-1)
+    return jnp.sum(math.multiply_no_nan(self.logits, value), axis=-1)
 
-  def prob(self, event: Array) -> Array:
+  def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""
-    return jnp.sum(math.multiply_no_nan(self.probs, event), axis=-1)
+    return jnp.sum(math.multiply_no_nan(self.probs, value), axis=-1)
 
   def mode(self) -> Array:
     """Calculates the mode."""
@@ -77,7 +77,7 @@ class OneHotCategorical(categorical.Categorical):
     greedy_index = jnp.argmax(preferences, axis=-1)
     return jax.nn.one_hot(greedy_index, self.num_categories).astype(self._dtype)
 
-  def cdf(self, event: Array) -> Array:
+  def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
     return jnp.sum(math.multiply_no_nan(
-        jnp.cumsum(self.probs, axis=-1), event), axis=-1)
+        jnp.cumsum(self.probs, axis=-1), value), axis=-1)

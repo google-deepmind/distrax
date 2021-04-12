@@ -24,9 +24,14 @@ from jax.config import config as jax_config
 import jax.numpy as jnp
 
 
+def setUpModule():
+  jax_config.update('jax_enable_x64', True)
+
+
 class UniformFloat64Test(chex.TestCase):
 
   def _assert_dtypes(self, dist, dtype):
+    """Asserts dist methods' outputs' datatypes."""
     # Sanity check to make sure float64 is enabled.
     x_64 = jnp.zeros([])
     self.assertEqual(jnp.float64, x_64.dtype)
@@ -63,5 +68,4 @@ class UniformFloat64Test(chex.TestCase):
 
 
 if __name__ == '__main__':
-  jax_config.update('jax_enable_x64', True)
   absltest.main()

@@ -88,9 +88,9 @@ def as_bijector(obj: BijectorLike) -> bijector.BijectorT:
     return obj
   elif isinstance(obj, tfb.Bijector):
     return bijector_from_tfp.BijectorFromTFP(obj)
-  elif obj == jax.nn.sigmoid:
+  elif obj is jax.nn.sigmoid:
     return sigmoid.Sigmoid()
-  elif obj == jnp.tanh:
+  elif obj is jnp.tanh:
     return tanh.Tanh()
   elif callable(obj):
     return lambda_bijector.Lambda(obj)

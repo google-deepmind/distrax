@@ -57,7 +57,7 @@ def _with_base_dists(*all_named_parameters):
 class ChainTest(parameterized.TestCase):
 
   def setUp(self):
-    super(ChainTest, self).setUp()
+    super().setUp()
     self.seed = jax.random.PRNGKey(1234)
 
   def test_properties(self):

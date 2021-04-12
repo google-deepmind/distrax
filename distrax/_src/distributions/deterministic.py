@@ -106,14 +106,14 @@ class Deterministic(distribution.Distribution):
     log_prob = jnp.zeros_like(samples)
     return samples, log_prob
 
-  def log_prob(self, event: Array) -> Array:
+  def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
-    return jnp.log(self.prob(event))
+    return jnp.log(self.prob(value))
 
-  def prob(self, event: Array) -> Array:
+  def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""
     return jnp.where(
-        jnp.abs(event - self.loc) <= self.slack, 1., 0.)
+        jnp.abs(value - self.loc) <= self.slack, 1., 0.)
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
@@ -139,9 +139,9 @@ class Deterministic(distribution.Distribution):
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 
-  def cdf(self, x: Array) -> Array:
+  def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
-    return jnp.where(x >= self.loc - self.slack, 1., 0.)
+    return jnp.where(value >= self.loc - self.slack, 1., 0.)
 
 
 def _kl_divergence_deterministic_deterministic(

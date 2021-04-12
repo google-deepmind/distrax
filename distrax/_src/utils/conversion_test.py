@@ -14,6 +14,9 @@
 # ==============================================================================
 """Tests for `conversion.py`."""
 
+import sys
+
+from absl import flags
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -26,14 +29,23 @@ from distrax._src.distributions.normal import Normal
 from distrax._src.distributions.transformed import Transformed
 from distrax._src.utils import conversion
 import jax
+from jax.config import config as jax_config
 import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
 tfb = tfp.bijectors
 tfd = tfp.distributions
+FLAGS = flags.FLAGS
+flags.DEFINE_bool('test_jax_enable_x64', False,
+                  'Whether to enable double precision for tests.')
 
-jax.config.config_with_absl()
+
+def setUpModule():
+  if not FLAGS.is_parsed():
+    FLAGS(sys.argv, known_only=True)
+  if FLAGS['test_jax_enable_x64'].value:
+    jax_config.update('jax_enable_x64', True)
 
 
 class AsBijectorTest(parameterized.TestCase):

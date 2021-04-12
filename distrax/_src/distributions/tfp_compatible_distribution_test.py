@@ -39,6 +39,7 @@ RTOL = 1e-4
 
 
 class TFPCompatibleDistributionNormal(parameterized.TestCase):
+  """Tests for Normal distribution."""
 
   def setUp(self):
     super().setUp()
@@ -147,6 +148,7 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
 
 
 class TFPCompatibleDistributionMvnNormal(TFPCompatibleDistributionNormal):
+  """Tests for multivariate normal distribution."""
 
   def setUp(self):
     super().setUp()
@@ -159,6 +161,7 @@ class TFPCompatibleDistributionMvnNormal(TFPCompatibleDistributionNormal):
 
 
 class TFPCompatibleDistributionCategorical(TFPCompatibleDistributionNormal):
+  """Tests for categorical distribution."""
 
   def setUp(self):
     super().setUp()
@@ -169,6 +172,7 @@ class TFPCompatibleDistributionCategorical(TFPCompatibleDistributionNormal):
 
 
 class TFPCompatibleDistributionTransformed(TFPCompatibleDistributionNormal):
+  """Tests for transformed distributions."""
 
   def setUp(self):
     super().setUp()
@@ -185,6 +189,7 @@ class TFPCompatibleDistributionTransformed(TFPCompatibleDistributionNormal):
 
 
 class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
+  """Tests for meta distributions (with wrappper base distr)."""
 
   def setUp(self):
     super().setUp()

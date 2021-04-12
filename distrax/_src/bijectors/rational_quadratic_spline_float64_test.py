@@ -27,9 +27,15 @@ from jax.config import config as jax_config
 import jax.numpy as jnp
 
 
+def setUpModule():
+  jax_config.update('jax_enable_x64', True)
+
+
 class RationalQuadraticSplineFloat64Test(chex.TestCase):
+  """Tests for rational quadratic spline that use float64."""
 
   def _assert_dtypes(self, bij, x, dtype):
+    """Asserts dtypes."""
     # Sanity check to make sure float64 is enabled.
     x_64 = jnp.zeros([])
     self.assertEqual(jnp.float64, x_64.dtype)
@@ -59,5 +65,4 @@ class RationalQuadraticSplineFloat64Test(chex.TestCase):
 
 
 if __name__ == '__main__':
-  jax_config.update('jax_enable_x64', True)
   absltest.main()

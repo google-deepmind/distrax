@@ -30,6 +30,7 @@ def _make_bijector(params_shape,
                    range_min=0.,
                    range_max=1.,
                    boundary_slopes='unconstrained'):
+  """Returns RationalQuadraticSpline bijector."""
   params_shape += (3 * num_bins + 1,)
   if zero_params:
     params = jnp.zeros(params_shape)
@@ -44,6 +45,7 @@ def _make_bijector(params_shape,
 
 
 class RationalQuadraticSplineTest(parameterized.TestCase):
+  """Tests for rational quadratic spline."""
 
   def test_properties(self):
     bijector = _make_bijector(params_shape=(4, 5), num_bins=8)
