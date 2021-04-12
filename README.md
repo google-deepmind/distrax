@@ -1,5 +1,7 @@
 # Distrax
 
+![CI status](https://github.com/deepmind/distrax/workflows/tests/badge.svg)
+
 Distrax is a lightweight library of probability distributions and bijectors. It
 acts as a JAX-native reimplementation of a subset of
 [TensorFlow Probability](https://www.tensorflow.org/probability) (TFP), with
