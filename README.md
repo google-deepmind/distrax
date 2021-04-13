@@ -7,6 +7,20 @@ acts as a JAX-native reimplementation of a subset of
 [TensorFlow Probability](https://www.tensorflow.org/probability) (TFP), with
 some new features and emphasis on extensibility.
 
+## Installation
+
+Distrax can be installed with pip directly from GitHub:
+
+`pip install git+git://github.com/deepmind/distrax.git`.
+
+or from PyPI:
+
+`pip install distrax`
+
+To run the tests or
+[examples](https://github.com/deepmind/distrax/tree/master/examples) you will
+need to install additional [requirements](https://github.com/deepmind/distrax/tree/master/requirements).
+
 ## Design Principles
 
 The general design principles for the DeepMind JAX Ecosystem are addressed in
