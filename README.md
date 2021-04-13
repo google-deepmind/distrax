@@ -15,7 +15,7 @@ Distrax can be installed with pip directly from GitHub:
 
 or from PyPI:
 
-`pip install distrax`
+`pip install distrax`| `pip3 install distrax`
 
 To run the tests or
 [examples](https://github.com/deepmind/distrax/tree/master/examples) you will
