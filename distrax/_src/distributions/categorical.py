@@ -50,8 +50,6 @@ class Categorical(distribution.Distribution):
     """
     super().__init__()
     chex.assert_exactly_one_is_none(probs, logits)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, probs, axis=-1, val=1)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, logits, axis=-1, val=1)
     if not (jnp.issubdtype(dtype, jnp.integer) or
             jnp.issubdtype(dtype, jnp.floating)):
       raise ValueError(
