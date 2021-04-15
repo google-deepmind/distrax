@@ -92,7 +92,7 @@ class Categorical(distribution.Distribution):
     """See `Distribution._sample_n`."""
     new_shape = (n,) + self.logits.shape[:-1]
     draws = jax.random.categorical(
-        key=key, logits=self.logits, axis=-1, shape=new_shape)
+        key=key, logits=self.logits[None, ...], axis=-1, shape=new_shape)
     return draws.astype(self._dtype)
 
   def log_prob(self, value: Array) -> Array:
