@@ -133,6 +133,22 @@ class Transformed(dist_base.Distribution):
     lp_y = lp_x + ildj_y
     return lp_y
 
+  def kl_divergence(self, other_dist, **kwargs) -> Array:
+    """Calculates the KL divergence to another distribution.
+
+    Args:
+      other_dist: A compatible Distax or TFP Distribution.
+      **kwargs: Additional kwargs.
+
+    Returns:
+      The KL divergence `KL(self || other_dist)`.
+    """
+    if (isinstance(other_dist, Transformed)
+        and self.bijector == other_dist.bijector):
+      return self.distribution.kl_divergence(other_dist.distribution)
+
+    return super().kl_divergence(other_dist, **kwargs)
+
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """Returns `n` samples."""
     x = self.distribution.sample(seed=key, sample_shape=n)
