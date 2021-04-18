@@ -14,7 +14,7 @@
 # ==============================================================================
 """Gamma distribution."""
 
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -49,7 +49,7 @@ class Gamma(distribution.Distribution):
     self._concentration = conversion.as_float_array(concentration)
     self._rate = conversion.as_float_array(rate)
     self._batch_shape = jax.lax.broadcast_shapes(
-        self._concentration.shape, self._rate.shape
+      self._concentration.shape, self._rate.shape
     )
 
   @property
@@ -75,7 +75,9 @@ class Gamma(distribution.Distribution):
   def _sample_from_std_gamma(self, key: PRNGKey, n: int) -> Array:
     out_shape = (n,) + self.batch_shape
     dtype = jnp.result_type(self._concentration, self._rate)
-    return jax.random.gamma(key, a=self._concentration, shape=out_shape, dtype=dtype)
+    return jax.random.gamma(
+      key, a=self._concentration, shape=out_shape, dtype=dtype
+    )
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
@@ -91,16 +93,21 @@ class Gamma(distribution.Distribution):
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     return (
-        self._concentration * jnp.log(self._rate)
-        + (self._concentration - 1) * jnp.log(value)
-        - self._rate * value
-        - jax.lax.lgamma(self._concentration)
+      self._concentration * jnp.log(self._rate)
+      + (self._concentration - 1) * jnp.log(value)
+      - self._rate * value
+      - jax.lax.lgamma(self._concentration)
     )
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
     log_rate = jnp.log(self._rate)
-    return self._concentration - log_rate + jax.lax.lgamma(self._concentration) + ((1. - self._concentration) * jax.lax.digamma(self._concentration))
+    return (
+      self._concentration
+      - log_rate
+      + jax.lax.lgamma(self._concentration)
+      + ((1.0 - self._concentration) * jax.lax.digamma(self._concentration))
+    )
 
   def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
@@ -112,7 +119,7 @@ class Gamma(distribution.Distribution):
 
   def stddev(self) -> Array:
     """Calculates the standard deviation."""
-    return jnp.sqrt(self._concentration ) / self._rate
+    return jnp.sqrt(self._concentration) / self._rate
 
   def variance(self) -> Array:
     """Calculates the variance."""
@@ -120,15 +127,16 @@ class Gamma(distribution.Distribution):
 
   def mode(self) -> Array:
     """Calculates the mode."""
-    mode = (self._concentration - 1.) / self._rate
-    return jnp.where(self._concentration > 1., mode, jnp.nan)
+    mode = (self._concentration - 1.0) / self._rate
+    return jnp.where(self._concentration > 1.0, mode, jnp.nan)
 
 
 def _kl_divergence_gamma_gamma(
-    dist1: Union[Gamma, tfd.Gamma],
-    dist2: Union[Gamma, tfd.Gamma],
-    *unused_args, **unused_kwargs,
-    ) -> Array:
+  dist1: Union[Gamma, tfd.Gamma],
+  dist2: Union[Gamma, tfd.Gamma],
+  *unused_args,
+  **unused_kwargs,
+) -> Array:
   """Batched KL divergence KL(dist1 || dist2) between two Gamma distributions.
 
   Args:
@@ -140,10 +148,12 @@ def _kl_divergence_gamma_gamma(
   """
   t1 = dist2.concentration * jnp.log(dist1.rate / dist2.rate)
   t2 = jax.lax.lgamma(dist2.concentration) - jax.lax.lgamma(dist1.concentration)
-  t3 = (dist1.concentration - dist2.concentration) * jax.lax.digamma(dist1.concentration)
+  t3 = (dist1.concentration - dist2.concentration) * jax.lax.digamma(
+    dist1.concentration
+  )
   t4 = (dist2.rate - dist1.rate) * (dist1.concentration / dist1.rate)
   return t1 + t2 + t3 + t4
-  
+
 
 # Register the KL functions with TFP.
 tfd.RegisterKL(Gamma, Gamma)(_kl_divergence_gamma_gamma)
