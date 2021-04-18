@@ -76,15 +76,15 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('1d std laplace, no shape', (1, 1), ()),
-      ('1d std laplace, int shape', (1, 1), 1),
-      ('1d std laplace, 1-tuple shape', (1, 1), (1,)),
-      ('1d std laplace, 2-tuple shape', (1, 1), (2, 2)),
-      ('2d std laplace, no shape', (np.ones(2), np.ones(2)), ()),
-      ('2d std laplace, int shape', ([1, 1], [1, 1]), 1),
-      ('2d std laplace, 1-tuple shape', (np.ones(2), np.ones(2)), (1,)),
-      ('2d std laplace, 2-tuple shape', ([1, 1], [1, 1]), (2, 2)),
-      ('rank 2 std laplace, 2-tuple shape', (np.ones((3, 2)), np.ones(
+      ('1d std gamma, no shape', (1, 1), ()),
+      ('1d std gamma, int shape', (1, 1), 1),
+      ('1d std gamma, 1-tuple shape', (1, 1), (1,)),
+      ('1d std gamma, 2-tuple shape', (1, 1), (2, 2)),
+      ('2d std gamma, no shape', (np.ones(2), np.ones(2)), ()),
+      ('2d std gamma, int shape', ([1, 1], [1, 1]), 1),
+      ('2d std gamma, 1-tuple shape', (np.ones(2), np.ones(2)), (1,)),
+      ('2d std gamma, 2-tuple shape', ([1, 1], [1, 1]), (2, 2)),
+      ('rank 2 std gamma, 2-tuple shape', (np.ones((3, 2)), np.ones(
           (3, 2))), (2, 2)),
       ('broadcasted concentration', (0, np.ones(3)), (2, 2)),
       ('broadcasted rate', (np.ones(3), 1), ()),
