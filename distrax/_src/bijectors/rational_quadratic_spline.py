@@ -107,8 +107,8 @@ def _rational_quadratic_spline_fwd(x: Array,
       knot_slopes[i + 1] * sq_z + 2. * bin_slope * z1mz +
       knot_slopes[i] * sq_1mz) - 2. * jnp.log(denominator)
   # If x is outside the spline range, we default to a linear transformation.
-  y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + x_pos[0], y)
-  y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + x_pos[-1], y)
+  y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + y_pos[0], y)
+  y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + y_pos[-1], y)
   logdet = jnp.where(below_range, jnp.log(knot_slopes[0]), logdet)
   logdet = jnp.where(above_range, jnp.log(knot_slopes[-1]), logdet)
   return y, logdet
@@ -163,8 +163,8 @@ def _rational_quadratic_spline_inv(y: Array,
       knot_slopes[i + 1] * sq_z + 2. * bin_slope * z1mz +
       knot_slopes[i] * sq_1mz) + 2. * jnp.log(denominator)
   # If y is outside the spline range, we default to a linear transformation.
-  x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + y_pos[0], x)
-  x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + y_pos[-1], x)
+  x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + x_pos[0], x)
+  x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + x_pos[-1], x)
   logdet = jnp.where(below_range, - jnp.log(knot_slopes[0]), logdet)
   logdet = jnp.where(above_range, - jnp.log(knot_slopes[-1]), logdet)
   return x, logdet
