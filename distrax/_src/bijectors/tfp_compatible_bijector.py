@@ -67,6 +67,7 @@ def tfp_compatible_bijector(
     def __init__(self):
       self._is_injective = True
       self._is_permutation = False
+      self._parts_interact = False
 
       self.dtype = None
       self.has_static_min_event_ndims = True
