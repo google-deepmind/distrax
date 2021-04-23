@@ -18,6 +18,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
+from distrax._src.bijectors import bijector as distrax_bijector
 from distrax._src.bijectors import block
 from distrax._src.bijectors import masked_coupling
 import jax
@@ -81,6 +82,47 @@ class MaskedCouplingTest(parameterized.TestCase):
     self.assertEqual(x.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, batch_shape)
 
+  def test_non_default_inner_event_ndims(self):
+    batch = 2
+    event_shape = (7, 5, 3)
+    inner_event_ndims = 1
+    multipliers = jnp.array([4., 1., 0.5])
+
+    class InnerBijector(distrax_bijector.Bijector):
+
+      def __init__(self):
+        super().__init__(event_ndims_in=inner_event_ndims)
+
+      def forward_and_log_det(self, x):
+        return x * multipliers, jnp.full(x.shape[:-inner_event_ndims],
+                                         jnp.sum(jnp.log(multipliers)))
+
+      def inverse_and_log_det(self, y):
+        return y / multipliers, jnp.full(x.shape[:-inner_event_ndims],
+                                         -jnp.sum(jnp.log(multipliers)))
+
+    bijector = masked_coupling.MaskedCoupling(
+        mask=jnp.full(event_shape[:-inner_event_ndims], False),
+        conditioner=lambda x: x,
+        bijector=lambda _: InnerBijector(),
+        inner_event_ndims=inner_event_ndims,
+        event_ndims=len(event_shape))
+    x = jnp.ones((batch,) + event_shape)
+    # Test forward.
+    y, ldj_y = bijector.forward_and_log_det(x)
+    np.testing.assert_allclose(
+        y, jnp.tile(multipliers[None, None, None, :], [batch, 7, 5, 1]))
+    np.testing.assert_allclose(
+        ldj_y,
+        np.full([batch],
+                np.prod(event_shape[:-inner_event_ndims]) *
+                jnp.sum(jnp.log(multipliers))),
+        rtol=1e-6)
+    # Test inverse
+    z, ldj_z = bijector.inverse_and_log_det(y)
+    np.testing.assert_allclose(z, x)
+    np.testing.assert_allclose(ldj_z, -ldj_y)
+
   @chex.all_variants
   def test_masking_works(self):
     key = jax.random.PRNGKey(42)
@@ -142,9 +184,25 @@ class MaskedCouplingTest(parameterized.TestCase):
         mask=jax.random.choice(key, jnp.array([True, False]), event_shape),
         conditioner=lambda x: x,
         bijector=lambda _: block.Block(lambda x: x, 1))
-    with self.assertRaises(ValueError):
+    with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
       bijector.forward_and_log_det(jnp.zeros(event_shape))
-    with self.assertRaises(ValueError):
+    with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
+      bijector.inverse_and_log_det(jnp.zeros(event_shape))
+
+  def test_raises_if_inner_bijector_has_wrong_inner_ndims(self):
+    key = jax.random.PRNGKey(101)
+    event_shape = (2, 3, 5)
+    inner_event_ndims = 2
+    bijector = masked_coupling.MaskedCoupling(
+        mask=jax.random.choice(key, jnp.array([True, False]),
+                               event_shape[:-inner_event_ndims]),
+        event_ndims=len(event_shape),
+        inner_event_ndims=inner_event_ndims,
+        conditioner=lambda x: x,
+        bijector=lambda _: block.Block(lambda x: x, 0.))
+    with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
+      bijector.forward_and_log_det(jnp.zeros(event_shape))
+    with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
       bijector.inverse_and_log_det(jnp.zeros(event_shape))
 
   def test_raises_on_invalid_input_shape(self):
