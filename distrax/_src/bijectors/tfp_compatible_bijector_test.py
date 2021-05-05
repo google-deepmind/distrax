@@ -25,6 +25,7 @@ from distrax._src.bijectors.scalar_affine import ScalarAffine
 from distrax._src.bijectors.tanh import Tanh
 from distrax._src.bijectors.tfp_compatible_bijector import tfp_compatible_bijector
 import jax
+import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
@@ -114,6 +115,36 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
     with self.subTest('inverse'):
       y = chain_with_tfp.forward(event)
       x_dx = chain_with_dx.inverse(y)
+      np.testing.assert_allclose(x_dx, event, rtol=RTOL)
+
+  @parameterized.named_parameters(
+      ('identity', lambda: Lambda(lambda x: x, is_constant_jacobian=True),
+       tfb.Identity, np.array([1, 1.5, 2], dtype=np.float32)),
+      ('affine', lambda: ScalarAffine(np.ones(3, dtype=np.float32),  # pylint: disable=g-long-lambda
+                                      np.full(3, 5.5, dtype=np.float32)),
+       lambda: tfb.Chain([tfb.Shift(np.ones(3, dtype=np.float32)),  # pylint: disable=g-long-lambda
+                          tfb.Scale(np.full(3, 5.5, dtype=np.float32))]),
+       np.array([1, 1.5, 2], dtype=np.float32)),
+      ('tanh', Tanh, tfb.Tanh, np.array([-0.1, 0.01, 0.1], dtype=np.float32)),
+      ('chain(tanh, affine)', lambda: Chain([Tanh(), ScalarAffine(0.2, 1.2)]),
+       lambda: tfb.Chain([tfb.Tanh(), tfb.Shift(0.2), tfb.Scale(1.2)]),
+       np.array([-0.1, 0.01, 0.1], dtype=np.float32)),
+  )
+  def test_invert(self, dx_bijector_fn, tfb_bijector_fn, event):
+    dx_bij = tfp_compatible_bijector(dx_bijector_fn())
+    tfp_bij = tfb_bijector_fn()
+
+    invert_with_dx = tfb.Invert(dx_bij)
+    invert_with_tfp = tfb.Invert(tfp_bij)
+
+    with self.subTest('forward'):
+      y_dx = invert_with_dx.forward(event)
+      y_tfp = invert_with_tfp.forward(event)
+      np.testing.assert_allclose(y_dx, y_tfp, rtol=RTOL)
+
+    with self.subTest('inverse'):
+      y = invert_with_tfp.forward(event)
+      x_dx = invert_with_dx.inverse(y)
       np.testing.assert_allclose(x_dx, event, rtol=RTOL)
 
   @parameterized.named_parameters(
@@ -240,6 +271,18 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
 
       with self.assertRaises(ValueError):
         tfp_bij.inverse_event_ndims(1)
+
+    with self.subTest('forward_event_shape'):
+      y_shape = tfp_bij.forward_event_shape((6,))
+      y_shape_tensor = tfp_bij.forward_event_shape_tensor((6,))
+      self.assertEqual(y_shape, (2, 3))
+      np.testing.assert_array_equal(y_shape_tensor, jnp.array((2, 3)))
+
+    with self.subTest('inverse_event_shape'):
+      x_shape = tfp_bij.inverse_event_shape((2, 3))
+      x_shape_tensor = tfp_bij.inverse_event_shape_tensor((2, 3))
+      self.assertEqual(x_shape, (6,))
+      np.testing.assert_array_equal(x_shape_tensor, jnp.array((6,)))
 
     with self.subTest('TransformedDistribution with correct event_ndims'):
       base = tfd.MultivariateNormalDiag(np.zeros(6), np.ones(6))
