@@ -138,12 +138,12 @@ def _kl_divergence_gamma_gamma(
   Returns:
     Batchwise `KL(dist1 || dist2)`.
   """
-  t1 = dist2.concentration * jnp.log(dist1.rate / dist2.rate)
+  t1 = dist2.concentration * (jnp.log(dist1.rate) - jnp.log(dist2.rate))
   t2 = jax.lax.lgamma(dist2.concentration) - jax.lax.lgamma(dist1.concentration)
   t3 = (dist1.concentration - dist2.concentration) * jax.lax.digamma(
     dist1.concentration
   )
-  t4 = (dist2.rate - dist1.rate) * (jnp.log(dist1.rate) - jnp.log(dist2.rate))
+  t4 = (dist2.rate - dist1.rate) * (dist1.concentration / dist1.rate)
   return t1 + t2 + t3 + t4
 
 
