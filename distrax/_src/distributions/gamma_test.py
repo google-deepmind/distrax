@@ -76,9 +76,9 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('1d std gamma, no shape', (1, 1), ()),
-      ('1d std gamma, int shape', (1, 1), 1),
-      ('1d std gamma, 1-tuple shape', (1, 1), (1,)),
+      ('1d std gamma, no shape', (11, 3), ()),
+      ('1d std gamma, int shape', (11, 3), 1),
+      ('1d std gamma, 1-tuple shape', (11, 3), (1,)),
       ('1d std gamma, 2-tuple shape', (1, 1), (2, 2)),
       ('2d std gamma, no shape', (np.ones(2), np.ones(2)), ()),
       ('2d std gamma, int shape', ([1, 1], [1, 1]), 1),
@@ -86,7 +86,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('2d std gamma, 2-tuple shape', ([1, 1], [1, 1]), (2, 2)),
       ('rank 2 std gamma, 2-tuple shape', (np.ones((3, 2)), np.ones(
           (3, 2))), (2, 2)),
-      ('broadcasted concentration', (0, np.ones(3)), (2, 2)),
+      ('broadcasted concentration', (1, np.ones(3)), (2, 2)),
       ('broadcasted rate', (np.ones(3), 1), ()),
   )
   def test_sample_and_log_prob(self, distr_params, sample_shape):
@@ -100,13 +100,13 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('1d dist, 1d value', (0, 1), 1),
+      ('1d dist, 1d value', (3.1, 1), 1),
       ('1d dist, 2d value', (0.5, 0.1), np.array([1, 2])),
       ('1d dist, 2d value as list', (0.5, 0.1), [1, 2]),
       ('2d dist, 1d value', (0.5 + np.zeros(2), 0.3 * np.ones(2)), 1),
-      ('2d broadcasted dist, 1d value', (np.zeros(2), 0.8), 1),
+      ('2d broadcasted dist, 1d value', (0.4 + np.zeros(2), 0.8), 1),
       ('2d dist, 2d value', ([0.1, -0.5], 0.9 * np.ones(2)), np.array([1, 2])),
-      ('1d dist, 1d value, edge case', (0, 1), 200),
+      ('1d dist, 1d value, edge case', (2.1, 1), 200),
   )
   def test_log_prob(self, distr_params, value):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
@@ -120,13 +120,13 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('1d dist, 1d value', (0, 1), 1),
+      ('1d dist, 1d value', (3.1, 1), 1),
       ('1d dist, 2d value', (0.5, 0.1), np.array([1, 2])),
       ('1d dist, 2d value as list', (0.5, 0.1), [1, 2]),
       ('2d dist, 1d value', (0.5 + np.zeros(2), 0.3 * np.ones(2)), 1),
-      ('2d broadcasted dist, 1d value', (np.zeros(2), 0.8), 1),
+      ('2d broadcasted dist, 1d value', (0.4 + np.zeros(2), 0.8), 1),
       ('2d dist, 2d value', ([0.1, -0.5], 0.9 * np.ones(2)), np.array([1, 2])),
-      ('1d dist, 1d value, edge case', (0, 1), 200),
+      ('1d dist, 1d value, edge case', (2.1, 1), 200),
   )
   def test_prob(self, distr_params, value):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
@@ -140,13 +140,13 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('1d dist, 1d value', (0, 1), 1),
+      ('1d dist, 1d value', (3.1, 1), 1),
       ('1d dist, 2d value', (0.5, 0.1), np.array([1, 2])),
       ('1d dist, 2d value as list', (0.5, 0.1), [1, 2]),
       ('2d dist, 1d value', (0.5 + np.zeros(2), 0.3 * np.ones(2)), 1),
-      ('2d broadcasted dist, 1d value', (np.zeros(2), 0.8), 1),
+      ('2d broadcasted dist, 1d value', (0.4 + np.zeros(2), 0.8), 1),
       ('2d dist, 2d value', ([0.1, -0.5], 0.9 * np.ones(2)), np.array([1, 2])),
-      ('1d dist, 1d value, edge case', (0, 1), 200),
+      ('1d dist, 1d value, edge case', (2.1, 1), 200),
   )
   def test_cdf(self, distr_params, value):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
