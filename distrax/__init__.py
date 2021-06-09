@@ -79,6 +79,7 @@ __all__ = (
     "DistributionLike",
     "EpsilonGreedy",
     "estimate_kl_best_effort",
+    "Gamma",
     "Greedy",
     "importance_sampling_ratios",
     "Independent",

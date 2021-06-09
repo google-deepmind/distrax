@@ -23,7 +23,6 @@ import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
 
 Array = chex.Array
@@ -32,8 +31,7 @@ PRNGKey = chex.PRNGKey
 
 
 class Gamma(distribution.Distribution):
-  """Gamma distribution with parameters
-  `concentration` (aka "alpha") and `rate` (aka "beta").
+  """Gamma distribution with parameters `concentration` and `rate`.
   """
 
   equiv_tfp_cls = tfd.Gamma
@@ -84,12 +82,6 @@ class Gamma(distribution.Distribution):
     rnd = self._sample_from_std_gamma(key, n)
     return rnd / self._rate
 
-  def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
-    """See `Distribution._sample_n_and_log_prob`."""
-    samples = self._sample_n(key, n)
-    log_prob = self.log_prob(samples)
-    return samples, log_prob
-
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     return (
@@ -106,7 +98,7 @@ class Gamma(distribution.Distribution):
       self._concentration
       - log_rate
       + jax.lax.lgamma(self._concentration)
-      + ((1.0 - self._concentration) * jax.lax.digamma(self._concentration))
+      + (1.0 - self._concentration) * jax.lax.digamma(self._concentration)
     )
 
   def cdf(self, value: Array) -> Array:
@@ -151,7 +143,7 @@ def _kl_divergence_gamma_gamma(
   t3 = (dist1.concentration - dist2.concentration) * jax.lax.digamma(
     dist1.concentration
   )
-  t4 = (dist2.rate - dist1.rate) * (dist1.concentration / dist1.rate)
+  t4 = (dist2.rate - dist1.rate) * (jnp.log(dist1.rate) - jnp.log(dist2.rate))
   return t1 + t2 + t3 + t4
 
 
