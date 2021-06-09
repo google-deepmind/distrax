@@ -14,14 +14,16 @@
 # ==============================================================================
 """Distribution representing a Bijector applied to a Distribution."""
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from distrax._src.bijectors import bijector as bjct_base
 from distrax._src.distributions import distribution as dist_base
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
+from tensorflow_probability.substrates import jax as tfp
 
+tfd = tfp.distributions
 
 PRNGKey = dist_base.PRNGKey
 Array = dist_base.Array
@@ -46,13 +48,16 @@ class Transformed(dist_base.Distribution):
   `J(f)(x)` is the Jacobian matrix of `f`, both evaluated at `x = f^{-1}(y)`.
 
   Note: the `batch_shape`, `event_shape`, and `dtype` properties of the
-  transformed distribution are computed on-demand via JAX tracing when
-  requested. This assumes that the `forward` function of the bijector is
-  traceable; that is, it is a pure function that does not contain run-time
-  branching. Functions that do not strictly meet this requirement can still be
-  used, but we cannot guarantee that the shape and dtype properties of the
-  resulting distribution can be correctly inferred.
+  transformed distribution, as well as the `kl_divergence` method, are computed
+  on-demand via JAX tracing when requested. This assumes that the `forward`
+  function of the bijector is traceable; that is, it is a pure function that
+  does not contain run-time branching. Functions that do not strictly meet this
+  requirement can still be used, but we cannot guarantee that the shapes, dtype,
+  and KL computations involving the transformed distribution can be correctly
+  obtained.
   """
+
+  equiv_tfp_cls = tfd.TransformedDistribution
 
   def __init__(self, distribution: DistributionLike, bijector: BijectorLike):
     """Initializes a Transformed distribution.
@@ -209,3 +214,72 @@ class Transformed(dist_base.Distribution):
           "`entropy` is not implemented for this transformed distribution, "
           "because its bijector's Jacobian determinant is not known to be "
           "constant.")
+
+
+def _kl_divergence_transformed_transformed(
+    dist1: Union[Transformed, tfd.TransformedDistribution],
+    dist2: Union[Transformed, tfd.TransformedDistribution],
+    *unused_args,
+    input_hint: Optional[Array] = None,
+    **unused_kwargs,
+    ) -> Array:
+  """Obtains the KL divergence between two Transformed distributions.
+
+  This computes the KL divergence between two Transformed distributions with the
+  same bijector. If the two Transformed distributions do not have the same
+  bijector, an error is raised. To determine if the bijectors are equal, this
+  method proceeds as follows:
+  - If both bijectors are the same instance of a Distrax bijector, then they are
+    declared equal.
+  - Otherwise, the string representation of the Jaxpr of the `forward` method
+    of each bijector is compared. If both string representations are equal, the
+    bijectors are declared equal.
+  - Otherwise, the bijectors cannot be guaranteed to be equal and an error is
+    raised.
+
+  Args:
+    dist1: A Transformed distribution.
+    dist2: A Transformed distribution.
+    input_hint: an example sample from the base distribution, used to trace
+      the `forward` method. If not specified, it is computed using a zero array
+      of the shape and dtype of a sample from the base distribution.
+
+  Returns:
+    Batchwise `KL(dist1 || dist2)`.
+
+  Raises:
+    NotImplementedError: If bijectors are not known to be equal.
+    ValueError: If the base distributions do not have the same `event_shape`.
+  """
+  if dist1.distribution.event_shape != dist2.distribution.event_shape:
+    raise ValueError(
+        f'The two base distributions do not have the same event shape: '
+        f'{dist1.distribution.event_shape} and '
+        f'{dist2.distribution.event_shape}.')
+
+  bij1 = conversion.as_bijector(dist1.bijector)  # conversion needed for TFP
+  bij2 = conversion.as_bijector(dist2.bijector)
+
+  # Check if the bijectors are different.
+  if bij1 != bij2:
+    if input_hint is None:
+      input_hint = jnp.zeros(
+          dist1.distribution.event_shape, dtype=dist1.distribution.dtype)
+    jaxpr_bij1 = jax.make_jaxpr(bij1.forward)(input_hint).jaxpr
+    jaxpr_bij2 = jax.make_jaxpr(bij2.forward)(input_hint).jaxpr
+    if str(jaxpr_bij1) != str(jaxpr_bij2):
+      raise NotImplementedError(
+          f'The KL divergence cannot be obtained because it is not possible to '
+          f'guarantee that the bijectors {dist1.bijector.name} and '
+          f'{dist2.bijector.name} of the Transformed distributions are '
+          f'equal. If possible, use the same instance of a Distrax bijector.')
+
+  return dist1.distribution.kl_divergence(dist2.distribution)
+
+
+# Register the KL functions with TFP.
+tfd.RegisterKL(Transformed, Transformed)(_kl_divergence_transformed_transformed)
+tfd.RegisterKL(Transformed.equiv_tfp_cls, Transformed)(
+    _kl_divergence_transformed_transformed)
+tfd.RegisterKL(Transformed, Transformed.equiv_tfp_cls)(
+    _kl_divergence_transformed_transformed)
