@@ -120,7 +120,7 @@ class Gamma(distribution.Distribution):
   def mode(self) -> Array:
     """Calculates the mode."""
     mode = (self._concentration - 1.0) / self._rate
-    return jnp.where(self._concentration > 1.0, mode, jnp.nan)
+    return jnp.where(self._concentration >= 1.0, mode, jnp.nan)
 
 
 def _kl_divergence_gamma_gamma(
