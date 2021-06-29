@@ -95,6 +95,10 @@ def tfp_compatible_distribution(
       return jnp.array(base_distribution.event_shape, dtype=jnp.int32)
 
     @property
+    def experimental_shard_axis_names(self) -> None:
+      return None
+
+    @property
     def name(self) -> str:
       """See `Distribution.name`."""
       return name_ or f'TFPCompatible{base_distribution.name}'
