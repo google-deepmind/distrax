@@ -23,7 +23,7 @@ import chex
 from distrax._src.distributions import distribution
 from distrax._src.utils import math
 import jax
-import jax.lax as lax
+from jax import lax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
@@ -75,7 +75,7 @@ class Multinomial(distribution.Distribution):
     else:
       assert self._logits is not None
       probs_batch_shape = self._logits.shape[:-1]
-    self._batch_shape = jax.lax.broadcast_shapes(
+    self._batch_shape = lax.broadcast_shapes(
         probs_batch_shape, self._total_count.shape)
 
   @property

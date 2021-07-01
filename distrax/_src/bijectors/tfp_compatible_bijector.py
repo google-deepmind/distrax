@@ -86,9 +86,12 @@ def tfp_compatible_bijector(
       """The name of the wrapped bijector."""
       return name_ or f"TFPCompatible{base_bijector.name}"
 
-    @property
-    def experimental_batch_shape(self) -> None:
-      return None
+    def experimental_batch_shape(self, x_event_ndims=None, y_event_ndims=None):
+      raise NotImplementedError()
+
+    def experimental_batch_shape_tensor(
+        self, x_event_ndims=None, y_event_ndims=None):
+      raise NotImplementedError()
 
     def forward_dtype(self, _: jnp.dtype) -> None:
       """Returns None, making no promise regarding dtypes."""
