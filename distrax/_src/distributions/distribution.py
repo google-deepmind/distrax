@@ -125,6 +125,7 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
     Returns:
       A sample of shape `sample_shape` + `batch_shape` + `event_shape`.
     """
+
     rng, sample_shape = convert_seed_and_sample_shape(seed, sample_shape)
     num_samples = functools.reduce(operator.mul, sample_shape, 1)  # product
 

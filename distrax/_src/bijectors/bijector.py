@@ -94,6 +94,7 @@ class Bijector(jittable.Jittable, metaclass=abc.ABCMeta):
         Only set to True if you're absoltely sure the Jacobian determinant is
         constant; if you're not sure, set to None.
     """
+
     if event_ndims_out is None:
       event_ndims_out = event_ndims_in
     if event_ndims_in < 0:
