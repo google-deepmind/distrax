@@ -52,6 +52,7 @@ from distrax._src.distributions.softmax import Softmax
 from distrax._src.distributions.transformed import Transformed
 from distrax._src.distributions.uniform import Uniform
 
+
 # Utilities.
 from distrax._src.utils.conversion import as_bijector
 from distrax._src.utils.conversion import as_distribution
