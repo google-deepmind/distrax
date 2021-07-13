@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import normal
 from distrax._src.utils import equivalence
+import jax.test_util as jtu
 import numpy as np
 
 
@@ -64,6 +65,7 @@ class NormalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_sample_shape(distr_params, dict(), sample_shape)
 
   @chex.all_variants
+  @jtu.disable_implicit_rank_promotion
   @parameterized.named_parameters(
       ('1d std normal, no shape', (0, 1), ()),
       ('1d std normal, int shape', (0, 1), 1),
