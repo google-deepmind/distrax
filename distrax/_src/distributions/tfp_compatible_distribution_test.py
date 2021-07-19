@@ -219,6 +219,18 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
 
     self.assertion_fn(log_prob, expected_log_prob)
 
+  def test_local_measure_with_independent(self):
+    base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
+    wrapped_dist = tfp_compatible_distribution(base_dist)
+    meta_dist = tfd.Independent(wrapped_dist, 1, validate_args=True)
+    samples = meta_dist.sample((), self._key)
+    expected_log_prob = meta_dist.log_prob(samples)
+
+    log_prob, space = meta_dist.experimental_local_measure(
+        samples, backward_compat=True)
+    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
+
   def test_with_transformed_distribution(self):
     base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
     wrapped_dist = tfp_compatible_distribution(base_dist)
@@ -234,12 +246,38 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
 
     self.assertion_fn(log_prob, expected_log_prob)
 
+  def test_local_measure_with_transformed_distribution(self):
+    base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
+    wrapped_dist = tfp_compatible_distribution(base_dist)
+    meta_dist = tfd.TransformedDistribution(
+        distribution=wrapped_dist, bijector=tfb.Exp(), validate_args=True)
+    samples = meta_dist.sample(seed=self._key)
+    expected_log_prob = meta_dist.log_prob(samples)
+
+    log_prob, space = meta_dist.experimental_local_measure(
+        samples, backward_compat=True)
+    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
+
   def test_with_sample(self):
     base_dist = Normal(0., 1.)
     wrapped_dist = tfp_compatible_distribution(base_dist)
     meta_dist = tfd.Sample(
         wrapped_dist, sample_shape=[1, 3], validate_args=True)
     meta_dist.log_prob(meta_dist.sample(2, seed=self._key))
+
+  def test_local_measure_with_sample(self):
+    base_dist = Normal(0., 1.)
+    wrapped_dist = tfp_compatible_distribution(base_dist)
+    meta_dist = tfd.Sample(
+        wrapped_dist, sample_shape=[1, 3], validate_args=True)
+    samples = meta_dist.sample(2, seed=self._key)
+    expected_log_prob = meta_dist.log_prob(samples)
+
+    log_prob, space = meta_dist.experimental_local_measure(
+        samples, backward_compat=True)
+    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
 
   def test_with_joint_distribution_named_auto_batched(self):
     def laplace(a, b):

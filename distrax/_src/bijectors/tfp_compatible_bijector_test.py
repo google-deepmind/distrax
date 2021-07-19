@@ -32,6 +32,7 @@ from tensorflow_probability.substrates import jax as tfp
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
+
 RTOL = 3e-3
 
 
@@ -208,6 +209,15 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
       tfp_out = tfp_bij.inverse_log_det_jacobian(
           y, event_ndims=base_bij.event_ndims_out)
       np.testing.assert_allclose(dx_out, tfp_out, rtol=RTOL)
+
+    with self.subTest('experimental_compute_density_correction'):
+      dx_out = dx_bij.forward_log_det_jacobian(
+          event, event_ndims=base_bij.event_ndims_in)
+      dx_dcorr_out, space = dx_bij.experimental_compute_density_correction(
+          event, tangent_space=tfp.experimental.tangent_spaces.FullSpace(),
+          event_ndims=base_bij.event_ndims_in)
+      np.testing.assert_allclose(dx_out, dx_dcorr_out, rtol=RTOL)
+      self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
 
   @parameterized.named_parameters(
       ('identity unbatched',

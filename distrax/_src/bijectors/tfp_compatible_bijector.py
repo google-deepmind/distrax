@@ -28,6 +28,7 @@ tfd = tfp.distributions
 
 Array = chex.Array
 Bijector = bijector.Bijector
+TangentSpace = tfp.experimental.tangent_spaces.TangentSpace
 
 
 def tfp_compatible_bijector(
@@ -174,5 +175,35 @@ def tfp_compatible_bijector(
                          f"at least {expected_ndims} dimensions, but was "
                          f"{event_shape} which has only {len(event_shape)} "
                          f"dimensions instead.")
+
+    def experimental_compute_density_correction(
+        self,
+        x: Array,
+        tangent_space: TangentSpace,
+        backward_compat: bool = True,
+        **kwargs):
+      """Density correction for this transform wrt the tangent space, at x.
+
+      See `tfp.bijectors.experimental_compute_density_correction`, and
+      Radul and Alexeev, AISTATS 2021, “The Base Measure Problem and its
+      Solution”, https://arxiv.org/abs/2010.09647.
+
+      Args:
+        x: `float` or `double` `Array`.
+        tangent_space: `TangentSpace` or one of its subclasses.  The tangent to
+          the support manifold at `x`.
+        backward_compat: unused
+        **kwargs: Optional keyword arguments forwarded to tangent space methods.
+
+      Returns:
+        density_correction: `Array` representing the density correction---in log
+          space---under the transformation that this Bijector denotes. Assumes
+          the Bijector is dimension-preserving.
+      """
+      del backward_compat
+      # We ignore the `backward_compat` flag and always act as though it's
+      # true because Distrax bijectors and distributions need not follow the
+      # base measure protocol from TFP.
+      return tangent_space.transform_dimension_preserving(x, self, **kwargs)
 
   return TFPCompatibleBijector()
