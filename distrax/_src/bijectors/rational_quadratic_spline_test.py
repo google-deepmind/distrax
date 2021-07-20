@@ -285,7 +285,7 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
       this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
       this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-7)
-      np.testing.assert_allclose(this_z, z[i], atol=1e-7)
+      np.testing.assert_allclose(this_z, z[i], atol=1e-6)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-5)
       np.testing.assert_allclose(this_logdet_inv, logdet_inv[i], atol=1e-5)
 

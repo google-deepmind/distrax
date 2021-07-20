@@ -77,7 +77,9 @@ class Uniform(distribution.Distribution):
     new_shape = (n,) + self.batch_shape
     uniform = jax.random.uniform(
         key=key, shape=new_shape, dtype=self.range.dtype, minval=0., maxval=1.)
-    return self.low + self.range * uniform
+    low = jnp.expand_dims(self._low, range(uniform.ndim - self._low.ndim))
+    range_ = jnp.expand_dims(self.range, range(uniform.ndim - self.range.ndim))
+    return low + range_ * uniform
 
   def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
     """See `Distribution._sample_n_and_log_prob`."""

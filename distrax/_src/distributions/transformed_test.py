@@ -21,8 +21,10 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.bijectors import block
+from distrax._src.bijectors import lambda_bijector
 from distrax._src.bijectors import masked_coupling
 from distrax._src.bijectors import scalar_affine
+from distrax._src.bijectors import sigmoid
 from distrax._src.distributions import normal
 from distrax._src.distributions import transformed
 from distrax._src.utils import conversion
@@ -371,6 +373,76 @@ class TransformedTest(parameterized.TestCase):
         inputs, standard_normal_log_prob_of_zero, dtype=jnp.float32)
 
     np.testing.assert_array_equal(log_prob, expected_log_prob)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('kl distrax_to_distrax', 'distrax_to_distrax'),
+      ('kl distrax_to_tfp', 'distrax_to_tfp'),
+      ('kl tfp_to_distrax', 'tfp_to_distrax'))
+  def test_kl_divergence(self, mode_string):
+    base_dist1 = tfd.Normal([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])
+    base_dist2 = tfd.Normal(-0.1, 1.5)
+    bij_tfp1 = tfb.Identity()
+    bij_tfp2 = tfb.Identity()
+    bij_distrax1 = bij_tfp1
+    bij_distrax2 = lambda_bijector.Lambda(lambda x: x)
+    tfp_dist1 = tfd.TransformedDistribution(base_dist1, bij_tfp1)
+    tfp_dist2 = tfd.TransformedDistribution(base_dist2, bij_tfp2)
+    distrax_dist1 = transformed.Transformed(base_dist1, bij_distrax1)
+    distrax_dist2 = transformed.Transformed(base_dist2, bij_distrax2)
+
+    expected_result_fwd = base_dist1.kl_divergence(base_dist2)
+    expected_result_inv = base_dist2.kl_divergence(base_dist1)
+
+    distrax_fn1 = self.variant(distrax_dist1.kl_divergence)
+    distrax_fn2 = self.variant(distrax_dist2.kl_divergence)
+
+    if mode_string == 'distrax_to_distrax':
+      result_fwd = distrax_fn1(distrax_dist2)
+      result_inv = distrax_fn2(distrax_dist1)
+    elif mode_string == 'distrax_to_tfp':
+      result_fwd = distrax_fn1(tfp_dist2)
+      result_inv = distrax_fn2(tfp_dist1)
+    elif mode_string == 'tfp_to_distrax':
+      result_fwd = tfp_dist1.kl_divergence(distrax_dist2)
+      result_inv = tfp_dist2.kl_divergence(distrax_dist1)
+
+    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=RTOL)
+    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=RTOL)
+
+  @chex.all_variants(with_pmap=False)
+  def test_kl_divergence_on_same_instance_of_distrax_bijector(self):
+    base_dist1 = tfd.Normal([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])
+    base_dist2 = tfd.Normal(-0.1, 1.5)
+    bij_distrax = sigmoid.Sigmoid()
+    distrax_dist1 = transformed.Transformed(base_dist1, bij_distrax)
+    distrax_dist2 = transformed.Transformed(base_dist2, bij_distrax)
+    expected_result_fwd = base_dist1.kl_divergence(base_dist2)
+    expected_result_inv = base_dist2.kl_divergence(base_dist1)
+    result_fwd = self.variant(distrax_dist1.kl_divergence)(distrax_dist2)
+    result_inv = self.variant(distrax_dist2.kl_divergence)(distrax_dist1)
+    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=RTOL)
+    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=RTOL)
+
+  def test_kl_divergence_raises_on_event_shape(self):
+    base_dist1 = tfd.MultivariateNormalDiag([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])
+    base_dist2 = tfd.Normal(-0.1, 1.5)
+    bij1 = block.Block(lambda_bijector.Lambda(lambda x: x), ndims=1)
+    bij2 = lambda_bijector.Lambda(lambda x: x)
+    distrax_dist1 = transformed.Transformed(base_dist1, bij1)
+    distrax_dist2 = transformed.Transformed(base_dist2, bij2)
+    with self.assertRaises(ValueError):
+      distrax_dist1.kl_divergence(distrax_dist2)
+
+  def test_kl_divergence_raises_on_different_bijectors(self):
+    base_dist1 = tfd.Normal([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])
+    base_dist2 = tfd.Normal(-0.1, 1.5)
+    bij1 = lambda_bijector.Lambda(lambda x: x)
+    bij2 = sigmoid.Sigmoid()
+    distrax_dist1 = transformed.Transformed(base_dist1, bij1)
+    distrax_dist2 = transformed.Transformed(base_dist2, bij2)
+    with self.assertRaises(NotImplementedError):
+      distrax_dist1.kl_divergence(distrax_dist2)
 
   def test_jittable(self):
     @jax.jit

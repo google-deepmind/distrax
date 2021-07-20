@@ -79,7 +79,9 @@ class Normal(distribution.Distribution):
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
     rnd = self._sample_from_std_normal(key, n)
-    return self._scale * rnd + self._loc
+    scale = jnp.expand_dims(self._scale, range(rnd.ndim - self._scale.ndim))
+    loc = jnp.expand_dims(self._loc, range(rnd.ndim - self._loc.ndim))
+    return scale * rnd + loc
 
   def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
     """See `Distribution._sample_n_and_log_prob`."""

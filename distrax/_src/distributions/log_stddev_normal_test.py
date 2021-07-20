@@ -48,12 +48,12 @@ class LogStddevNormalTest(parameterized.TestCase):
     log_stddev = np.log(stddev)
     dist = lsn.LogStddevNormal(mean, log_stddev)
 
-    num_samples = 10000000
+    num_samples = 1000000
     prng_key = jax.random.PRNGKey(1331)
     samples = dist.sample(seed=prng_key, sample_shape=num_samples)
     chex.assert_shape(samples, (num_samples,))
-    np.testing.assert_allclose(jnp.mean(samples), mean, atol=1e-2)
-    np.testing.assert_allclose(jnp.std(samples), stddev, atol=1e-2)
+    np.testing.assert_allclose(jnp.mean(samples), mean, atol=4e-2)
+    np.testing.assert_allclose(jnp.std(samples), stddev, atol=4e-2)
 
   @parameterized.parameters(
       ([3, 4], [1.5, 2.5]),
@@ -64,12 +64,12 @@ class LogStddevNormalTest(parameterized.TestCase):
     assert mean.shape == log_stddev.shape
     dist = lsn.LogStddevNormal(mean, log_stddev)
 
-    num_samples = 10000000
+    num_samples = 1000000
     prng_key = jax.random.PRNGKey(1331)
     samples = dist.sample(seed=prng_key, sample_shape=num_samples)
     chex.assert_shape(samples, (num_samples,) + mean.shape)
-    np.testing.assert_allclose(jnp.mean(samples, axis=0), mean, atol=1e-2)
-    np.testing.assert_allclose(jnp.std(samples, axis=0), stddev, atol=1e-2)
+    np.testing.assert_allclose(jnp.mean(samples, axis=0), mean, atol=4e-2)
+    np.testing.assert_allclose(jnp.std(samples, axis=0), stddev, atol=4e-2)
 
   def testSamplingBatched(self):
     means = np.array([[3.0, 4.0], [-5, 48.0], [58, 64.0]])
@@ -77,13 +77,13 @@ class LogStddevNormalTest(parameterized.TestCase):
     log_stddevs = np.log(stddevs)
     dist = lsn.LogStddevNormal(means, log_stddevs)
 
-    num_samples = 10000000
+    num_samples = 1000000
     prng_key = jax.random.PRNGKey(1331)
     samples = dist.sample(seed=prng_key, sample_shape=num_samples)
     # output shape is [num_samples] + means.shape
     chex.assert_shape(samples, (num_samples, 3, 2))
-    np.testing.assert_allclose(jnp.mean(samples, axis=0), means, atol=1e-2)
-    np.testing.assert_allclose(jnp.std(samples, axis=0), stddevs, atol=1e-2)
+    np.testing.assert_allclose(jnp.mean(samples, axis=0), means, atol=4e-2)
+    np.testing.assert_allclose(jnp.std(samples, axis=0), stddevs, atol=4e-2)
 
   def testSamplingBatchedCustomDim(self):
     means = np.array([[3.0, 4.0], [-5, 48.0], [58, 64.0]])
@@ -91,12 +91,12 @@ class LogStddevNormalTest(parameterized.TestCase):
     log_stddevs = np.log(stddevs)
     dist = lsn.LogStddevNormal(means, log_stddevs)
 
-    num_samples = 10000000
+    num_samples = 1000000
     prng_key = jax.random.PRNGKey(1331)
     samples = dist.sample(seed=prng_key, sample_shape=num_samples)
     chex.assert_shape(samples, (num_samples, 3, 2))
-    np.testing.assert_allclose(jnp.mean(samples, axis=0), means, atol=1e-2)
-    np.testing.assert_allclose(jnp.std(samples, axis=0), stddevs, atol=1e-2)
+    np.testing.assert_allclose(jnp.mean(samples, axis=0), means, atol=4e-2)
+    np.testing.assert_allclose(jnp.std(samples, axis=0), stddevs, atol=4e-2)
 
   @chex.all_variants
   @parameterized.named_parameters(

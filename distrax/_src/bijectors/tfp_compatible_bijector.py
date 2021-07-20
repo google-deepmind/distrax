@@ -67,6 +67,7 @@ def tfp_compatible_bijector(
     def __init__(self):
       self._is_injective = True
       self._is_permutation = False
+      self._parts_interact = False
 
       self.dtype = None
       self.has_static_min_event_ndims = True
@@ -84,6 +85,13 @@ def tfp_compatible_bijector(
     def name(self) -> str:
       """The name of the wrapped bijector."""
       return name_ or f"TFPCompatible{base_bijector.name}"
+
+    def experimental_batch_shape(self, x_event_ndims=None, y_event_ndims=None):
+      raise NotImplementedError()
+
+    def experimental_batch_shape_tensor(
+        self, x_event_ndims=None, y_event_ndims=None):
+      raise NotImplementedError()
 
     def forward_dtype(self, _: jnp.dtype) -> None:
       """Returns None, making no promise regarding dtypes."""

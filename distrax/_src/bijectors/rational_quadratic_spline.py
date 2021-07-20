@@ -72,43 +72,59 @@ def _rational_quadratic_spline_fwd(x: Array,
   """
   # Search to find the right bin. NOTE: The bins are sorted, so we could use
   # binary search, but this is more GPU/TPU friendly.
-  i = jnp.sum(x_pos < x) - 1
+  # The following implementation avoids indexing for faster TPU computation.
   below_range = x <= x_pos[0]
   above_range = x >= x_pos[-1]
-  outside_range = jnp.logical_or(below_range, above_range)
-  # Avoid NaNs which might propagate to the gradient despite jnp.where
-  # later by setting i to 0 when outside of range.
-  i = jnp.where(outside_range, 0, i)
-  bin_width = x_pos[i + 1] - x_pos[i]
-  bin_height = y_pos[i + 1] - y_pos[i]
+  correct_bin = jnp.logical_and(x >= x_pos[:-1], x < x_pos[1:])
+  any_bin_in_range = jnp.any(correct_bin)
+  first_bin = jnp.concatenate([jnp.array([1]),
+                               jnp.zeros(len(correct_bin)-1)]).astype(bool)
+  # If y does not fall into any bin, we use the first spline in the following
+  # computations to avoid numerical issues.
+  correct_bin = jnp.where(any_bin_in_range, correct_bin, first_bin)
+  # Dot product of each parameter with the correct bin mask.
+  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
+  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
+  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+
+  x_pos_bin = (params_bin_left[0], params_bin_right[0])
+  y_pos_bin = (params_bin_left[1], params_bin_right[1])
+  knot_slopes_bin = (params_bin_left[2], params_bin_right[2])
+
+  bin_width = x_pos_bin[1] - x_pos_bin[0]
+  bin_height = y_pos_bin[1] - y_pos_bin[0]
   bin_slope = bin_height / bin_width
-  z = (x - x_pos[i]) / bin_width
+
+  z = (x - x_pos_bin[0]) / bin_width
   # `z` should be in range [0, 1] to avoid NaNs later. This can happen because
-  # of small floating point issues or when x is outside of the range and `i` was
-  # set to 0. To avoid all problems, we restrict z in [0, 1].
+  # of small floating point issues or when x is outside of the range of bins.
+  # To avoid all problems, we restrict z in [0, 1].
   z = jnp.clip(z, 0., 1.)
   sq_z = z * z
   z1mz = z - sq_z  # z(1-z)
   sq_1mz = (1. - z) ** 2
-  slopes_term = knot_slopes[i + 1] + knot_slopes[i] - 2. * bin_slope
-  numerator = bin_height * (bin_slope * sq_z + knot_slopes[i] * z1mz)
+  slopes_term = knot_slopes_bin[1] + knot_slopes_bin[0] - 2. * bin_slope
+  numerator = bin_height * (bin_slope * sq_z + knot_slopes_bin[0] * z1mz)
   denominator = bin_slope + slopes_term * z1mz
-  y = y_pos[i] + numerator / denominator
+  y = y_pos_bin[0] + numerator / denominator
+
   # Compute log det Jacobian.
   # The logdet is a sum of 3 logs. It is easy to see that the inputs of the
   # first two logs are guaranteed to be positive because we ensured that z is in
   # [0, 1]. This is also true of the log(denominator) because:
   # denominator
-  # == bin_slope + (knot_slopes[i+1] + knot_slopes[i] - 2 * bin_slope) * z*(1-z)
+  # == bin_slope + (knot_slopes_bin[1] + knot_slopes_bin[0] - 2 * bin_slope) *
+  # z*(1-z)
   # >= bin_slope - 2 * bin_slope * z * (1-z)
   # >= bin_slope - 2 * bin_slope * (1/4)
   # == bin_slope / 2
   logdet = 2. * jnp.log(bin_slope) + jnp.log(
-      knot_slopes[i + 1] * sq_z + 2. * bin_slope * z1mz +
-      knot_slopes[i] * sq_1mz) - 2. * jnp.log(denominator)
+      knot_slopes_bin[1] * sq_z + 2. * bin_slope * z1mz +
+      knot_slopes_bin[0] * sq_1mz) - 2. * jnp.log(denominator)
+
   # If x is outside the spline range, we default to a linear transformation.
-  y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + x_pos[0], y)
-  y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + x_pos[-1], y)
+  y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + y_pos[0], y)
+  y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + y_pos[-1], y)
   logdet = jnp.where(below_range, jnp.log(knot_slopes[0]), logdet)
   logdet = jnp.where(above_range, jnp.log(knot_slopes[-1]), logdet)
   return y, logdet
@@ -134,37 +150,54 @@ def _rational_quadratic_spline_inv(y: Array,
   """
   # Search to find the right bin. NOTE: The bins are sorted, so we could use
   # binary search, but this is more GPU/TPU friendly.
-  i = jnp.sum(y_pos < y) - 1
+  # The following implementation avoids indexing for faster TPU computation.
   below_range = y <= y_pos[0]
   above_range = y >= y_pos[-1]
-  outside_range = jnp.logical_or(below_range, above_range)
-  # Set i = 0 when y is out of range, to avoid NaNs later.
-  i = jnp.where(outside_range, 0, i)
-  bin_width = x_pos[i + 1] - x_pos[i]
-  bin_height = y_pos[i + 1] - y_pos[i]
+  correct_bin = jnp.logical_and(y >= y_pos[:-1], y < y_pos[1:])
+  any_bin_in_range = jnp.any(correct_bin)
+  first_bin = jnp.concatenate([jnp.array([1]),
+                               jnp.zeros(len(correct_bin)-1)]).astype(bool)
+  # If y does not fall into any bin, we use the first spline in the following
+  # computations to avoid numerical issues.
+  correct_bin = jnp.where(any_bin_in_range, correct_bin, first_bin)
+  # Dot product of each parameter with the correct bin mask.
+  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
+  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
+  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+
+  # These are the parameters for the corresponding bin.
+  x_pos_bin = (params_bin_left[0], params_bin_right[0])
+  y_pos_bin = (params_bin_left[1], params_bin_right[1])
+  knot_slopes_bin = (params_bin_left[2], params_bin_right[2])
+
+  bin_width = x_pos_bin[1] - x_pos_bin[0]
+  bin_height = y_pos_bin[1] - y_pos_bin[0]
   bin_slope = bin_height / bin_width
-  w = (y - y_pos[i]) / bin_height
+  w = (y - y_pos_bin[0]) / bin_height
   w = jnp.clip(w, 0., 1.)  # Ensure w is in [0, 1].
   # Compute quadratic coefficients: az^2 + bz + c = 0
-  slopes_term = knot_slopes[i + 1] + knot_slopes[i] - 2. * bin_slope
+  slopes_term = knot_slopes_bin[1] + knot_slopes_bin[0] - 2. * bin_slope
   c = - bin_slope * w
-  b = knot_slopes[i] - slopes_term * w
+  b = knot_slopes_bin[0] - slopes_term * w
   a = bin_slope - b
+
   # Solve quadratic to obtain z and then x.
   z = - 2. * c / (b + jnp.sqrt(b ** 2 - 4. * a * c))
   z = jnp.clip(z, 0., 1.)  # Ensure z is in [0, 1].
-  x = bin_width * z + x_pos[i]
+  x = bin_width * z + x_pos_bin[0]
+
   # Compute log det Jacobian.
   sq_z = z * z
   z1mz = z - sq_z  # z(1-z)
   sq_1mz = (1. - z) ** 2
   denominator = bin_slope + slopes_term * z1mz
   logdet = - 2. * jnp.log(bin_slope) - jnp.log(
-      knot_slopes[i + 1] * sq_z + 2. * bin_slope * z1mz +
-      knot_slopes[i] * sq_1mz) + 2. * jnp.log(denominator)
+      knot_slopes_bin[1] * sq_z + 2. * bin_slope * z1mz +
+      knot_slopes_bin[0] * sq_1mz) + 2. * jnp.log(denominator)
+
   # If y is outside the spline range, we default to a linear transformation.
-  x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + y_pos[0], x)
-  x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + y_pos[-1], x)
+  x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + x_pos[0], x)
+  x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + x_pos[-1], x)
   logdet = jnp.where(below_range, - jnp.log(knot_slopes[0]), logdet)
   logdet = jnp.where(above_range, - jnp.log(knot_slopes[-1]), logdet)
   return x, logdet

@@ -56,7 +56,7 @@ def make_conditioner(event_shape: Sequence[int],
                      num_bijector_params: int) -> hk.Sequential:
   """Creates an MLP conditioner for each layer of the flow."""
   return hk.Sequential([
-      hk.Flatten(),
+      hk.Flatten(preserve_dims=-len(event_shape)),
       hk.nets.MLP(hidden_sizes, activate_final=True),
       # We initialize this linear layer to zero so that the flow is initialized
       # to the identity function.
@@ -64,7 +64,7 @@ def make_conditioner(event_shape: Sequence[int],
           np.prod(event_shape) * num_bijector_params,
           w_init=jnp.zeros,
           b_init=jnp.zeros),
-      hk.Reshape(tuple(event_shape) + (num_bijector_params,)),
+      hk.Reshape(tuple(event_shape) + (num_bijector_params,), preserve_dims=-1),
   ])
 
 

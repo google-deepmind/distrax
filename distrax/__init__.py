@@ -58,6 +58,7 @@ from distrax._src.utils.conversion import as_bijector
 from distrax._src.utils.conversion import as_distribution
 from distrax._src.utils.conversion import to_tfp
 from distrax._src.utils.importance_sampling import importance_sampling_ratios
+from distrax._src.utils.math import multiply_no_nan
 from distrax._src.utils.monte_carlo import estimate_kl_best_effort
 from distrax._src.utils.monte_carlo import mc_estimate_kl
 from distrax._src.utils.monte_carlo import mc_estimate_kl_with_reparameterized
@@ -95,6 +96,7 @@ __all__ = (
     "mc_estimate_mode",
     "MixtureSameFamily",
     "Multinomial",
+    "multiply_no_nan",
     "MultivariateNormalDiag",
     "Normal",
     "OneHotCategorical",
