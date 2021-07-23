@@ -162,19 +162,19 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
   @parameterized.named_parameters(
       ('entropy', ([0., 1.3, -0.5], [0.5, 1.3, 1.5]), 'entropy'),
       ('entropy broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'entropy'),
-      ('entropy broadcasted rate', ([0., 1.3, -0.5], 0.8), 'entropy'),
-      ('mean', ([0., 1.3, -0.5], [0.5, 1.3, 1.5]), 'mean'),
+      ('entropy broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'entropy'),
+      ('mean', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'mean'),
       ('mean broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'mean'),
-      ('mean broadcasted rate', ([0., 1.3, -0.5], 0.8), 'mean'),
-      ('variance', ([0., 1.3, -0.5], [0.5, 1.3, 1.5]), 'variance'),
+      ('mean broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'mean'),
+      ('variance', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'variance'),
       ('variance broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'variance'),
-      ('variance broadcasted rate', ([0., 1.3, -0.5], 0.8), 'variance'),
-      ('stddev', ([0., 1.3, -0.5], [0.5, 1.3, 1.5]), 'stddev'),
+      ('variance broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'variance'),
+      ('stddev', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'stddev'),
       ('stddev broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'stddev'),
-      ('stddev broadcasted rate', ([0., 1.3, -0.5], 0.8), 'stddev'),
-      ('mode', ([0., 1.3, -0.5], [0.5, 1.3, 1.5]), 'mode'),
+      ('stddev broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'stddev'),
+      ('mode', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'mode'),
       ('mode broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'mode'),
-      ('mode broadcasted rate', ([0., 1.3, -0.5], 0.8), 'mode'),
+      ('mode broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'mode'),
   )
   def test_method(self, distr_params, function_string):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
@@ -198,17 +198,17 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         mode_string=mode_string,
         dist1_kwargs={
-            'concentration': np.random.randn(4, 1, 2),
+            'concentration': np.random.rand(4, 1, 2),
             'rate': np.array([[0.8, 0.2], [0.1, 1.2], [1.4, 3.1]]),
         },
         dist2_kwargs={
-            'concentration': np.random.randn(3, 2),
+            'concentration': np.random.rand(3, 2),
             'rate': 0.1 + np.random.rand(4, 1, 2),
         },
         assertion_fn=self.assertion_fn)
 
   def test_jitable(self):
-    super()._test_jittable((0., 1.))
+    super()._test_jittable((0.1, 1.5))
 
 
 if __name__ == '__main__':
