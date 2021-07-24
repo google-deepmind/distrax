@@ -167,7 +167,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('mean broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'mean'),
       ('mean broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'mean'),
       ('variance', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'variance'),
-      ('variance broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'variance'),
+      ('variance broadcasted concentration', (0.5, [0.5, 1., 1.]), 'variance'),
       ('variance broadcasted rate', ([0.1, 1.3, -0.5], 0.8), 'variance'),
       ('stddev', ([0.1, 1.3, -0.5], [0.5, 1.3, 1.5]), 'stddev'),
       ('stddev broadcasted concentration', (0.5, [0.5, 1.3, 1.5]), 'stddev'),
