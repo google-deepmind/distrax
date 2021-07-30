@@ -214,7 +214,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(self.variant(dist.median)(), dist.mean())
+    self.assertion_fn(self.variant(dist.median)(), dist.median())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
