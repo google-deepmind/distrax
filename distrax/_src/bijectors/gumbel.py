@@ -50,4 +50,4 @@ class GumbelCDF(base.Bijector):
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     x = self._loc - self._scale * jnp.log(-jnp.log(y))
-    return x, -self.forward_log_det_jacobian(x)
+    return x, jnp.log(self._scale / (-jnp.log(y) * y))
