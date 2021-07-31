@@ -240,7 +240,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
         assertion_fn=self.assertion_fn)
 
   def test_jitable(self):
-    super()._test_jittable((0., 1.))
+    super()._test_jittable((0.1, 1.2))
 
 
 if __name__ == '__main__':
