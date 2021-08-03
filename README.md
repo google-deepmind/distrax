@@ -323,10 +323,31 @@ class MyBijector(distrax.Bijector):
     return x, logdet
 ```
 
+## Examples
+
+The `examples` directory contains some representative examples of full programs
+that use Distrax.
+
+`hmm.py` demonstrates how to use `distrax.HMM` to combine distributions that
+model the initial states, transitions, and observation distributions of a
+Hidden Markov Model, and infer the latent rates and state transitions in a
+changing noisy signal.
+
+`vae.py` contains an example implementation of a variational auto-encoder that
+is trained to model the binarized MNIST dataset as a joint `distrax.Bernoulli`
+distribution over the pixels.
+
+`flow.py` illustrates a simple example of modelling MNIST data using
+`distrax.MaskedCoupling` layers to implement a normalizing flow, and training
+the model with gradient descent.
+
 ## Acknowledgements
 
 We greatly appreciate the ongoing support of the TensorFlow Probability authors
 in assisting with the design and cross-compatibility of Distrax.
+
+Special thanks to Aleyna Kara and Kevin Murphy for contributing the code upon
+which the Hidden Markov Model and associated example are based.
 
 ## Citing Distrax
 
