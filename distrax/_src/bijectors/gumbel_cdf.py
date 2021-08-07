@@ -20,7 +20,6 @@ from distrax._src.bijectors import bijector as base
 from distrax._src.utils import conversion
 import jax.numpy as jnp
 
-
 Array = base.Array
 
 
@@ -33,19 +32,12 @@ class GumbelCDF(base.Bijector):
     self._loc = conversion.as_float_array(loc)
     self._scale = conversion.as_float_array(scale)
 
-  def forward(self, x: Array) -> Array:   
-    """Computes y = f(x)."""
-    z = (x - self._loc) / self._scale
-    return jnp.exp(-jnp.exp(z))
-
-  def forward_log_det_jacobian(self, x: Array) -> Array:
-    """Computes log|det J(f)(x)|."""
-    z = (x - self._loc) / self._scale
-    return -z - jnp.exp(-z) - jnp.log(self._scale)
-
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
-    return self.forward(x), self.forward_log_det_jacobian(x)
+    z = (x - self._loc) / self._scale
+    y = jnp.exp(-jnp.exp(z))
+    log_det = -z - jnp.exp(-z) - jnp.log(self._scale)
+    return y, log_det
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""

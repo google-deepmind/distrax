@@ -19,7 +19,7 @@ from typing import Tuple, Union
 
 import chex
 from distrax._src.distributions import transformed, uniform
-from distrax._src.bijectors import gumbel, inverse
+from distrax._src.bijectors import gumbel_cdf, inverse
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
@@ -48,7 +48,7 @@ class Gumbel(transformed.Transformed):
     self._scale = conversion.as_float_array(scale)
     self._batch_shape = jax.lax.broadcast_shapes(
         self._loc.shape, self._scale.shape)
-    gumbel_bijector = gumbel.GumbelCDF(loc=self._loc, scale=self._scale)
+    gumbel_bijector = gumbel_cdf.GumbelCDF(loc=self._loc, scale=self._scale)
 
     dtype = jnp.result_type(self._loc, self._scale)
     super().__init__(
