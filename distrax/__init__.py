@@ -19,7 +19,7 @@ from distrax._src.bijectors.bijector import Bijector
 from distrax._src.bijectors.bijector import BijectorLike
 from distrax._src.bijectors.block import Block
 from distrax._src.bijectors.chain import Chain
-from distrax._src.bijectors.gumbel import GumbelCDF
+from distrax._src.bijectors.gumbel_cdf import GumbelCDF
 from distrax._src.bijectors.inverse import Inverse
 from distrax._src.bijectors.lambda_bijector import Lambda
 from distrax._src.bijectors.lower_upper_triangular_affine import LowerUpperTriangularAffine

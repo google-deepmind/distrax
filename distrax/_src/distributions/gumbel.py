@@ -18,8 +18,10 @@ import math
 from typing import Tuple, Union
 
 import chex
-from distrax._src.distributions import transformed, uniform
-from distrax._src.bijectors import gumbel_cdf, inverse
+from distrax._src.bijectors import gumbel_cdf
+from distrax._src.bijectors import inverse
+from distrax._src.distributions import transformed
+from distrax._src.distributions import uniform
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
@@ -108,7 +110,7 @@ class Gumbel(transformed.Transformed):
 
   def mode(self) -> Array:
     """Calculates the mode."""
-    return self._loc * jnp.ones_like(self._scale)
+    return self._loc
 
   def median(self) -> Array:
     """Calculates the median."""
