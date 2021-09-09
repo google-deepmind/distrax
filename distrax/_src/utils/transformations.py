@@ -47,6 +47,8 @@ functions:
     appear in the output. This is an experimental feature.
 """
 
+import functools
+
 from absl import logging
 import jax
 import jax.numpy as jnp
@@ -110,7 +112,8 @@ def register_inverse(primitive, inverse_left, inverse_right=None):
 def inv(fun):
   """Returns the inverse of `fun` such that (inv(fun) o fun)(x) = x."""
   jaxpr_fn = _invertible_jaxpr_and_constants(fun)
-  @jax.api.wraps(fun)  # pylint: disable=no-value-for-parameter
+
+  @functools.wraps(fun)  # pylint: disable=no-value-for-parameter
   def wrapped(*args, **kwargs):
     jaxpr, consts = jaxpr_fn(*args, **kwargs)
     out = _interpret_inverse(jaxpr, consts, *args)
@@ -193,7 +196,7 @@ def _invertible_jaxpr_and_constants(fun):
   """Returns a transformation from function invocation to invertible jaxpr."""
   jaxpr_maker = jax.make_jaxpr(fun)
 
-  @jax.api.wraps(fun)  # pylint: disable=no-value-for-parameter
+  @functools.wraps(fun)  # pylint: disable=no-value-for-parameter
   def jaxpr_const_maker(*args, **kwargs):
     typed_jaxpr = jaxpr_maker(*args, **kwargs)
     return typed_jaxpr.jaxpr, typed_jaxpr.literals
