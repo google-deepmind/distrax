@@ -37,6 +37,7 @@ from distrax._src.distributions.deterministic import Deterministic
 from distrax._src.distributions.distribution import Distribution
 from distrax._src.distributions.distribution import DistributionLike
 from distrax._src.distributions.epsilon_greedy import EpsilonGreedy
+from distrax._src.distributions.gamma import Gamma
 from distrax._src.distributions.greedy import Greedy
 from distrax._src.distributions.independent import Independent
 from distrax._src.distributions.laplace import Laplace
@@ -80,6 +81,7 @@ __all__ = (
     "DistributionLike",
     "EpsilonGreedy",
     "estimate_kl_best_effort",
+    "Gamma",
     "Greedy",
     "HMM",
     "importance_sampling_ratios",
