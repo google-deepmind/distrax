@@ -259,7 +259,7 @@ def _interpret_inverse(jaxpr, consts, *args):
     call_jaxpr, params = jax.core.extract_call_jaxpr(eqn.primitive, eqn.params)
     if call_jaxpr:
       subfuns = [jax.linear_util.wrap_init(
-          jax.util.partial(_interpret_inverse, call_jaxpr, ()))]
+          functools.partial(_interpret_inverse, call_jaxpr, ()))]
       prim_inv = eqn.primitive
 
     else:  # otherwise, get its inverse if it exists
