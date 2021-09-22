@@ -135,13 +135,14 @@ disable=apply-builtin,
         unichr-builtin,
         unicode-builtin,
         unpacking-in-except,
+        use-dict-literal,
+        use-list-literal,
         useless-else-on-loop,
         useless-suppression,
         using-cmp-argument,
         xrange-builtin,
         wrong-import-order,
         zip-builtin-not-iterating,
-        use-dict-literal,
 
 
 [REPORTS]
