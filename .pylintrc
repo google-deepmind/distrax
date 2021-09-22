@@ -141,6 +141,7 @@ disable=apply-builtin,
         xrange-builtin,
         wrong-import-order,
         zip-builtin-not-iterating,
+        use-dict-literal,
 
 
 [REPORTS]
