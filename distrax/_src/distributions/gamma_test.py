@@ -191,6 +191,8 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax')
   )
   def test_with_two_distributions(self, function_string, mode_string):
+    rtol = 1e-3
+    atol = 1e-4
     super()._test_with_two_distributions(
         attribute_string=function_string,
         mode_string=mode_string,
@@ -202,7 +204,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
             'concentration': np.random.rand(3, 2),
             'rate': 0.1 + np.random.rand(4, 1, 2),
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=lambda x, y: np.testing.assert_allclose(x, y, rtol, atol))
 
   def test_jitable(self):
     super()._test_jittable((0.1, 1.5), assertion_fn=self.assertion_fn)
