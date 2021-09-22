@@ -314,9 +314,9 @@ class EquivalenceTest(absltest.TestCase):
       comp_dist2_dist1 = getattr(tfp_dist2, attribute_string)(dist1)
     else:
       raise ValueError(
-          '`mode_string` should be one of the following: '
-          '"distrax_to_distrax", "distrax_to_tfp", or "tfp_to_distrax", '
-          'but it is "{}"'.format(mode_string))
+          f'`mode_string` should be one of the following: '
+          f'"distrax_to_distrax", "distrax_to_tfp", or "tfp_to_distrax", '
+          f'but it is "{mode_string}".')
 
     assertion_fn(comp_dist1_dist2, tfp_comp_dist1_dist2)
     assertion_fn(comp_dist2_dist1, tfp_comp_dist2_dist1)

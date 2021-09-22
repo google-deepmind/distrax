@@ -172,10 +172,10 @@ def _kl_divergence_categorical_categorical(
 
   if num_categories1 != num_categories2:
     raise ValueError(
-        'Cannot obtain the KL between two Categorical distributions '
-        'with different number of categories: the first distribution has {} '
-        'categories, while the second distribution has {} categories'.format(
-            num_categories1, num_categories2))
+        f'Cannot obtain the KL between two Categorical distributions '
+        f'with different number of categories: the first distribution has '
+        f'{num_categories1} categories, while the second distribution has '
+        f'{num_categories2} categories.')
 
   # pylint: disable=protected-access
   if dist1._probs is None:
