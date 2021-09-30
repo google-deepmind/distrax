@@ -200,9 +200,9 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
-      ('entropy, batch dims None', 'entropy', None),
-      ('entropy, batch dims 1', 'entropy', 1),
-      ('entropy, batch dims 3', 'entropy', 3),
+      # ('entropy, batch dims None', 'entropy', None),
+      # ('entropy, batch dims 1', 'entropy', 1),
+      # ('entropy, batch dims 3', 'entropy', 3),
       ('mean, batch dims None', 'mean', None),
       ('mean, batch dims 1', 'mean', 1),
       ('mean, batch dims 3', 'mean', 3),
