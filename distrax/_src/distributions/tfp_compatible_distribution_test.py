@@ -57,10 +57,18 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     return tfp_compatible_distribution(self.base_dist)
 
   def test_event_shape(self):
-    chex.assert_equal(self.wrapped_dist.event_shape, self.base_dist.event_shape)
+    self.assertEqual(self.wrapped_dist.event_shape, self.base_dist.event_shape)
+
+  def test_event_shape_types(self):
+    wrapped_dist = tfp_compatible_distribution(self.distrax_second_dist)
+    self.assertEqual(
+        type(wrapped_dist.event_shape), type(self.tfp_second_dist.event_shape))
+    self.assertEqual(
+        type(wrapped_dist.event_shape_tensor()),
+        type(self.tfp_second_dist.event_shape_tensor()))
 
   def test_batch_shape(self):
-    chex.assert_equal(self.wrapped_dist.batch_shape, self.base_dist.batch_shape)
+    self.assertEqual(self.wrapped_dist.batch_shape, self.base_dist.batch_shape)
 
   @chex.all_variants
   def test_sample(self):
