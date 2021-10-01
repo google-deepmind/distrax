@@ -28,6 +28,10 @@ jobs:
           pip install flake8 pytest-xdist pytype pylint pylint-exit
           pip install -r requirements/requirements.txt
           pip install -r requirements/requirements-tests.txt
+
+          # Use TFP nightly builds in tests. Disable on new release.
+          pip uninstall tensorflow-probability -y
+          pip install tfp-nightly
         shell: bash
       - name: Lint with flake8
         run: |

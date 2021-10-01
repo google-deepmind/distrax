@@ -3,4 +3,4 @@ chex>=0.0.7
 jax>=0.2.13
 jaxlib>=0.1.67
 numpy>=1.18.0
-tensorflow-probability>=0.13.0rc0
+tensorflow-probability>=0.14.1
