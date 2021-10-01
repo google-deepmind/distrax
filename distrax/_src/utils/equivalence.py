@@ -30,7 +30,7 @@ tfd = tfp.distributions
 
 
 def get_tfp_equiv(distrax_cls):
-  """Returns the tfp equivalent of a Distrax class.
+  """Returns the TFP equivalent of a Distrax class.
 
   Args:
     distrax_cls: The Distrax class or the name of the class as a string.
@@ -98,21 +98,21 @@ class EquivalenceTest(absltest.TestCase):
     values among Distrax and TFP implementations.
 
     Args:
-      attribute_string: An attribute or a method of a distrax/tfp
+      attribute_string: An attribute or a method of a Distrax/TFP
         distribution, provided as a string.
-      dist_args: Arguments to be passed to distrax constructor as *dist_args.
-      dist_kwargs: Keyword arguments to be passed to distrax constructor as
+      dist_args: Arguments to be passed to Distrax constructor as *dist_args.
+      dist_kwargs: Keyword arguments to be passed to Distrax constructor as
         **dist_kwargs.
-      tfp_dist_args: Arguments to be passed to tfp constructor as
+      tfp_dist_args: Arguments to be passed to TFP constructor as
         *tfp_dist_args. If None, defaults to `dist_args`.
-      tfp_dist_kwargs: Keyword arguments to be passed to tfp constructor as
+      tfp_dist_kwargs: Keyword arguments to be passed to TFP constructor as
         **tfp_dist_kwargs. If None, defaults to `dist_kwargs`.
-      call_args: Arguments to be passed to distrax and tfp methods as
+      call_args: Arguments to be passed to Distrax and TFP methods as
         *call_args.
-      call_kwargs: Keyword arguments to be passed to distrax and tfp
+      call_kwargs: Keyword arguments to be passed to Distrax and TFP
         methods as **call_kwargs.
       assertion_fn: Assertion function to be called to compare
-        distrax and tfp methods/attributes.
+        Distrax and TFP methods/attributes.
     """
 
     if dist_kwargs is None:
@@ -241,7 +241,7 @@ class EquivalenceTest(absltest.TestCase):
     """Asserts equivalence of TFP and Distrax methods that compare two distribs.
 
     This checks that the methods `D(dist1 || dist2)` and `D(dist2 || dist1)`
-    give the same results as their tfp counterparts, where `D` is typically the
+    give the same results as their TFP counterparts, where `D` is typically the
     KL divergence or the cross-entropy.
 
     Args:
@@ -249,32 +249,32 @@ class EquivalenceTest(absltest.TestCase):
       mode_string: string, must be one of the following:
         - If "distrax_to_distrax", this method verifies the values of
           `D(dist1 || dist2)` and `D(dist2 || dist1)`, where both `dist1` and
-          `dist2` are distrax distributions.
+          `dist2` are Distrax distributions.
         - If "distrax_to_tfp", this method verifies the values of
           `D(dist1 || tfp_dist2)` and `D(dist2 || tfp_dist1)`.
         - If "tfp_to_distrax", this method verifies the values of
           `D(tfp_dist1 || dist2)` and `D(tfp_dist2 || dist1)`.
-      dist1_args: Arguments to be passed to distrax constructor as *dist_args
+      dist1_args: Arguments to be passed to Distrax constructor as *dist_args
         for the first distribution
-      dist1_kwargs: Keyword arguments to be passed to distrax constructor as
+      dist1_kwargs: Keyword arguments to be passed to Distrax constructor as
         **dist_kwargs for the first distribution.
-      dist2_args: Arguments to be passed to distrax constructor as *dist_args
+      dist2_args: Arguments to be passed to Distrax constructor as *dist_args
         for the second distribution.
-      dist2_kwargs: Keyword arguments to be passed to distrax constructor as
+      dist2_kwargs: Keyword arguments to be passed to Distrax constructor as
         **dist_kwargs for the second distribution.
-      tfp_dist1_args: Arguments to be passed to tfp constructor as
+      tfp_dist1_args: Arguments to be passed to TFP constructor as
         *tfp_dist_args for the first distribution. If None, defaults to
         `dist1_args`.
-      tfp_dist1_kwargs: Keyword arguments to be passed to tfp constructor as
+      tfp_dist1_kwargs: Keyword arguments to be passed to TFP constructor as
         **tfp_dist_kwargs for the first distribution. If None, defaults to
         `dist1_kwargs`.
-      tfp_dist2_args: Arguments to be passed to tfp constructor as
+      tfp_dist2_args: Arguments to be passed to TFP constructor as
         *tfp_dist_args for the second distribution. If None, defaults to
         `dist2_args`.
-      tfp_dist2_kwargs: Keyword arguments to be passed to tfp constructor as
+      tfp_dist2_kwargs: Keyword arguments to be passed to TFP constructor as
         **tfp_dist_kwargs for the second distribution. If None, defaults to
         `dist2_kwargs`.
-      assertion_fn: Assertion function to be called to compare distrax and tfp
+      assertion_fn: Assertion function to be called to compare Distrax and TFP
         function values.
     """
     dist1_kwargs = {} if dist1_kwargs is None else dist1_kwargs
@@ -314,9 +314,9 @@ class EquivalenceTest(absltest.TestCase):
       comp_dist2_dist1 = getattr(tfp_dist2, attribute_string)(dist1)
     else:
       raise ValueError(
-          '`mode_string` should be one of the following: '
-          '"distrax_to_distrax", "distrax_to_tfp", or "tfp_to_distrax", '
-          'but it is "{}"'.format(mode_string))
+          f'`mode_string` should be one of the following: '
+          f'"distrax_to_distrax", "distrax_to_tfp", or "tfp_to_distrax", '
+          f'but it is "{mode_string}".')
 
     assertion_fn(comp_dist1_dist2, tfp_comp_dist1_dist2)
     assertion_fn(comp_dist2_dist1, tfp_comp_dist2_dist1)

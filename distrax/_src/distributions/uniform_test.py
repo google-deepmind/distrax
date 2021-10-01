@@ -20,7 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import uniform
 from distrax._src.utils import equivalence
-import jax.test_util as jtu
+import jax
 import numpy as np
 
 
@@ -62,7 +62,7 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_sample_shape(distr_params, dict(), sample_shape)
 
   @chex.all_variants
-  @jtu.disable_implicit_rank_promotion
+  @jax.numpy_rank_promotion('raise')
   @parameterized.named_parameters(
       ('1d, no shape', (0., 1.), ()),
       ('1d, int shape', (0., 1.), 1),

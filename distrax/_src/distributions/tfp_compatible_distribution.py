@@ -25,6 +25,7 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 Array = chex.Array
+ArrayNumpy = chex.ArrayNumpy
 Distribution = distribution.Distribution
 IntLike = distribution.IntLike
 PRNGKey = chex.PRNGKey
@@ -90,9 +91,9 @@ def tfp_compatible_distribution(
       """Returns a `TensorShape` with the `event_shape` of the distribution."""
       return tfp.tf2jax.TensorShape(base_distribution.event_shape)
 
-    def event_shape_tensor(self) -> Array:
+    def event_shape_tensor(self) -> ArrayNumpy:
       """See `Distribution.event_shape`."""
-      return jnp.array(base_distribution.event_shape, dtype=jnp.int32)
+      return np.array(base_distribution.event_shape, dtype=jnp.int32)
 
     @property
     def experimental_shard_axis_names(self):

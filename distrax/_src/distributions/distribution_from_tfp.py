@@ -59,6 +59,10 @@ def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
     def __getattr__(self, name: str):
       return getattr(tfp_distribution, name)
 
+    def sample(self, *a, **k):  # pylint: disable=useless-super-delegation
+      """See `Distribution.sample`."""
+      return super().sample(*a, **k)
+
     def _sample_n(self, key: PRNGKey, n: int):
       """See `Distribution._sample_n`."""
       return jnp.asarray(

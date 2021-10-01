@@ -21,8 +21,8 @@ import chex
 from distrax._src.distributions import mvn_diag
 from distrax._src.distributions import normal
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
-import jax.test_util as jtu
 import numpy as np
 
 
@@ -147,7 +147,7 @@ class MultivariateNormalDiagTest(
         sample_shape=sample_shape)
 
   @chex.all_variants
-  @jtu.disable_implicit_rank_promotion
+  @jax.numpy_rank_promotion('raise')
   @parameterized.named_parameters(
       ('1d std normal, no shape',
        {'scale_diag': np.ones((1,))},

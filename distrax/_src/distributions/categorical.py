@@ -50,8 +50,6 @@ class Categorical(distribution.Distribution):
     """
     super().__init__()
     chex.assert_exactly_one_is_none(probs, logits)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, probs, axis=-1, val=1)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, logits, axis=-1, val=1)
     if not (jnp.issubdtype(dtype, jnp.integer) or
             jnp.issubdtype(dtype, jnp.floating)):
       raise ValueError(
@@ -174,10 +172,10 @@ def _kl_divergence_categorical_categorical(
 
   if num_categories1 != num_categories2:
     raise ValueError(
-        'Cannot obtain the KL between two Categorical distributions '
-        'with different number of categories: the first distribution has {} '
-        'categories, while the second distribution has {} categories'.format(
-            num_categories1, num_categories2))
+        f'Cannot obtain the KL between two Categorical distributions '
+        f'with different number of categories: the first distribution has '
+        f'{num_categories1} categories, while the second distribution has '
+        f'{num_categories2} categories.')
 
   # pylint: disable=protected-access
   if dist1._probs is None:
