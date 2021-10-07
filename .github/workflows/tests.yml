@@ -53,16 +53,15 @@ jobs:
         run: |
           set -xe
           python -VV
-          python setup.py install
+          python setup.py sdist
+          pip wheel --verbose --no-deps --no-clean dist/distrax*.tar.gz
+          pip install distrax*.whl
         shell: bash
       - name: Check types with pytype
         run: |
           set -xe
           pytype --version
-          if [[ `python -c 'import sys; print(sys.version_info.minor)'` -le 8 ]]
-          then
-            pytype `find distrax/_src/ -name "*py" | xargs` -k
-          fi
+          pytype `find distrax/_src/ -name "*py" | xargs` -k
         shell: bash
       - name: Run tests
         run: |
