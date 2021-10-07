@@ -14,7 +14,7 @@
 # ==============================================================================
 
 # Runs CI tests on a local machine.
-set -xe
+set -xeuo pipefail
 
 # Install deps in a virtual env.
 readonly VENV_DIR=/tmp/distrax-env
@@ -64,5 +64,6 @@ pytest -n "$(grep -c ^processor /proc/cpuinfo)" `find ../distrax/_src/ -name "*_
 
 cd ..
 
+set +u
 deactivate
 echo "All tests passed. Congrats!"
