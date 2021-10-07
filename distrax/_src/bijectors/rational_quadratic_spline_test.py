@@ -289,6 +289,23 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-5)
       np.testing.assert_allclose(this_logdet_inv, logdet_inv[i], atol=1e-5)
 
+  @chex.all_variants
+  @parameterized.parameters(
+      (-1., 4., -3., 1.,),  # when b >= 0
+      (1., -4., 3., 3.),  # when b < 0
+      (-1., 2., -1., 1.),  # when b**2 - 4*a*c = 0, and b >= 0
+      (1., -2., 1., 1.),  # when b**2 - 4*a*c = 0, and b < 0
+  )
+  def test_safe_quadratic_root(self, a, b, c, x):
+    a = jnp.array(a)
+    b = jnp.array(b)
+    c = jnp.array(c)
+    x = jnp.array(x)
+    sol_x, grad = self.variant(jax.value_and_grad(
+        rational_quadratic_spline._safe_quadratic_root))(a, b, c)
+    np.testing.assert_allclose(sol_x, x, atol=1e-5)
+    self.assertFalse(np.any(np.isnan(grad)))
+
   def test_jittable(self):
     @jax.jit
     def f(x, b):
