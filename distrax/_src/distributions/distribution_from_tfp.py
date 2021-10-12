@@ -134,4 +134,8 @@ def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
       """See `Distribution.mode`."""
       return jnp.asarray(tfp_distribution.mode())
 
+    def __getitem__(self, index) -> DistributionT:
+      """See `Distribution.__getitem__`."""
+      return distribution_from_tfp(tfp_distribution[index])
+
   return DistributionFromTFP()

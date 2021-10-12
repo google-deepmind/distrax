@@ -144,6 +144,12 @@ class Categorical(distribution.Distribution):
     """Wrapper for `logits` property, for TFP API compatibility."""
     return self.logits
 
+  def __getitem__(self, index) -> 'Categorical':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    if self._logits is not None:
+      return Categorical(logits=self.logits[index], dtype=self._dtype)
+    return Categorical(probs=self.probs[index], dtype=self._dtype)
 
 CategoricalLike = Union[Categorical, tfd.Categorical]
 

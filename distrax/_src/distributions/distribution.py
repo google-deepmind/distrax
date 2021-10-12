@@ -228,6 +228,15 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
   def _name_and_control_scope(self, *unused_a, **unused_k):
     yield
 
+  def __getitem__(self, index) -> 'Distribution':
+    """Returns a matching distribution obtained by indexing the batch shape.
+
+    Args:
+      index: An object, typically int or slice (or a tuple thereof), used for
+        indexing the distribution.
+    """
+    raise NotImplementedError(f'Indexing not implemented for `{self.name}`.')
+
 
 def convert_seed_and_sample_shape(
     seed: Union[IntLike, PRNGKey],
@@ -245,6 +254,38 @@ def convert_seed_and_sample_shape(
     rng = seed
 
   return rng, sample_shape
+
+
+def to_batch_shape_index(
+    batch_shape: Tuple[int, ...],
+    index,
+) -> Tuple[jnp.ndarray, ...]:
+  """Utility function that transforms the index to respect the batch shape.
+
+  When indexing a distribution we only want to index based on the batch shape.
+  For example, a Categorical with logits shaped (2, 3, 4) has batch shape of
+  (2, 3) and number of categoricals 4. Indexing this distribution creates a new
+  distribution with indexed logits. If the index is [0], the new distribution's
+  logits will be shaped (3, 4). But if the index is [..., -1] the new logits
+  should be shaped (2, 4), but applying the index operation on logits directly
+  will result in shape (2, 3). This function fixes such indices such that they
+  are only applied on the batch shape.
+
+  Args:
+    batch_shape: Distribution's batch_shape.
+    index: An object, typically int or slice (or a tuple thereof), used for
+      indexing the distribution.
+
+  Returns:
+    A new index that is only applied on the batch shape.
+  """
+  try:
+    new_index = [x[index] for x in jnp.indices(batch_shape)]
+    return tuple(new_index)
+  except IndexError as e:
+    raise IndexError(f'Batch shape `{batch_shape}` not compatible with index '
+                     f'`{index}`.') from e
+
 
 DistributionLike = Union[Distribution, tfd.Distribution]
 DistributionT = typing.TypeVar('DistributionT', bound=Distribution)

@@ -185,6 +185,12 @@ class MultivariateNormalDiag(distribution.Distribution):
     """
     return jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(self.variance())
 
+  def __getitem__(self, index) -> 'MultivariateNormalDiag':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return MultivariateNormalDiag(
+        loc=self.loc[index], scale_diag=self.scale_diag[index])
+
 
 def _kl_divergence_mvndiag_mvndiag(
     dist1: Union[MultivariateNormalDiag, tfd.MultivariateNormalDiag],

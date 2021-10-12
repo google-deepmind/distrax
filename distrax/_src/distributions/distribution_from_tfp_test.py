@@ -19,6 +19,7 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.distributions.categorical import Categorical
+from distrax._src.distributions.distribution import Distribution
 from distrax._src.distributions.distribution_from_tfp import distribution_from_tfp
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
 from distrax._src.distributions.normal import Normal
@@ -180,6 +181,19 @@ class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
     self.tfp_second_dist = tfd.MultivariateNormalDiag(
         loc=[-1., 0.], scale_diag=[0.8, 1.2])
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    loc = np.random.randn(3, 4, 5)
+    scale_diag = np.random.randn(3, 4, 5)
+    dist = distribution_from_tfp(
+        tfd.MultivariateNormalDiag(loc=loc, scale_diag=scale_diag))
+    sliced_dist = dist[slice_]
+    self.assertIsInstance(sliced_dist, Distribution)
+    self.assertion_fn(sliced_dist.mean(), loc[slice_])
+
 
 class DistributionFromTfpCategorical(DistributionFromTfpNormal):
   """Tests for categorical distribution."""
@@ -190,6 +204,24 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
     self.values = jnp.array([0, 1, 2])
     self.distrax_second_dist = Categorical(probs=jnp.array([0.2, 0.2, 0.6]))
     self.tfp_second_dist = tfd.Categorical(probs=[0.2, 0.2, 0.6])
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    logits = np.random.randn(3, 4, 5)
+    probs = jax.nn.softmax(np.random.randn(3, 4, 5), axis=-1)
+    dist1 = distribution_from_tfp(tfd.Categorical(logits=logits))
+    dist2 = distribution_from_tfp(tfd.Categorical(probs=probs))
+    sliced_dist1 = dist1[slice_]
+    sliced_dist2 = dist2[slice_]
+    self.assertIsInstance(sliced_dist1, Distribution)
+    self.assertIsInstance(sliced_dist2, Distribution)
+    self.assertion_fn(
+        jax.nn.softmax(sliced_dist1.logits, axis=-1),
+        jax.nn.softmax(logits[slice_], axis=-1))
+    self.assertion_fn(sliced_dist2.probs, probs[slice_])
 
 
 class DistributionFromTfpTransformed(DistributionFromTfpNormal):
