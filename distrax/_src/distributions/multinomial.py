@@ -264,3 +264,13 @@ class Multinomial(distribution.Distribution):
         jnp.diag, signature='(k)->(k,k)')(
             self._total_count[..., None] * probs)
     return cov_matrix
+
+  def __getitem__(self, index) -> 'Multinomial':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    total_count = self.total_count[index]
+    if self._logits is not None:
+      return Multinomial(
+          total_count=total_count, logits=self.logits[index], dtype=self._dtype)
+    return Multinomial(
+        total_count=total_count, probs=self.probs[index], dtype=self._dtype)

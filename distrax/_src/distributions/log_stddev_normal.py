@@ -18,6 +18,7 @@ import math
 from typing import Optional
 
 import chex
+from distrax._src.distributions import distribution
 from distrax._src.distributions import normal
 from distrax._src.utils import conversion
 import jax
@@ -52,6 +53,7 @@ class LogStddevNormal(normal.Normal):
         hard maximum; rather, we compute scale as per the following formula:
         log(max_scale) - softplus(log(max_scale) - log_scale).
     """
+    self._max_scale = max_scale
     if max_scale is not None:
       max_log_scale = math.log(max_scale)
       self._log_scale = max_log_scale - jax.nn.softplus(
@@ -65,6 +67,14 @@ class LogStddevNormal(normal.Normal):
   def log_scale(self):
     """Distribution parameter for log standard deviation."""
     return jnp.broadcast_to(self._log_scale, self.batch_shape)
+
+  def __getitem__(self, index) -> 'LogStddevNormal':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return LogStddevNormal(
+        loc=self.loc[index],
+        log_scale=self.log_scale[index],
+        max_scale=self._max_scale)
 
 
 def _kl_logstddevnormal_logstddevnormal(p, q, *unused_args, **unused_kwargs):

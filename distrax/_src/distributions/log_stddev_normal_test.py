@@ -28,6 +28,7 @@ from tensorflow_probability.substrates import jax as tfp
 
 
 kl_module = tfp.distributions.kullback_leibler
+RTOL = 1e-3
 
 
 class LogStddevNormalTest(parameterized.TestCase):
@@ -151,6 +152,28 @@ class LogStddevNormalTest(parameterized.TestCase):
     dist = lsn.LogStddevNormal(np.array([0.0]), np.array([0.0]))
     event = dist.sample(seed=jax.random.PRNGKey(0))
     jitted_function(event, dist)
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)))
+  def test_slice(self, slice_):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    log_scale = jnp.array(np.random.randn(3, 4, 5))
+    dist = lsn.LogStddevNormal(loc=loc, log_scale=log_scale)
+    sliced_dist = dist[slice_]
+    np.testing.assert_allclose(sliced_dist.mean(), loc[slice_], rtol=RTOL)
+    np.testing.assert_allclose(
+        sliced_dist.log_scale, log_scale[slice_], rtol=RTOL)
+    self.assertIsInstance(sliced_dist, lsn.LogStddevNormal)
+
+  def test_slice_different_parameterization(self):
+    loc = jnp.array(np.random.randn(4))
+    log_scale = jnp.array(np.random.randn(3, 4))
+    dist = lsn.LogStddevNormal(loc=loc, log_scale=log_scale)
+    np.testing.assert_allclose(dist[0].mean(), loc, rtol=RTOL)
+    np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=RTOL)
 
 if __name__ == '__main__':
   absltest.main()

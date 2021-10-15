@@ -22,6 +22,7 @@ from distrax._src.distributions import categorical
 from distrax._src.distributions import one_hot_categorical
 from distrax._src.utils import equivalence
 from distrax._src.utils import math
+import jax
 import jax.numpy as jnp
 import numpy as np
 import scipy
@@ -378,6 +379,34 @@ class OneHotCategoricalTest(
 
   def test_jittable(self):
     super()._test_jittable((np.zeros((3,)),))
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    logits = jnp.array(np.random.randn(3, 4, 5))
+    probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
+    dist1 = self.distrax_cls(logits=logits)
+    dist2 = self.distrax_cls(probs=probs)
+    dist1_sliced = dist1[slice_]
+    dist2_sliced = dist2[slice_]
+    self.assertion_fn(
+        jax.nn.softmax(dist1_sliced.logits, axis=-1),
+        jax.nn.softmax(logits[slice_], axis=-1))
+    self.assertion_fn(dist2_sliced.probs, probs[slice_])
+    self.assertIsInstance(dist1_sliced, one_hot_categorical.OneHotCategorical)
+    self.assertIsInstance(dist2_sliced, one_hot_categorical.OneHotCategorical)
+
+  def test_slice_on_batch_shape(self):
+    logits = jnp.array(np.random.randn(4, 4, 5))
+    probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
+    dist1 = self.distrax_cls(logits=logits)
+    dist2 = self.distrax_cls(probs=probs)
+    self.assertion_fn(
+        jax.nn.softmax(dist1[..., -1].logits, axis=-1),
+        jax.nn.softmax(logits[:, -1], axis=-1))
+    self.assertion_fn(dist2[..., -1].probs, probs[:, -1])
 
 
 if __name__ == '__main__':
