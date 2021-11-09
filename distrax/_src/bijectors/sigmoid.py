@@ -36,6 +36,19 @@ class Sigmoid(base.Bijector):
   `forward` function of this bijector does not support inputs of integer type.
   To invoke the forward function of this bijector on an argument of integer
   type, it should first be cast explicitly to a floating point type.
+
+  When the absolute value of the input is large, `Sigmoid` becomes close to a
+  constant, so that it is not possible to recover the input `x` from the output
+  `y` within machine precision. In cases where it is needed to compute both the
+  forward mapping and the backward mapping one after the other to recover the
+  original input `x`, it is the user's responsibility to simplify the operation
+  to avoid numerical issues; this is unlike the `tfb.Sigmoid`. One example of
+  such case is to use the bijector within a `Transformed` distribution and to
+  obtain the log-probability of samples obtained from the distribution's
+  `sample` method. For values of the samples for which it is not possible to
+  apply the inverse bijector accurately, `log_prob` returns NaN. This can be
+  avoided by using `sample_and_log_prob` instead of `sample` followed by
+  `log_prob`.
   """
 
   def __init__(self):
