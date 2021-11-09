@@ -120,6 +120,12 @@ class Gamma(distribution.Distribution):
     mode = (self._concentration - 1.0) / self._rate
     return jnp.where(self._concentration >= 1.0, mode, jnp.nan)
 
+  def __getitem__(self, index) -> 'Gamma':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Gamma(
+        concentration=self.concentration[index], rate=self.rate[index])
+
 
 def _kl_divergence_gamma_gamma(
     dist1: Union[Gamma, tfd.Gamma],

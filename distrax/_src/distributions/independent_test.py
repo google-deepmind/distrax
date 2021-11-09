@@ -25,7 +25,6 @@ from distrax._src.distributions import mvn_diag
 from distrax._src.distributions import normal
 from distrax._src.utils import equivalence
 import jax
-import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
@@ -36,12 +35,44 @@ RTOL = 1e-3
 
 
 class IndependentTest(parameterized.TestCase):
+  """Class to test miscellaneous methods of the `Independent` distribution."""
+
+  def setUp(self):
+    super().setUp()
+    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+    self.loc = np.random.randn(2, 3, 4)
+    self.scale = np.abs(np.random.randn(2, 3, 4))
+    self.base = normal.Normal(loc=self.loc, scale=self.scale)
+    self.dist = independent.Independent(self.base, reinterpreted_batch_ndims=1)
 
   @parameterized.parameters(None, 0, 1, 2)
   def test_constructor_is_jittable_given_ndims(self, ndims):
-    base = normal.Normal(loc=jnp.zeros((2, 3)), scale=jnp.ones((2, 3)))
     constructor = lambda d: independent.Independent(d, ndims)
-    jax.jit(constructor)(base)
+    jax.jit(constructor)(self.base)
+
+  @parameterized.named_parameters(
+      ('single element', 1, (3,)),
+      ('range', slice(-1), (1, 3)),
+      ('range_2', (slice(None), slice(-1)), (2, 2)),
+  )
+  def test_slice(self, slice_, expected_batch_shape):
+    sliced_dist = self.dist[slice_]
+    self.assertEqual(sliced_dist.batch_shape, expected_batch_shape)
+    self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
+    self.assertIsInstance(sliced_dist, independent.Independent)
+    self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
+    self.assertion_fn(sliced_dist.distribution.loc, self.loc[slice_])
+    self.assertion_fn(sliced_dist.distribution.scale, self.scale[slice_])
+
+  def test_slice_ellipsis(self):
+    sliced_dist = self.dist[..., -1]
+    expected_batch_shape = (2,)
+    self.assertEqual(sliced_dist.batch_shape, expected_batch_shape)
+    self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
+    self.assertIsInstance(sliced_dist, independent.Independent)
+    self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
+    self.assertion_fn(sliced_dist.distribution.loc, self.loc[:, -1, :])
+    self.assertion_fn(sliced_dist.distribution.scale, self.scale[:, -1, :])
 
 
 class TFPMultivariateNormalTest(equivalence.EquivalenceTest,

@@ -59,6 +59,28 @@ class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jittable(self):
     super()._test_jittable((np.array([0., 4., -1., 4.]),))
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    preferences = np.abs(np.random.randn(3, 4, 5))
+    dtype = jnp.float32
+    dist = self.distrax_cls(preferences, dtype=dtype)
+    dist_sliced = dist[slice_]
+    self.assertIsInstance(dist_sliced, greedy.Greedy)
+    self.assertion_fn(dist_sliced.preferences, preferences[slice_])
+    self.assertEqual(dist_sliced.dtype, dtype)
+
+  def test_slice_ellipsis(self):
+    preferences = np.abs(np.random.randn(3, 4, 5))
+    dtype = jnp.float32
+    dist = self.distrax_cls(preferences, dtype=dtype)
+    dist_sliced = dist[..., -1]
+    self.assertIsInstance(dist_sliced, greedy.Greedy)
+    self.assertion_fn(dist_sliced.preferences, preferences[:, -1])
+    self.assertEqual(dist_sliced.dtype, dtype)
+
 
 if __name__ == '__main__':
   absltest.main()

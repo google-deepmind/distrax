@@ -131,6 +131,11 @@ class Laplace(distribution.Distribution):
     """Calculates the median."""
     return self.mean()
 
+  def __getitem__(self, index) -> 'Laplace':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Laplace(loc=self.loc[index], scale=self.scale[index])
+
 
 def _kl_divergence_laplace_laplace(
     dist1: Union[Laplace, tfd.Laplace],

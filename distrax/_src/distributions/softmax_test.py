@@ -86,6 +86,33 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jittable(self):
     super()._test_jittable((np.array([2., 4., 1., 3.]),))
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    logits = jnp.array(np.random.randn(3, 4, 5))
+    temperature = 0.8
+    scaled_logits = logits / temperature
+    dist = self.distrax_cls(logits=logits, temperature=temperature)
+    self.assertIsInstance(dist[slice_], self.distrax_cls)
+    self.assertion_fn(dist[slice_].temperature, temperature)
+    self.assertion_fn(
+        jax.nn.softmax(dist[slice_].logits, axis=-1),
+        jax.nn.softmax(scaled_logits[slice_], axis=-1))
+
+  def test_slice_ellipsis(self):
+    logits = jnp.array(np.random.randn(3, 4, 5))
+    temperature = 0.8
+    scaled_logits = logits / temperature
+    dist = self.distrax_cls(logits=logits, temperature=temperature)
+    dist_sliced = dist[..., -1]
+    self.assertIsInstance(dist_sliced, self.distrax_cls)
+    self.assertion_fn(dist_sliced.temperature, temperature)
+    self.assertion_fn(
+        jax.nn.softmax(dist_sliced.logits, axis=-1),
+        jax.nn.softmax(scaled_logits[:, -1], axis=-1))
+
 
 if __name__ == '__main__':
   absltest.main()

@@ -16,6 +16,7 @@
 
 import chex
 from distrax._src.distributions import categorical
+from distrax._src.distributions import distribution
 import jax.numpy as jnp
 
 
@@ -42,6 +43,25 @@ class Softmax(categorical.Categorical):
       temperature: Softmax temperature τ.
       dtype: The type of event samples.
     """
+    self._temperature = temperature
+    self._unscaled_logits = logits
     scaled_logits = logits / temperature
     super().__init__(logits=scaled_logits, dtype=dtype)
 
+  @property
+  def temperature(self) -> float:
+    """The softmax temperature parameter."""
+    return self._temperature
+
+  @property
+  def unscaled_logits(self) -> Array:
+    """The logits of the distribution before the temperature scaling."""
+    return self._unscaled_logits
+
+  def __getitem__(self, index) -> 'Softmax':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Softmax(
+        logits=self.unscaled_logits[index],
+        temperature=self.temperature,
+        dtype=self.dtype)

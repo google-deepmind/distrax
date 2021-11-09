@@ -45,7 +45,8 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_atol(self, atol):
     dist_params = {'loc': np.asarray([0.1, 0.5, 1.5]), 'atol': atol}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(dist.atol, np.asarray(0 if atol is None else atol))
+    broadcasted_atol = np.zeros((3,)) if atol is None else atol * np.ones((3,))
+    self.assertion_fn(dist.atol, broadcasted_atol)
 
   @parameterized.named_parameters(
       ('None', None),
@@ -54,7 +55,8 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_rtol(self, rtol):
     dist_params = {'loc': np.asarray([0.1, 0.5, 1.5]), 'rtol': rtol}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(dist.rtol, np.asarray(0 if rtol is None else rtol))
+    broadcasted_rtol = np.zeros((3,)) if rtol is None else rtol * np.ones((3,))
+    self.assertion_fn(dist.rtol, broadcasted_rtol)
 
   @parameterized.named_parameters(
       ('atol_None_rtol_None', None, None),
@@ -233,6 +235,29 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def test_jittable(self):
     super()._test_jittable((np.array([0., 4., -1., 4.]),))
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)))
+  def test_slice(self, slice_):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    atol = jnp.array(np.random.randn(3, 4, 5))
+    rtol = jnp.array(np.random.randn(3, 4, 5))
+    dist = self.distrax_cls(loc=loc, atol=atol, rtol=rtol)
+    self.assertion_fn(dist[slice_].loc, loc[slice_])
+    self.assertion_fn(dist[slice_].atol, atol[slice_])
+    self.assertion_fn(dist[slice_].rtol, rtol[slice_])
+
+  def test_slice_different_parameterization(self):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    atol = jnp.array(np.random.randn(4, 5))
+    rtol = jnp.array(np.random.randn(4, 5))
+    dist = self.distrax_cls(loc=loc, atol=atol, rtol=rtol)
+    self.assertion_fn(dist[0].loc, loc[0])
+    self.assertion_fn(dist[0].atol, atol)  # Not slicing atol.
+    self.assertion_fn(dist[0].rtol, rtol)  # Not slicing rtol.
 
 
 if __name__ == '__main__':

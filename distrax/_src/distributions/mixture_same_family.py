@@ -147,3 +147,10 @@ class MixtureSameFamily(distribution.Distribution):
     sq_diff = jnp.square(means - jnp.expand_dims(mean, axis=component_axis))
     var_cond_mean = jnp.sum(weights * sq_diff, axis=component_axis)
     return mean_cond_var + var_cond_mean
+
+  def __getitem__(self, index) -> 'MixtureSameFamily':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return MixtureSameFamily(
+        mixture_distribution=self.mixture_distribution[index],
+        components_distribution=self.components_distribution[index])

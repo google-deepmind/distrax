@@ -356,5 +356,38 @@ class QuantizedInvalidParams(
     })
 
 
+class QuantizedSlicingTest(parameterized.TestCase):
+  """Class to test the `getitem` method."""
+
+  def setUp(self):
+    super().setUp()
+    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+    self.uniform_low = np.random.randn(2, 3, 4)
+    self.uniform_high = self.uniform_low + np.abs(np.random.randn(2, 3, 4))
+    self.base = uniform.Uniform(self.uniform_low, self.uniform_high)
+    self.low = np.ceil(np.random.randn(3, 4))
+    self.high = np.floor(np.random.randn(3, 4))
+    self.dist = quantized.Quantized(self.base, self.low, self.high)
+
+  @parameterized.named_parameters(
+      ('single element', 1, (3, 4)),
+      ('range', slice(-1), (1, 3, 4)),
+      ('range_2', (slice(None), slice(-1)), (2, 2, 4)),
+      ('ellipsis', (Ellipsis, -1), (2, 3)),
+  )
+  def test_slice(self, slice_, expected_batch_shape):
+    sliced_dist = self.dist[slice_]
+    self.assertEqual(sliced_dist.batch_shape, expected_batch_shape)
+    self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
+    self.assertIsInstance(sliced_dist, quantized.Quantized)
+    self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
+    self.assertion_fn(sliced_dist.distribution.low, self.uniform_low[slice_])
+    self.assertion_fn(sliced_dist.distribution.high, self.uniform_high[slice_])
+    self.assertion_fn(sliced_dist.low,
+                      np.broadcast_to(self.low, self.base.batch_shape)[slice_])
+    self.assertion_fn(sliced_dist.high,
+                      np.broadcast_to(self.high, self.base.batch_shape)[slice_])
+
+
 if __name__ == '__main__':
   absltest.main()

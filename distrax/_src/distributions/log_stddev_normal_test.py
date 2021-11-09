@@ -172,7 +172,8 @@ class LogStddevNormalTest(parameterized.TestCase):
     loc = jnp.array(np.random.randn(4))
     log_scale = jnp.array(np.random.randn(3, 4))
     dist = lsn.LogStddevNormal(loc=loc, log_scale=log_scale)
-    np.testing.assert_allclose(dist[0].mean(), loc, rtol=RTOL)
+    np.testing.assert_allclose(
+        dist[0].mean(), loc, rtol=RTOL)  # Not slicing loc
     np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=RTOL)
 
 if __name__ == '__main__':

@@ -69,6 +69,9 @@ def tfp_compatible_distribution(
     def __getattr__(self, name: str):
       return getattr(base_distribution, name)
 
+    def __getitem__(self, index):
+      return tfp_compatible_distribution(base_distribution[index], name=name_)
+
     @property
     def allow_nan_stats(self) -> bool:
       """Proxy for the TFP property `allow_nan_stats`.

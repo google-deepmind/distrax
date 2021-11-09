@@ -369,26 +369,16 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
   def test_slice(self, slice_):
     logits = jnp.array(np.random.randn(3, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)
     dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(
-        jax.nn.softmax(dist1[slice_].logits, axis=-1),
-        jax.nn.softmax(logits[slice_], axis=-1))
+    self.assertion_fn(dist1[slice_].logits, logits[slice_])
     self.assertion_fn(dist2[slice_].probs, probs[slice_])
-
-  def test_slice_on_batch_shape(self):
-    logits = jnp.array(np.random.randn(4, 4, 5))
-    probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
-    dist1 = self.distrax_cls(logits=logits)
-    dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(
-        jax.nn.softmax(dist1[..., -1].logits, axis=-1),
-        jax.nn.softmax(logits[..., -1], axis=-1))
-    self.assertion_fn(dist2[..., -1].probs, probs[..., -1])
 
 
 if __name__ == '__main__':

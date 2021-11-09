@@ -186,7 +186,7 @@ class DistributionTest(parameterized.TestCase):
     # This test needs to be a separate function since JAX doesn't allow creating
     # jnp.arrays in the top level of the program.
     # NOTE: Using jnp.arrays behaves differently compared to np.arrays as it
-    # wraps instead of raising. Raising for same index is teted for np.arrays
+    # wraps instead of raising. Raising for same index is tested for np.arrays
     # below.
     index = jnp.array([-1, 2])
     expected = (jnp.array([1, 1, 1, 1], dtype=jnp.int32),

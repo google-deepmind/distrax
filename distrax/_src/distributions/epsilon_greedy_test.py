@@ -65,6 +65,30 @@ class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(np.array([0., 4., -1., 4.]), 0.1),
         assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-5))
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))))
+  def test_slice(self, slice_):
+    preferences = np.abs(np.random.randn(3, 4, 5))
+    dtype = jnp.float32
+    dist = self.distrax_cls(preferences, self.epsilon, dtype=dtype)
+    dist_sliced = dist[slice_]
+    self.assertIsInstance(dist_sliced, epsilon_greedy.EpsilonGreedy)
+    self.assertion_fn(dist_sliced.preferences, preferences[slice_])
+    self.assertion_fn(dist_sliced.epsilon, self.epsilon)
+    self.assertEqual(dist_sliced.dtype, dtype)
+
+  def test_slice_ellipsis(self):
+    preferences = np.abs(np.random.randn(3, 4, 5))
+    dtype = jnp.float32
+    dist = self.distrax_cls(preferences, self.epsilon, dtype=dtype)
+    dist_sliced = dist[..., -1]
+    self.assertIsInstance(dist_sliced, epsilon_greedy.EpsilonGreedy)
+    self.assertion_fn(dist_sliced.preferences, preferences[:, -1])
+    self.assertion_fn(dist_sliced.epsilon, self.epsilon)
+    self.assertEqual(dist_sliced.dtype, dtype)
+
 
 if __name__ == '__main__':
   absltest.main()
