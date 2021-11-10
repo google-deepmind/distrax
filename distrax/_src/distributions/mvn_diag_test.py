@@ -444,7 +444,8 @@ class MultivariateNormalDiagTest(
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+  )
   def test_slice(self, slice_):
     loc = jnp.array(np.random.randn(3, 4, 5))
     scale_diag = jnp.array(np.random.randn(3, 4, 5))
@@ -458,7 +459,7 @@ class MultivariateNormalDiagTest(
     self.assertion_fn(dist[0].mean(), loc)  # Not slicing loc.
     self.assertion_fn(dist[0].stddev(), scale_diag[0])
 
-  def test_slice_on_batch_shape(self):
+  def test_slice_ellipsis(self):
     loc = jnp.array(np.random.randn(3, 4, 5))
     scale_diag = jnp.array(np.random.randn(3, 4, 5))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)

@@ -562,7 +562,8 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+  )
   def test_slice(self, slice_):
     logits = jnp.array(np.random.randn(3, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
@@ -575,7 +576,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         jax.nn.softmax(logits[slice_], axis=-1))
     self.assertion_fn(dist2[slice_].probs, probs[slice_])
 
-  def test_slice_on_batch_shape(self):
+  def test_slice_ellipsis(self):
     logits = jnp.array(np.random.randn(4, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
     total_count_value = 2

@@ -157,7 +157,8 @@ class LogStddevNormalTest(parameterized.TestCase):
       ('single element', 2),
       ('range', slice(-1)),
       ('range_2', (slice(None), slice(-1))),
-      ('ellipsis', (Ellipsis, -1)))
+      ('ellipsis', (Ellipsis, -1)),
+  )
   def test_slice(self, slice_):
     loc = jnp.array(np.random.randn(3, 4, 5))
     log_scale = jnp.array(np.random.randn(3, 4, 5))

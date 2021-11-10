@@ -383,7 +383,8 @@ class OneHotCategoricalTest(
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+  )
   def test_slice(self, slice_):
     logits = jnp.array(np.random.randn(3, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
@@ -398,7 +399,7 @@ class OneHotCategoricalTest(
     self.assertIsInstance(dist1_sliced, one_hot_categorical.OneHotCategorical)
     self.assertIsInstance(dist2_sliced, one_hot_categorical.OneHotCategorical)
 
-  def test_slice_on_batch_shape(self):
+  def test_slice_ellipsis(self):
     logits = jnp.array(np.random.randn(4, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)

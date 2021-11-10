@@ -62,7 +62,8 @@ class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+  )
   def test_slice(self, slice_):
     preferences = np.abs(np.random.randn(3, 4, 5))
     dtype = jnp.float32

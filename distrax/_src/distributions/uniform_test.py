@@ -148,7 +148,9 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
   def test_slice(self, slice_):
     low = jnp.zeros((3, 4, 5))
     high = jnp.ones((3, 4, 5))
@@ -162,7 +164,7 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(low=low, high=high)
     self.assertion_fn(dist[..., -1].low, low[..., -1])
     self.assertEqual(dist[..., -1].high.shape, (3, 4))
-    self.assertion_fn(dist[..., -1].high, high)
+    self.assertion_fn(dist[..., -1].high, high)  # Not slicing high.
 
 if __name__ == '__main__':
   absltest.main()

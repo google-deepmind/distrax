@@ -208,7 +208,8 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
-      ('range_2', (slice(None), slice(-1))))
+      ('range_2', (slice(None), slice(-1))),
+  )
   def test_slice(self, slice_):
     logits = np.random.randn(3, 4, 5)
     probs = jax.nn.softmax(np.random.randn(3, 4, 5), axis=-1)
@@ -218,10 +219,28 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
     sliced_dist2 = dist2[slice_]
     self.assertIsInstance(sliced_dist1, Distribution)
     self.assertIsInstance(sliced_dist2, Distribution)
+    self.assertIsInstance(sliced_dist1, tfd.Categorical)
+    self.assertIsInstance(sliced_dist2, tfd.Categorical)
     self.assertion_fn(
         jax.nn.softmax(sliced_dist1.logits, axis=-1),
         jax.nn.softmax(logits[slice_], axis=-1))
     self.assertion_fn(sliced_dist2.probs, probs[slice_])
+
+  def test_slice_ellipsis(self):
+    logits = np.random.randn(3, 4, 5)
+    probs = jax.nn.softmax(np.random.randn(3, 4, 5), axis=-1)
+    dist1 = distribution_from_tfp(tfd.Categorical(logits=logits))
+    dist2 = distribution_from_tfp(tfd.Categorical(probs=probs))
+    sliced_dist1 = dist1[..., -1]
+    sliced_dist2 = dist2[..., -1]
+    self.assertIsInstance(sliced_dist1, Distribution)
+    self.assertIsInstance(sliced_dist2, Distribution)
+    self.assertIsInstance(sliced_dist1, tfd.Categorical)
+    self.assertIsInstance(sliced_dist2, tfd.Categorical)
+    self.assertion_fn(
+        jax.nn.softmax(sliced_dist1.logits, axis=-1),
+        jax.nn.softmax(logits[:, -1], axis=-1))
+    self.assertion_fn(sliced_dist2.probs, probs[:, -1])
 
 
 class DistributionFromTfpTransformed(DistributionFromTfpNormal):
