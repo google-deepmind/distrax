@@ -32,11 +32,36 @@ class Jittable(metaclass=abc.ABCMeta):
     return instance
 
   def tree_flatten(self):
-    return ((), ((self._args, self._kwargs), self.__dict__))
+    jax_data, python_data = _partition_by_jittability(self.__dict__)
+    return ((jax_data,), ((self._args, self._kwargs), python_data))
 
   @classmethod
-  def tree_unflatten(cls, aux_data, _):
-    (args, kwargs), state_dict = aux_data
+  def tree_unflatten(cls, aux_data, jax_data):
+    (args, kwargs), python_data = aux_data
     obj = cls(*args, **kwargs)
-    obj.__dict__ = state_dict
+    obj.__dict__ = python_data
+    obj.__dict__.update(jax_data[0])
     return obj
+
+
+def _is_jax_data(x):
+  if isinstance(x, jax.numpy.ndarray):
+    return True
+  elif hasattr(x, 'tree_flatten') and hasattr(x, 'tree_unflatten'):
+    return True
+  else:
+    return False
+
+
+def _partition_by_jittability(data):
+  """Partitions the dictionary into jittable data and pure-python data."""
+  jax_data = {}
+  python_data = {}
+
+  for k, v in data.items():
+    if all(map(_is_jax_data, jax.tree_leaves(v))):
+      jax_data[k] = v
+    else:
+      python_data[k] = v
+
+  return jax_data, python_data

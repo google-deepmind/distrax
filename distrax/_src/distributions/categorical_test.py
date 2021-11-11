@@ -390,6 +390,9 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jittable(self):
     super()._test_jittable((np.array([0., 4., -1., 4.]),))
 
+  def test_returnable(self):
+    super()._test_returnable((np.array([0., 4., -1., 4.]),))
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

@@ -318,6 +318,12 @@ class TFPUnivariateNormalTest(TFPMultivariateNormalTest):
                      'reinterpreted_batch_ndims': 1},
         assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-4))
 
+  def test_returnable(self):
+    super()._test_returnable(
+        dist_kwargs={'distribution': self.base_dist,
+                     'reinterpreted_batch_ndims': 1},
+        assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-4))
+
 
 class DistraxUnivariateNormalTest(TFPMultivariateNormalTest):
   """Class to test Distrax Independent distribution against its TFP counterpart.

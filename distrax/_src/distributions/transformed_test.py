@@ -455,5 +455,14 @@ class TransformedTest(parameterized.TestCase):
     x = np.zeros(())
     f(x, dist)
 
+  def test_returnable(self):
+    @jax.jit
+    def f():
+      base = normal.Normal(0, 1)
+      bijector = scalar_affine.ScalarAffine(0, 1)
+      dist = transformed.Transformed(base, bijector)
+      return dist
+    f()
+
 if __name__ == '__main__':
   absltest.main()

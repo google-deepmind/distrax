@@ -86,6 +86,9 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jittable(self):
     super()._test_jittable((np.array([2., 4., 1., 3.]),))
 
+  def test_returnable(self):
+    super()._test_returnable((np.array([2., 4., 1., 3.]),))
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

@@ -209,6 +209,9 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jitable(self):
     super()._test_jittable((0.1, 1.5), assertion_fn=self.assertion_fn)
 
+  def test_returnable(self):
+    super()._test_returnable((0.1, 1.5), assertion_fn=self.assertion_fn)
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

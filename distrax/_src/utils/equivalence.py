@@ -339,6 +339,26 @@ class EquivalenceTest(absltest.TestCase):
     jitted_log_prob = jitted_function(event, dist)
     assertion_fn(jitted_log_prob, log_prob)
 
+  def _test_returnable(
+      self,
+      dist_args: Tuple[Any, ...] = (),
+      dist_kwargs: Optional[Dict[str, Any]] = None,
+      assertion_fn: Callable[[Any, Any], None] = np.testing.assert_allclose):
+    """Tests that the distribution can be returned from a jitted function."""
+    dist_kwargs = dist_kwargs or {}
+
+    @jax.jit
+    def jitted_function():
+      dist = self.distrax_cls(*dist_args, **dist_kwargs)
+      return dist
+
+    dist = self.distrax_cls(*dist_args, **dist_kwargs)
+    jitted_dist = jitted_function()
+    event = dist.sample(seed=self.key)
+    log_prob = dist.log_prob(event)
+    jitted_log_prob = jitted_dist.log_prob(event)
+    assertion_fn(jitted_log_prob, log_prob)
+
   def _test_raises_error(
       self,
       dist_args: Tuple[Any, ...] = (),

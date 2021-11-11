@@ -210,6 +210,9 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jitable(self):
     super()._test_jittable((0., 1.))
 
+  def test_returnable(self):
+    super()._test_returnable((0., 1.))
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

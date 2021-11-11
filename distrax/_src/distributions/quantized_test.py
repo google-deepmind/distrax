@@ -318,6 +318,9 @@ class QuantizedTFPUniform2D(
   def test_jittable(self):
     super()._test_jittable((self.tfd_base_distribution, 0., 1.))
 
+  def test_returnable(self):
+    super()._test_returnable((self.tfd_base_distribution, 0., 1.))
+
 
 class QuantizedDistraxUniform2D(QuantizedTFPUniform2D):
 
@@ -326,6 +329,9 @@ class QuantizedDistraxUniform2D(QuantizedTFPUniform2D):
 
   def test_jittable(self):
     super()._test_jittable((self.distrax_base_distribution, 0., 1.))
+
+  def test_returnable(self):
+    super()._test_returnable((self.distrax_base_distribution, 0., 1.))
 
 
 class QuantizedInvalidParams(

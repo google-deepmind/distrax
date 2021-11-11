@@ -153,6 +153,13 @@ class LogStddevNormalTest(parameterized.TestCase):
     event = dist.sample(seed=jax.random.PRNGKey(0))
     jitted_function(event, dist)
 
+  def test_returnable(self):
+    @jax.jit
+    def jitted_function():
+      dist = lsn.LogStddevNormal(np.array([0.0]), np.array([0.0]))
+      return dist
+    jitted_function()
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

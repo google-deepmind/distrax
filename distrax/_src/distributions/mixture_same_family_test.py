@@ -198,6 +198,13 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
             'components_distribution': self.components_dist},
         assertion_fn=functools.partial(np.testing.assert_allclose, rtol=RTOL))
 
+  def test_returnable(self):
+    super()._test_returnable(
+        dist_kwargs={
+            'mixture_distribution': self.mixture_dist,
+            'components_distribution': self.components_dist},
+        assertion_fn=functools.partial(np.testing.assert_allclose, rtol=RTOL))
+
 
 class TFPLogitsCategoricalTFPUnivariateComponents(
     TFPLogitsCategoricalTFPMultivariateComponents):

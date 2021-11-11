@@ -17,6 +17,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
+import chex
 from distrax._src.utils import jittable
 import jax
 import jax.numpy as jnp
@@ -37,7 +38,15 @@ class JittableTest(parameterized.TestCase):
     def get_params(obj):
       return obj.data['params']
     obj = DummyJittable(jnp.ones((5,)))
-    np.testing.assert_array_equal(get_params(obj), obj.data['params'])
+    chex.assert_trees_all_close(get_params(obj), obj.data['params'])
+
+  def test_returnable(self):
+    @jax.jit
+    def get_jittable():
+      obj = DummyJittable(jnp.ones((5,)))
+      return obj
+    obj = get_jittable()
+    chex.assert_trees_all_close(obj.data['params'], jnp.ones((5,)))
 
   def test_traceable(self):
     @jax.jit

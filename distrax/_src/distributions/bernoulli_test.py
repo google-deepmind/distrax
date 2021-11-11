@@ -366,6 +366,10 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_jittable(
         (np.array([0., 4., -1., 4.]),), assertion_fn=self.assertion_fn)
 
+  def test_returnable(self):
+    super()._test_returnable(
+        (np.array([0., 4., -1., 4.]),), assertion_fn=self.assertion_fn)
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

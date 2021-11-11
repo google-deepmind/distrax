@@ -441,6 +441,10 @@ class MultivariateNormalDiagTest(
     super()._test_jittable(
         (np.zeros((2, 3,)), np.ones((2, 3,))), assertion_fn=self.assertion_fn)
 
+  def test_returnable(self):
+    super()._test_returnable(
+        (np.zeros((2, 3,)), np.ones((2, 3,))), assertion_fn=self.assertion_fn)
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

@@ -567,6 +567,12 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         },
         assertion_fn=assertion_fn)
 
+  def test_returnable(self):
+    super()._test_returnable(dist_kwargs={
+        'probs': np.asarray([1.0, 0.0, 0.0]),
+        'total_count': np.asarray([3, 10]),
+    })
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),

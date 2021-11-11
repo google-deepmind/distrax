@@ -65,6 +65,11 @@ class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(np.array([0., 4., -1., 4.]), 0.1),
         assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-5))
 
+  def test_returnable(self):
+    super()._test_returnable(
+        dist_args=(np.array([0., 4., -1., 4.]), 0.1),
+        assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-5))
+
   @parameterized.named_parameters(
       ('single element', 2),
       ('range', slice(-1)),
