@@ -65,7 +65,7 @@ class GumbelTest(parameterized.TestCase):
   ))
   def test_event_shape(self, mu, sigma, base_dist):
     base = base_dist(mu, sigma)
-  
+
     bijector = gumbel_cdf.GumbelCDF()
     dist = transformed.Transformed(base, bijector)
 
