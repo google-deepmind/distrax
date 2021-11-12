@@ -33,15 +33,15 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super().setUp(gumbel.Gumbel)
     self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
-  # @parameterized.named_parameters(
-  #     ('1d std gumbel', (0, 1)),
-  #     ('2d std gumbel', (np.zeros(2), np.ones(2))),
-  #     ('rank 2 std gumbel', (np.zeros((3, 2)), np.ones((3, 2)))),
-  #     ('broadcasted loc', (0, np.ones(3))),
-  #     ('broadcasted scale', (np.ones(3), 1)),
-  # )
-  # def test_event_shape(self, distr_params):
-  #   super()._test_event_shape(distr_params, dict())
+#   @parameterized.named_parameters(
+#       ('1d std gumbel', (0, 1)),
+#       ('2d std gumbel', (np.zeros(2), np.ones(2))),
+#       ('rank 2 std gumbel', (np.zeros((3, 2)), np.ones((3, 2)))),
+#       ('broadcasted loc', (0, np.ones(3))),
+#       ('broadcasted scale', (np.ones(3), 1)),
+#   )
+#   def test_event_shape(self, distr_params):
+#     super()._test_event_shape(distr_params, dict())
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -214,7 +214,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(self.variant(dist.median)(), dist.median())
+    self.assertion_fn(self.variant(dist.median)(), dist._loc - dist._scale * jnp.log(jnp.log(2)))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

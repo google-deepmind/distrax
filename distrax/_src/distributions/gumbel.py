@@ -82,7 +82,7 @@ class Gumbel(transformed.Transformed):
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     z = (value - self._loc) / self._scale
-    return  -(z + jnp.exp(-z)) - jnp.log(self._scale)
+    return -(z + jnp.exp(-z)) - jnp.log(self._scale)
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
@@ -110,7 +110,7 @@ class Gumbel(transformed.Transformed):
 
   def mode(self) -> Array:
     """Calculates the mode."""
-    return self._loc
+    return self.loc
 
   def median(self) -> Array:
     """Calculates the median."""
