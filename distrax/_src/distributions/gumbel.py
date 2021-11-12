@@ -14,7 +14,6 @@
 # ==============================================================================
 """Gumbel distribution."""
 
-import math
 from typing import Tuple, Union
 
 import chex
@@ -55,7 +54,7 @@ class Gumbel(transformed.Transformed):
     dtype = jnp.result_type(self._loc, self._scale)
     super().__init__(
         distribution=uniform.Uniform(
-            low=jnp.broadcast_to(jnp.finfo(dtype).tiny, self.batch_shape), 
+            low=jnp.broadcast_to(jnp.finfo(dtype).tiny, self.batch_shape),
             high=jnp.ones_like(self.loc)),
         bijector=inverse.Inverse(gumbel_bijector))
 
