@@ -21,6 +21,7 @@ import chex
 from distrax._src.distributions import uniform
 from distrax._src.utils import equivalence
 import jax
+import jax.numpy as jnp
 import numpy as np
 
 
@@ -143,6 +144,27 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def test_jittable(self):
     super()._test_jittable((0.0, 1.0))
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
+  def test_slice(self, slice_):
+    low = jnp.zeros((3, 4, 5))
+    high = jnp.ones((3, 4, 5))
+    dist = self.distrax_cls(low=low, high=high)
+    self.assertion_fn(dist[slice_].low, low[slice_])
+    self.assertion_fn(dist[slice_].high, high[slice_])
+
+  def test_slice_different_parameterization(self):
+    low = jnp.zeros((3, 4, 5))
+    high = 1.
+    dist = self.distrax_cls(low=low, high=high)
+    self.assertion_fn(dist[..., -1].low, low[..., -1])
+    self.assertEqual(dist[..., -1].high.shape, (3, 4))
+    self.assertion_fn(dist[..., -1].high, high)  # Not slicing high.
 
 if __name__ == '__main__':
   absltest.main()

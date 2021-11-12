@@ -16,6 +16,7 @@
 
 import chex
 from distrax._src.distributions import categorical
+from distrax._src.distributions import distribution
 import jax.numpy as jnp
 
 
@@ -45,6 +46,17 @@ class Greedy(categorical.Categorical):
       preferences: Unnormalized preferences.
       dtype: The type of event samples.
     """
-    preferences = jnp.asarray(preferences)
-    probs = _argmax_with_random_tie_breaking(preferences)
+    self._preferences = jnp.asarray(preferences)
+    probs = _argmax_with_random_tie_breaking(self._preferences)
     super().__init__(probs=probs, dtype=dtype)
+
+  @property
+  def preferences(self) -> Array:
+    """Unnormalized preferences."""
+    return self._preferences
+
+  def __getitem__(self, index) -> 'Greedy':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Greedy(
+        preferences=self.preferences[index], dtype=self.dtype)

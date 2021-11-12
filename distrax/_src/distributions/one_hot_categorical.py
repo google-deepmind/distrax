@@ -18,6 +18,7 @@ from typing import Optional, Tuple
 
 import chex
 from distrax._src.distributions import categorical
+from distrax._src.distributions import distribution
 from distrax._src.utils import math
 import jax
 import jax.numpy as jnp
@@ -81,3 +82,10 @@ class OneHotCategorical(categorical.Categorical):
     """See `Distribution.cdf`."""
     return jnp.sum(math.multiply_no_nan(
         jnp.cumsum(self.probs, axis=-1), value), axis=-1)
+
+  def __getitem__(self, index) -> 'OneHotCategorical':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    if self._logits is not None:
+      return OneHotCategorical(logits=self.logits[index], dtype=self._dtype)
+    return OneHotCategorical(probs=self.probs[index], dtype=self._dtype)

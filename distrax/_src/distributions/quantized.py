@@ -197,3 +197,10 @@ class Quantized(base_distribution.Distribution):
     if self.high is not None:
       result = jnp.where(y < self.high, result, 1.)
     return result
+
+  def __getitem__(self, index) -> 'Quantized':
+    """See `Distribution.__getitem__`."""
+    index = base_distribution.to_batch_shape_index(self.batch_shape, index)
+    low = None if self._low is None else self.low[index]
+    high = None if self._high is None else self.high[index]
+    return Quantized(distribution=self.distribution[index], low=low, high=high)

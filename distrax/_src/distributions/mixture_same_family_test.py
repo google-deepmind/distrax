@@ -286,5 +286,57 @@ class TFPLogitsCategoricalDistraxUnivariateComponents(
         scale=jax.random.uniform(key=key_scale, shape=components_shape) + 0.5)
 
 
+class MixtureSameFamilySlicingTest(parameterized.TestCase):
+  """Class to test the `getitem` method."""
+
+  def setUp(self):
+    super().setUp()
+    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+    self.loc = np.random.randn(2, 3, 4, 5)
+    self.scale_diag = np.abs(np.random.randn(2, 3, 4, 5))
+    self.components_dist = MultivariateNormalDiag(
+        loc=self.loc, scale_diag=self.scale_diag)
+    self.logits = np.random.randn(2, 3, 4)
+    self.mixture_dist = Categorical(logits=self.logits)
+    self.dist = MixtureSameFamily(self.mixture_dist, self.components_dist)
+
+  @parameterized.named_parameters(
+      ('single element', 1, (3,)),
+      ('range', slice(-1), (1, 3)),
+      ('range_2', (slice(None), slice(-1)), (2, 2)),
+  )
+  def test_slice(self, slice_, expected_batch_shape):
+    sliced_dist = self.dist[slice_]
+    self.assertEqual(sliced_dist.batch_shape, expected_batch_shape)
+    self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
+    self.assertEqual(sliced_dist.mixture_distribution.logits.shape[-1],
+                     self.dist.mixture_distribution.logits.shape[-1])
+    self.assertIsInstance(sliced_dist, MixtureSameFamily)
+    self.assertIsInstance(
+        sliced_dist.components_distribution, MultivariateNormalDiag)
+    self.assertIsInstance(sliced_dist.mixture_distribution, Categorical)
+    self.assertion_fn(sliced_dist.components_distribution.loc, self.loc[slice_])
+    self.assertion_fn(
+        sliced_dist.components_distribution.scale_diag, self.scale_diag[slice_])
+
+  def test_slice_ellipsis(self):
+    sliced_dist = self.dist[..., -1]
+    expected_batch_shape = (2,)
+    self.assertEqual(sliced_dist.batch_shape, expected_batch_shape)
+    self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
+    self.assertEqual(sliced_dist.mixture_distribution.logits.shape[-1],
+                     self.dist.mixture_distribution.logits.shape[-1])
+    self.assertIsInstance(sliced_dist, MixtureSameFamily)
+    self.assertIsInstance(
+        sliced_dist.components_distribution, MultivariateNormalDiag)
+    self.assertIsInstance(sliced_dist.mixture_distribution, Categorical)
+    self.assertion_fn(
+        sliced_dist.components_distribution.loc,
+        self.loc[:, -1, ...])
+    self.assertion_fn(
+        sliced_dist.components_distribution.scale_diag,
+        self.scale_diag[:, -1, ...])
+
+
 if __name__ == '__main__':
   absltest.main()

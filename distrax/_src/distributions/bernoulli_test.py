@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import bernoulli
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 from scipy import special as sp_special
@@ -364,6 +365,20 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jittable(self):
     super()._test_jittable(
         (np.array([0., 4., -1., 4.]),), assertion_fn=self.assertion_fn)
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
+  def test_slice(self, slice_):
+    logits = jnp.array(np.random.randn(3, 4, 5))
+    probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
+    dist1 = self.distrax_cls(logits=logits)
+    dist2 = self.distrax_cls(probs=probs)
+    self.assertion_fn(dist1[slice_].logits, logits[slice_])
+    self.assertion_fn(dist2[slice_].probs, probs[slice_])
 
 
 if __name__ == '__main__':

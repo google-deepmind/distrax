@@ -120,3 +120,8 @@ class Logistic(distribution.Distribution):
   def median(self) -> Array:
     """Calculates the median."""
     return self.mean()
+
+  def __getitem__(self, index) -> 'Logistic':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Logistic(loc=self.loc[index], scale=self.scale[index])

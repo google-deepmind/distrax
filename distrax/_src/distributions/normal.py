@@ -133,6 +133,11 @@ class Normal(distribution.Distribution):
     """Calculates the median."""
     return self.mean()
 
+  def __getitem__(self, index) -> 'Normal':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Normal(loc=self.loc[index], scale=self.scale[index])
+
 
 def _kl_divergence_normal_normal(
     dist1: Union[Normal, tfd.Normal],

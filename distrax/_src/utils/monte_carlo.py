@@ -24,13 +24,13 @@ import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions
-PNRGKey = chex.PRNGKey
+PRNGKey = chex.PRNGKey
 
 
 def estimate_kl_best_effort(
     distribution_a: DistributionLike,
     distribution_b: DistributionLike,
-    rng_key: PNRGKey,
+    rng_key: PRNGKey,
     num_samples: int,
     proposal_distribution: Optional[DistributionLike] = None):
   """Estimates KL(distribution_a, distribution_b) exactly or with DiCE.
@@ -64,7 +64,7 @@ def estimate_kl_best_effort(
 def mc_estimate_kl(
     distribution_a: DistributionLike,
     distribution_b: DistributionLike,
-    rng_key: PNRGKey,
+    rng_key: PRNGKey,
     num_samples: int,
     proposal_distribution: Optional[DistributionLike] = None):
   """Estimates KL(distribution_a, distribution_b) with the DiCE estimator.
@@ -106,7 +106,7 @@ def mc_estimate_kl(
 def mc_estimate_kl_with_reparameterized(
     distribution_a: DistributionLike,
     distribution_b: DistributionLike,
-    rng_key: PNRGKey,
+    rng_key: PRNGKey,
     num_samples: int):
   """Estimates KL(distribution_a, distribution_b)."""
   if isinstance(distribution_a, tfd.Distribution):
@@ -126,7 +126,7 @@ def mc_estimate_kl_with_reparameterized(
 
 def mc_estimate_mode(
     distribution: DistributionLike,
-    rng_key: PNRGKey,
+    rng_key: PRNGKey,
     num_samples: int):
   """Returns a Monte Carlo estimate of the mode of a distribution."""
   distribution = conversion.as_distribution(distribution)

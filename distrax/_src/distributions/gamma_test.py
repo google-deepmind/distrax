@@ -209,6 +209,26 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_jitable(self):
     super()._test_jittable((0.1, 1.5), assertion_fn=self.assertion_fn)
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
+  def test_slice(self, slice_):
+    concentration = jnp.array(np.abs(np.random.randn(3, 4, 5)))
+    rate = jnp.array(np.abs(np.random.randn(3, 4, 5)))
+    dist = self.distrax_cls(concentration, rate)
+    self.assertion_fn(dist[slice_].concentration, concentration[slice_])
+    self.assertion_fn(dist[slice_].rate, rate[slice_])
+
+  def test_slice_different_parameterization(self):
+    concentration = jnp.array(np.abs(np.random.randn(3, 4, 5)))
+    rate = jnp.array(np.abs(np.random.randn(4, 5)))
+    dist = self.distrax_cls(concentration, rate)
+    self.assertion_fn(dist[0].concentration, concentration[0])
+    self.assertion_fn(dist[0].rate, rate)  # Not slicing rate.
+
 
 if __name__ == '__main__':
   absltest.main()

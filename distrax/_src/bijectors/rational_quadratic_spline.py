@@ -130,6 +130,33 @@ def _rational_quadratic_spline_fwd(x: Array,
   return y, logdet
 
 
+def _safe_quadratic_root(a: Array, b: Array, c: Array) -> Array:
+  """Implement a numerically stable version of the quadratic formula."""
+  # This is not a general solution to the quadratic equation, as it assumes
+  # b ** 2 - 4. * a * c is known a priori to be positive (and which of the two
+  # roots is to be used, see https://arxiv.org/abs/1906.04032).
+  # There are two sources of instability:
+  # (a) When b ** 2 - 4. * a * c -> 0, sqrt gives NaNs in gradient.
+  # We clip sqrt_diff to have the smallest float number.
+  sqrt_diff = b ** 2 - 4. * a * c
+  safe_sqrt = jnp.sqrt(jnp.clip(sqrt_diff, jnp.finfo(sqrt_diff.dtype).tiny))
+  # If sqrt_diff is non-positive, we set sqrt to 0. as it should be positive.
+  safe_sqrt = jnp.where(sqrt_diff > 0., safe_sqrt, 0.)
+  # (b) When 4. * a * c -> 0. We use the more stable quadratic solution
+  # depending on the sign of b.
+  # See https://people.csail.mit.edu/bkph/articles/Quadratics.pdf (eq 7 and 8).
+  # Solution when b >= 0
+  numerator_1 = 2. * c
+  denominator_1 = -b - safe_sqrt
+  # Solution when b < 0
+  numerator_2 = - b + safe_sqrt
+  denominator_2 = 2 * a
+  # Choose the numerically stable solution.
+  numerator = jnp.where(b >= 0, numerator_1, numerator_2)
+  denominator = jnp.where(b >= 0, denominator_1, denominator_2)
+  return numerator / denominator
+
+
 def _rational_quadratic_spline_inv(y: Array,
                                    x_pos: Array,
                                    y_pos: Array,
@@ -182,7 +209,7 @@ def _rational_quadratic_spline_inv(y: Array,
   a = bin_slope - b
 
   # Solve quadratic to obtain z and then x.
-  z = - 2. * c / (b + jnp.sqrt(b ** 2 - 4. * a * c))
+  z = _safe_quadratic_root(a, b, c)
   z = jnp.clip(z, 0., 1.)  # Ensure z is in [0, 1].
   x = bin_width * z + x_pos_bin[0]
 

@@ -131,6 +131,11 @@ class Uniform(distribution.Distribution):
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 
+  def __getitem__(self, index) -> 'Uniform':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Uniform(low=self.low[index], high=self.high[index])
+
 
 def _kl_divergence_uniform_uniform(
     dist1: Union[Uniform, tfd.Uniform],

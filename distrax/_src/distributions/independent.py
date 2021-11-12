@@ -132,6 +132,13 @@ class Independent(distrax_distribution.Distribution):
     return fn(value,
               axis=[-i - 1 for i in range(0, self.reinterpreted_batch_ndims)])
 
+  def __getitem__(self, index) -> 'Independent':
+    """See `Distribution.__getitem__`."""
+    index = distrax_distribution.to_batch_shape_index(self.batch_shape, index)
+    return Independent(
+        distribution=self.distribution[index],
+        reinterpreted_batch_ndims=self.reinterpreted_batch_ndims)
+
 
 def _kl_divergence_independent_independent(
     dist1: Union[Independent, tfd.Independent],

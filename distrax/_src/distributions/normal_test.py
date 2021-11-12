@@ -21,6 +21,7 @@ import chex
 from distrax._src.distributions import normal
 from distrax._src.utils import equivalence
 import jax
+import jax.numpy as jnp
 import numpy as np
 
 
@@ -167,6 +168,25 @@ class NormalTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def test_jittable(self):
     super()._test_jittable((np.zeros((3,)), np.ones((3,))))
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
+  def test_slice(self, slice_):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    scale = jnp.array(np.random.randn(3, 4, 5))
+    dist = self.distrax_cls(loc=loc, scale=scale)
+    self.assertion_fn(dist[slice_].mean(), loc[slice_])
+
+  def test_slice_different_parameterization(self):
+    loc = jnp.array(np.random.randn(4))
+    scale = jnp.array(np.random.randn(3, 4))
+    dist = self.distrax_cls(loc=loc, scale=scale)
+    self.assertion_fn(dist[0].mean(), loc)  # Not slicing loc.
+    self.assertion_fn(dist[0].stddev(), scale[0])
 
 
 if __name__ == '__main__':

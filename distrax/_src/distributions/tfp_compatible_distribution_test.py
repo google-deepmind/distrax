@@ -265,5 +265,29 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
     meta_dist.log_prob(meta_dist.sample(7, seed=self._key))
 
 
+class TFPCompatibleDistributionSlicing(parameterized.TestCase):
+  """Class to test the `getitem` method."""
+
+  def setUp(self):
+    super().setUp()
+    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+      ('ellipsis', (Ellipsis, -1)),
+  )
+  def test_slice(self, slice_):
+    loc = np.random.randn(3, 4, 5)
+    base_dist = Normal(loc=loc, scale=1.)
+    dist = tfp_compatible_distribution(base_dist)
+    sliced_dist = dist[slice_]
+    self.assertIsInstance(sliced_dist, base_dist.__class__)
+    self.assertIsInstance(sliced_dist.batch_shape, tfp.tf2jax.TensorShape)
+    self.assertTrue(sliced_dist.allow_nan_stats)
+    self.assertion_fn(sliced_dist.loc, loc[slice_])
+
+
 if __name__ == '__main__':
   absltest.main()

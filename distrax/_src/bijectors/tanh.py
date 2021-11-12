@@ -31,6 +31,19 @@ class Tanh(base.Bijector):
   than relying on the automatic differentiation approach used by Lambda, so this
   bijector should be preferred over Lambda(jnp.tanh) where possible. See
   `tfp.bijectors.Tanh` for details.
+
+  When the absolute value of the input is large, `Tanh` becomes close to a
+  constant, so that it is not possible to recover the input `x` from the output
+  `y` within machine precision. In cases where it is needed to compute both the
+  forward mapping and the backward mapping one after the other to recover the
+  original input `x`, it is the user's responsibility to simplify the operation
+  to avoid numerical issues; this is unlike the `tfp.bijectors.Tanh`. One
+  example of such case is to use the bijector within a `Transformed`
+  distribution and to obtain the log-probability of samples obtained from the
+  distribution's `sample` method. For values of the samples for which it is not
+  possible to apply the inverse bijector accurately, `log_prob` returns NaN.
+  This can be avoided by using `sample_and_log_prob` instead of `sample`
+  followed by `log_prob`.
   """
 
   def __init__(self):

@@ -146,6 +146,13 @@ class Bernoulli(distribution.Distribution):
     """See `Distribution.median`."""
     return self.mean()
 
+  def __getitem__(self, index) -> 'Bernoulli':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    if self._logits is not None:
+      return Bernoulli(logits=self.logits[index], dtype=self._dtype)
+    return Bernoulli(probs=self.probs[index], dtype=self._dtype)
+
 
 def _probs_and_log_probs(
     dist: Union[Bernoulli, tfd.Bernoulli]

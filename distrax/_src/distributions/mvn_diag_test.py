@@ -441,6 +441,31 @@ class MultivariateNormalDiagTest(
     super()._test_jittable(
         (np.zeros((2, 3,)), np.ones((2, 3,))), assertion_fn=self.assertion_fn)
 
+  @parameterized.named_parameters(
+      ('single element', 2),
+      ('range', slice(-1)),
+      ('range_2', (slice(None), slice(-1))),
+  )
+  def test_slice(self, slice_):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    scale_diag = jnp.array(np.random.randn(3, 4, 5))
+    dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
+    self.assertion_fn(dist[slice_].mean(), loc[slice_])
+
+  def test_slice_different_parameterization(self):
+    loc = jnp.array(np.random.randn(4))
+    scale_diag = jnp.array(np.random.randn(3, 4))
+    dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
+    self.assertion_fn(dist[0].mean(), loc)  # Not slicing loc.
+    self.assertion_fn(dist[0].stddev(), scale_diag[0])
+
+  def test_slice_ellipsis(self):
+    loc = jnp.array(np.random.randn(3, 4, 5))
+    scale_diag = jnp.array(np.random.randn(3, 4, 5))
+    dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
+    self.assertion_fn(dist[..., -1].mean(), loc[:, -1])
+    self.assertion_fn(dist[..., -1].stddev(), scale_diag[:, -1])
+
 
 if __name__ == '__main__':
   absltest.main()

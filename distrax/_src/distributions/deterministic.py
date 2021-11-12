@@ -80,12 +80,12 @@ class Deterministic(distribution.Distribution):
   @property
   def atol(self) -> Array:
     """Absolute tolerance for comparing closeness to `loc`."""
-    return self._atol
+    return jnp.broadcast_to(self._atol, self.batch_shape)
 
   @property
   def rtol(self) -> Array:
     """Relative tolerance for comparing closeness to `loc`."""
-    return self._rtol
+    return jnp.broadcast_to(self._rtol, self.batch_shape)
 
   @property
   def slack(self) -> Array:
@@ -142,6 +142,12 @@ class Deterministic(distribution.Distribution):
   def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
     return jnp.where(value >= self.loc - self.slack, 1., 0.)
+
+  def __getitem__(self, index) -> 'Deterministic':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Deterministic(
+        loc=self.loc[index], atol=self.atol[index], rtol=self.rtol[index])
 
 
 def _kl_divergence_deterministic_deterministic(
