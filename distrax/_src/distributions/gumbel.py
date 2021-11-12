@@ -17,6 +17,7 @@
 from typing import Tuple, Union
 
 import chex
+from distrax._src.distributions import distribution
 from distrax._src.bijectors import gumbel_cdf
 from distrax._src.bijectors import inverse
 from distrax._src.distributions import transformed
@@ -83,7 +84,7 @@ class Gumbel(transformed.Transformed):
     z = (value - self._loc) / self._scale
     return -(z + jnp.exp(-z)) - jnp.log(self._scale)
 
-  def entropy(self) -> Array:
+  def entropy(self) -> Array:  # pylint:disable=arguments-differ
     """Calculates the Shannon entropy (in nats)."""
     return jnp.log(self._scale) + 1 + jnp.euler_gamma
 
@@ -114,6 +115,12 @@ class Gumbel(transformed.Transformed):
   def median(self) -> Array:
     """Calculates the median."""
     return self._loc - self._scale * jnp.log(jnp.log(2))
+
+  def __getitem__(self, index) -> 'Gumbel':
+    """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
+    return Gumbel(
+        loc=self.loc[index], scale=self.scale[index])
 
 
 def _kl_divergence_gumbel_gumbel(
