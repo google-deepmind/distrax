@@ -39,7 +39,7 @@ class OneHotCategorical(categorical.Categorical):
   def __init__(self,
                logits: Optional[Array] = None,
                probs: Optional[Array] = None,
-               dtype: jnp.dtype = jnp.int_):
+               dtype: jnp.dtype = int):
     """Initializes a OneHotCategorical distribution.
 
     Args:

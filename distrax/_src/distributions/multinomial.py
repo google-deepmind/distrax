@@ -44,7 +44,7 @@ class Multinomial(distribution.Distribution):
                total_count: Numeric,
                logits: Optional[Array] = None,
                probs: Optional[Array] = None,
-               dtype: jnp.dtype = jnp.int_):
+               dtype: jnp.dtype = int):
     """Initializes a Multinomial distribution.
 
     Args:

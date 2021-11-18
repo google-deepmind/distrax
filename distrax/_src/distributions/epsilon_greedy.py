@@ -46,7 +46,7 @@ class EpsilonGreedy(categorical.Categorical):
   def __init__(self,
                preferences: Array,
                epsilon: float,
-               dtype: jnp.dtype = jnp.int_):
+               dtype: jnp.dtype = int):
     """Initializes an EpsilonGreedy distribution.
 
     Args:

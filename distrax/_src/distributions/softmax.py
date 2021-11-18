@@ -35,7 +35,7 @@ class Softmax(categorical.Categorical):
   def __init__(self,
                logits: Array,
                temperature: float = 1.,
-               dtype: jnp.dtype = jnp.int_):
+               dtype: jnp.dtype = int):
     """Initializes a Softmax distribution.
 
     Args:

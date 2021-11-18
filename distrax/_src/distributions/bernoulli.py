@@ -43,7 +43,7 @@ class Bernoulli(distribution.Distribution):
   def __init__(self,
                logits: Optional[Numeric] = None,
                probs: Optional[Numeric] = None,
-               dtype: jnp.dtype = jnp.int_):
+               dtype: jnp.dtype = int):
     """Initializes a Bernoulli distribution.
 
     Args:

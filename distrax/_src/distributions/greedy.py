@@ -37,9 +37,7 @@ class Greedy(categorical.Categorical):
   all other indices will be assigned a probability of zero.
   """
 
-  def __init__(self,
-               preferences: Array,
-               dtype: jnp.dtype = jnp.int_):
+  def __init__(self, preferences: Array, dtype: jnp.dtype = int):
     """Initializes a Greedy distribution.
 
     Args:
