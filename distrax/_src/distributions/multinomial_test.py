@@ -28,6 +28,7 @@ from scipy import stats
 
 
 RTOL = 1e-3
+ATOL = 1e-6
 
 
 class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
@@ -39,7 +40,8 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         [4, 3], dtype=np.float32)  # float dtype required for TFP
     self.probs = 0.5 * np.asarray([0.1, 0.4, 0.2, 0.3])  # unnormalized
     self.logits = np.log(self.probs)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+    self.assertion_fn = lambda x, y: np.testing.assert_allclose(  # pylint: disable=g-long-lambda
+        x, y, rtol=RTOL, atol=ATOL)
 
   @parameterized.named_parameters(
       ('from probs', False),
@@ -554,10 +556,12 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         assertion_fn=self.assertion_fn)
 
   def test_jittable(self):
-    super()._test_jittable(dist_kwargs={
-        'probs': np.asarray([1.0, 0.0, 0.0]),
-        'total_count': np.asarray([3, 10]),
-    })
+    super()._test_jittable(
+        dist_kwargs={
+            'probs': np.asarray([1.0, 0.0, 0.0]),
+            'total_count': np.asarray([3, 10])
+        },
+        assertion_fn=self.assertion_fn)
 
   @parameterized.named_parameters(
       ('single element', 2),
