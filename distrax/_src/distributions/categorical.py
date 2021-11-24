@@ -96,7 +96,11 @@ class Categorical(distribution.Distribution):
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     value_one_hot = jax.nn.one_hot(value, self.num_categories)
-    return jnp.sum(math.multiply_no_nan(self.logits, value_one_hot), axis=-1)
+    mask_outside_domain = jnp.logical_or(
+        value < 0, value > self.num_categories - 1)
+    return jnp.where(
+        mask_outside_domain, -jnp.inf,
+        jnp.sum(math.multiply_no_nan(self.logits, value_one_hot), axis=-1))
 
   def prob(self, value: Array) -> Array:
     """See `Distribution.prob`."""

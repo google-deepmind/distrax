@@ -326,6 +326,15 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         call_args=(value,),
         assertion_fn=self.assertion_fn)
 
+  @chex.all_variants
+  def test_pdf_outside_domain(self):
+    probs = jnp.asarray([0.2, 0.3, 0.5])
+    dist = self.distrax_cls(probs=probs)
+    value = jnp.asarray([-1, -2, 3, 4], dtype=jnp.int32)
+    self.assertion_fn(
+        self.variant(dist.prob)(value), np.asarray([0., 0., 0., 0.]))
+    self.assertTrue(np.all(jnp.isinf(self.variant(dist.log_prob)(value))))
+
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('entropy; from 2d logits',
