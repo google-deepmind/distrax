@@ -140,3 +140,14 @@ class LowerUpperTriangularAffine(base.Bijector):
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     return self.inverse(y), self.inverse_log_det_jacobian(y)
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    if type(other) is LowerUpperTriangularAffine:  # pylint: disable=unidiomatic-typecheck
+      return all((
+          self.lower is other.lower,
+          self.upper is other.upper,
+          self.bias is other.bias,
+      ))
+    else:
+      return False

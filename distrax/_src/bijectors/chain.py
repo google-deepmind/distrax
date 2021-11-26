@@ -107,3 +107,18 @@ class Chain(base.Bijector):
       y, ld = bijector.inverse_and_log_det(y)
       log_det += ld
     return y, log_det
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    if type(other) is Chain:  # pylint: disable=unidiomatic-typecheck
+      if len(self.bijectors) != len(other.bijectors):
+        return False
+      for bij1, bij2 in zip(self.bijectors, other.bijectors):
+        if not bij1.same_as(bij2):
+          return False
+      return True
+    elif len(self.bijectors) == 1:
+      return self.bijectors[0].same_as(other)
+
+    return False
+

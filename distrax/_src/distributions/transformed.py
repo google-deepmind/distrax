@@ -231,6 +231,8 @@ def _kl_divergence_transformed_transformed(
   method proceeds as follows:
   - If both bijectors are the same instance of a Distrax bijector, then they are
     declared equal.
+  - If not the same instance, we check if they are equal according to their
+    `same_as` predicate.
   - Otherwise, the string representation of the Jaxpr of the `forward` method
     of each bijector is compared. If both string representations are equal, the
     bijectors are declared equal.
@@ -261,7 +263,7 @@ def _kl_divergence_transformed_transformed(
   bij2 = conversion.as_bijector(dist2.bijector)
 
   # Check if the bijectors are different.
-  if bij1 != bij2:
+  if bij1 != bij2 and not bij1.same_as(bij2):
     if input_hint is None:
       input_hint = jnp.zeros(
           dist1.distribution.event_shape, dtype=dist1.distribution.dtype)

@@ -134,3 +134,17 @@ class Lambda(base.Bijector):
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     return self.inverse(y), self.inverse_log_det_jacobian(y)
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    if type(other) is Lambda:  # pylint: disable=unidiomatic-typecheck
+      return all((
+          self.forward is other.forward,
+          self.inverse is other.inverse,
+          self.forward_log_det_jacobian is other.forward_log_det_jacobian,
+          self.inverse_log_det_jacobian is other.inverse_log_det_jacobian,
+          self.forward_and_log_det is other.forward_and_log_det,
+          self.inverse_and_log_det is other.inverse_and_log_det,
+      ))
+
+    return False

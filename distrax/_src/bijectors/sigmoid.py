@@ -68,6 +68,10 @@ class Sigmoid(base.Bijector):
     x = jnp.log(y) - jnp.log1p(-y)
     return x, -self.forward_log_det_jacobian(x)
 
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    return type(other) is Sigmoid  # pylint: disable=unidiomatic-typecheck
+
 
 def _more_stable_sigmoid(x):
   """Where extremely negatively saturated, approximate sigmoid with exp(x)."""

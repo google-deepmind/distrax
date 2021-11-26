@@ -166,6 +166,11 @@ class Bijector(jittable.Jittable, metaclass=abc.ABCMeta):
     """Name of the bijector."""
     return self.__class__.__name__
 
+  def same_as(self, other: "Bijector") -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    del other
+    return False
+
   def _check_forward_input_shape(self, x: Array) -> None:
     """Checks that the input `x` to a forward method has valid shape."""
     x_ndims = len(jnp.shape(x))

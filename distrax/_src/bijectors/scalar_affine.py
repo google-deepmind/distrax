@@ -119,3 +119,14 @@ class ScalarAffine(base.Bijector):
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     return self.inverse(y), self.inverse_log_det_jacobian(y)
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    if type(other) is ScalarAffine:  # pylint: disable=unidiomatic-typecheck
+      return all((
+          self.shift is other.shift,
+          self.scale is other.scale,
+          self.log_scale is other.log_scale,
+      ))
+    else:
+      return False

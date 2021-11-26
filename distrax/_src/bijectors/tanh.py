@@ -62,3 +62,7 @@ class Tanh(base.Bijector):
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     x = jnp.arctanh(y)
     return x, -self.forward_log_det_jacobian(x)
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    return type(other) is Tanh  # pylint: disable=unidiomatic-typecheck

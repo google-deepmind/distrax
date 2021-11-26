@@ -81,3 +81,9 @@ class Inverse(base.Bijector):
   def name(self) -> str:
     """Name of the bijector."""
     return self.__class__.__name__ + self._bijector.name
+
+  def same_as(self, other: base.Bijector) -> bool:
+    """Returns True if this bijector is guaranteed to be the same as `other`."""
+    if type(other) is Inverse:  # pylint: disable=unidiomatic-typecheck
+      return self.bijector.same_as(other.bijector)
+    return False
