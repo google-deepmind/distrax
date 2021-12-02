@@ -50,6 +50,7 @@ from distrax._src.distributions.normal import Normal
 from distrax._src.distributions.one_hot_categorical import OneHotCategorical
 from distrax._src.distributions.quantized import Quantized
 from distrax._src.distributions.softmax import Softmax
+from distrax._src.distributions.straight_through import straight_through_wrapper
 from distrax._src.distributions.transformed import Transformed
 from distrax._src.distributions.uniform import Uniform
 
@@ -71,6 +72,7 @@ __version__ = "0.1.0"
 __all__ = (
     "as_bijector",
     "as_distribution",
+    "straight_through_wrapper",
     "Bernoulli",
     "Bijector",
     "BijectorLike",

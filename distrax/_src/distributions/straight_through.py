@@ -13,14 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 """Straight-through gradient sampling distribution."""
-import distrax
 from distrax._src.distributions import categorical
+from distrax._src.distributions import distribution
 import jax
 
 
 def straight_through_wrapper(  # pylint: disable=invalid-name
     Distribution,
-    ) -> distrax.DistributionLike:
+    ) -> distribution.DistributionLike:
   """Wrap a distribution to use straight-through gradient for samples."""
 
   def sample(self, seed, sample_shape=()):  # pylint: disable=g-doc-args
