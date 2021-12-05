@@ -351,14 +351,8 @@ which the Hidden Markov Model and associated example are based.
 
 ## Citing Distrax
 
-To cite this repository:
+This repository is part of the [DeepMind JAX Ecosystem]. To cite Distrax please
+use the [DeepMind JAX Ecosystem citation].
 
-```
-@software{distrax2021github,
-  author = {Jake Bruce and David Budden and Matteo Hessel and George Papamakarios and Francisco Ruiz},
-  title = {Distrax: Probability distributions in {JAX}},
-  url = {http://github.com/deepmind/distrax},
-  version = {0.0.1},
-  year = {2021},
-}
-```
+[DeepMind JAX Ecosystem]: https://deepmind.com/blog/article/using-jax-to-accelerate-our-research "DeepMind JAX Ecosystem"
+[DeepMind JAX Ecosystem citation]: https://github.com/deepmind/jax/blob/main/deepmind2020jax.txt "Citation"
