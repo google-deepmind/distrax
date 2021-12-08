@@ -343,8 +343,14 @@ class EquivalenceTest(absltest.TestCase):
       self,
       dist_args: Tuple[Any, ...] = (),
       dist_kwargs: Optional[Dict[str, Any]] = None,
-      error_type=ValueError):
+      error_type=AssertionError):
     """Tests that the instantiation of the distribution raises an error."""
     dist_kwargs = dist_kwargs or {}
-    with self.assertRaises(error_type):
-      self.distrax_cls(*dist_args, **dist_kwargs)
+    try:
+      with self.assertRaises(error_type):
+        self.distrax_cls(*dist_args, **dist_kwargs)
+    except ValueError:
+      # For forward compatibility with Chex (it will raise AssertionErrors
+      # instead of ValueErrors in the new version) .
+      # TODO(iukemaev): remove after the new version of Chex is released.
+      pass
