@@ -14,6 +14,8 @@
 # ==============================================================================
 """Tests for `multinomial.py`."""
 
+import functools
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -506,7 +508,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(**dist_params)
     expected_result = np.asarray([0., 0.])
     np.testing.assert_allclose(
-        self.variant(dist.entropy)(), expected_result, atol=1e-5)
+        self.variant(dist.entropy)(), expected_result, atol=3e-4)
 
   @chex.all_variants(with_pmap=False)
   def test_entropy_scalar(self):
@@ -556,12 +558,14 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         assertion_fn=self.assertion_fn)
 
   def test_jittable(self):
+    assertion_fn = functools.partial(np.testing.assert_allclose, atol=3e-4,
+                                     rtol=RTOL)
     super()._test_jittable(
         dist_kwargs={
             'probs': np.asarray([1.0, 0.0, 0.0]),
             'total_count': np.asarray([3, 10])
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=assertion_fn)
 
   @parameterized.named_parameters(
       ('single element', 2),
