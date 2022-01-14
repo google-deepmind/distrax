@@ -14,18 +14,16 @@
 # ==============================================================================
 """LU-decomposed affine bijector."""
 
-from typing import Tuple
-
 from distrax._src.bijectors import bijector as base
-from distrax._src.bijectors import unconstrained_affine
-import jax
+from distrax._src.bijectors import chain
+from distrax._src.bijectors import triangular_affine
 import jax.numpy as jnp
 
 
 Array = base.Array
 
 
-class LowerUpperTriangularAffine(base.Bijector):
+class LowerUpperTriangularAffine(chain.Chain):
   """An affine bijector whose weight matrix is parameterized as A = LU.
 
   This bijector is defined as `f(x) = Ax + b` where:
@@ -67,79 +65,33 @@ class LowerUpperTriangularAffine(base.Bijector):
         generally not equal to the product `LU`.
       bias: the vector `b` in `LUx + b`. Can also be a batch of vectors.
     """
-    super().__init__(event_ndims_in=1, is_constant_jacobian=True)
-    self._batch_shape = unconstrained_affine.common_batch_shape(matrix, bias)
-    self._bias = bias
-
-    def compute_lu(matrix):
-      # Lower-triangular matrix with ones on the diagonal.
-      lower = jnp.eye(matrix.shape[-1]) + jnp.tril(matrix, -1)
-      # Upper-triangular matrix.
-      upper = jnp.triu(matrix)
-      # Log absolute determinant.
-      logdet = jnp.sum(jnp.log(jnp.abs(jnp.diag(matrix))))
-      return lower, upper, logdet
-
-    compute_lu = jnp.vectorize(compute_lu, signature="(m,m)->(m,m),(m,m),()")
-    self._lower, self._upper, self._logdet = compute_lu(matrix)
+    if matrix.ndim < 2:
+      raise ValueError(f"`matrix` must have at least 2 dimensions, got"
+                       f" {matrix.ndim}.")
+    dim = matrix.shape[-1]
+    # z = Ux
+    self._upper_linear = triangular_affine.TriangularAffine(
+        matrix, bias=jnp.zeros((dim,)), is_lower=False)
+    # y = Lz + b
+    lower = jnp.eye(dim) + jnp.tril(matrix, -1)  # Replace diagonal with ones.
+    self._lower_affine = triangular_affine.TriangularAffine(
+        lower, bias, is_lower=True)
+    super().__init__([self._lower_affine, self._upper_linear])
 
   @property
   def lower(self) -> Array:
     """The lower triangular matrix `L` with ones in the diagonal."""
-    return self._lower
+    return self._lower_affine.matrix
 
   @property
   def upper(self) -> Array:
     """The upper triangular matrix `U`."""
-    return self._upper
+    return self._upper_linear.matrix
 
   @property
   def bias(self) -> Array:
     """The shift `b` of the transformation."""
-    return self._bias
-
-  def forward(self, x: Array) -> Array:
-    """Computes y = f(x)."""
-    self._check_forward_input_shape(x)
-
-    def unbatched(single_x, lower, upper, bias):
-      return lower @ (upper @ single_x) + bias
-
-    batched = jnp.vectorize(unbatched, signature="(m),(m,m),(m,m),(m)->(m)")
-    return batched(x, self._lower, self._upper, self._bias)
-
-  def forward_log_det_jacobian(self, x: Array) -> Array:
-    """Computes log|det J(f)(x)|."""
-    self._check_forward_input_shape(x)
-    batch_shape = jax.lax.broadcast_shapes(self._batch_shape, x.shape[:-1])
-    return jnp.broadcast_to(self._logdet, batch_shape)
-
-  def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
-    """Computes y = f(x) and log|det J(f)(x)|."""
-    return self.forward(x), self.forward_log_det_jacobian(x)
-
-  def inverse(self, y: Array) -> Array:
-    """Computes x = f^{-1}(y)."""
-    self._check_inverse_input_shape(y)
-
-    def unbatched(single_y, lower, upper, bias):
-      x = single_y - bias
-      x = jax.scipy.linalg.solve_triangular(
-          lower, x, lower=True, unit_diagonal=True)
-      x = jax.scipy.linalg.solve_triangular(
-          upper, x, lower=False, unit_diagonal=False)
-      return x
-
-    batched = jnp.vectorize(unbatched, signature="(m),(m,m),(m,m),(m)->(m)")
-    return batched(y, self._lower, self._upper, self._bias)
-
-  def inverse_log_det_jacobian(self, y: Array) -> Array:
-    """Computes log|det J(f^{-1})(y)|."""
-    return -self.forward_log_det_jacobian(y)
-
-  def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
-    """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
-    return self.inverse(y), self.inverse_log_det_jacobian(y)
+    return self._lower_affine.bias
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""

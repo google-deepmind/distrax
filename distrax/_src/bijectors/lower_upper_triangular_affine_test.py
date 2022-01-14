@@ -35,11 +35,26 @@ class LowerUpperTriangularAffineTest(parameterized.TestCase):
 
   def test_properties(self):
     bijector = LowerUpperTriangularAffine(
-        matrix=jnp.eye(4),
-        bias=jnp.ones((4,)))
-    np.testing.assert_allclose(bijector.lower, np.eye(4), atol=1e-6)
-    np.testing.assert_allclose(bijector.upper, np.eye(4), atol=1e-6)
-    np.testing.assert_allclose(bijector.bias, np.ones((4,)), atol=1e-6)
+        matrix=jnp.array([[2., 3.], [4., 5.]]),
+        bias=jnp.ones((2,)))
+    np.testing.assert_allclose(
+        bijector.lower, np.array([[1., 0.], [4., 1.]]), atol=1e-6)
+    np.testing.assert_allclose(
+        bijector.upper, np.array([[2., 3.], [0., 5.]]), atol=1e-6)
+    np.testing.assert_allclose(bijector.bias, np.ones((2,)), atol=1e-6)
+
+  @parameterized.named_parameters(
+      ('matrix is 0d', {'matrix': np.zeros(()), 'bias': np.zeros((4,))}),
+      ('matrix is 1d', {'matrix': np.zeros((4,)), 'bias': np.zeros((4,))}),
+      ('bias is 0d', {'matrix': np.zeros((4, 4)), 'bias': np.zeros(())}),
+      ('matrix is not square',
+       {'matrix': np.zeros((3, 4)), 'bias': np.zeros((4,))}),
+      ('matrix and bias shapes do not agree',
+       {'matrix': np.zeros((4, 4)), 'bias': np.zeros((3,))}),
+  )
+  def test_raises_with_invalid_parameters(self, bij_params):
+    with self.assertRaises(ValueError):
+      LowerUpperTriangularAffine(**bij_params)
 
   @chex.all_variants
   @parameterized.parameters(
