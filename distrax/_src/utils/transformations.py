@@ -176,7 +176,7 @@ def _dependent_variables(jaxpr, dependent=None):
 
   for eqn in jaxpr.eqns:
     # If primitive is an xla_call, get subexpressions and evaluate recursively
-    call_jaxpr, _ = jax.core.extract_call_jaxpr(eqn.primitive, eqn.params)
+    call_jaxpr, _ = _extract_call_jaxpr(eqn.primitive, eqn.params)
     if call_jaxpr:
       to_name = dict(zip(eqn.invars, call_jaxpr.invars))
       arg_dependence = set(to_name[v] for v in eqn.invars if v in dependent)
@@ -256,7 +256,7 @@ def _interpret_inverse(jaxpr, consts, *args):
     var_idx = _identify_variable_in_eqn(eqn)
 
     # if primitive is an xla_call, get subexpressions and evaluate recursively
-    call_jaxpr, params = jax.core.extract_call_jaxpr(eqn.primitive, eqn.params)
+    call_jaxpr, params = _extract_call_jaxpr(eqn.primitive, eqn.params)
     if call_jaxpr:
       subfuns = [jax.linear_util.wrap_init(
           functools.partial(_interpret_inverse, call_jaxpr, ()))]
@@ -301,3 +301,11 @@ def _interpret_inverse(jaxpr, consts, *args):
                      "cannot be inverted.")
 
   return jax.api_util.safe_map(read, jaxpr.invars)
+
+
+def _extract_call_jaxpr(primitive, params):
+  if not (primitive.call_primitive or primitive.map_primitive):
+    return None, params
+  else:
+    params = dict(params)
+    return params.pop("call_jaxpr"), params
