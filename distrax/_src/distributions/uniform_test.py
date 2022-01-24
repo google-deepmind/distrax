@@ -167,4 +167,5 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertion_fn(dist[..., -1].high, high)  # Not slicing high.
 
 if __name__ == '__main__':
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

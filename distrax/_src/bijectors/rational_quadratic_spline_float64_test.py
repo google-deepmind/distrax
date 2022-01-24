@@ -23,12 +23,12 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.bijectors import rational_quadratic_spline
-from jax.config import config as jax_config
+import jax
 import jax.numpy as jnp
 
 
 def setUpModule():
-  jax_config.update('jax_enable_x64', True)
+  jax.config.update('jax_enable_x64', True)
 
 
 class RationalQuadraticSplineFloat64Test(chex.TestCase):
@@ -65,4 +65,6 @@ class RationalQuadraticSplineFloat64Test(chex.TestCase):
 
 
 if __name__ == '__main__':
+  # Substantially reduces testing time.
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

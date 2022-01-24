@@ -22,6 +22,7 @@ from distrax._src.distributions import independent
 from distrax._src.distributions import quantized
 from distrax._src.distributions import uniform
 from distrax._src.utils import equivalence
+import jax
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
@@ -390,4 +391,6 @@ class QuantizedSlicingTest(parameterized.TestCase):
 
 
 if __name__ == '__main__':
+  # Substantially reduces testing time.
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

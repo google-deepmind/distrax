@@ -86,4 +86,5 @@ def _check_kl_estimator(estimator_fn, distribution_fn, num_samples=10000,
 
 
 if __name__ == '__main__':
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

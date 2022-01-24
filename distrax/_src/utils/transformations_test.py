@@ -173,4 +173,5 @@ class TransformationsTest(parameterized.TestCase):
 
 
 if __name__ == '__main__':
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

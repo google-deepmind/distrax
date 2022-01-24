@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import logistic
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -231,4 +232,5 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
 
 
 if __name__ == '__main__':
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()

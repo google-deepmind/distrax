@@ -178,4 +178,5 @@ class LogStddevNormalTest(parameterized.TestCase):
     np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=RTOL)
 
 if __name__ == '__main__':
+  jax.config.update('jax_disable_most_optimizations', True)
   absltest.main()
