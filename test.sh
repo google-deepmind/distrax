@@ -57,10 +57,14 @@ pytype `find distrax/_src/ -name "*py" | xargs` -k
 mkdir _testing && cd _testing
 
 # Main tests.
+
+# Disable JAX optimizations to speed up tests.
+export JAX_DISABLE_MOST_OPTIMIZATIONS=True
 pytest -n "$(grep -c ^processor /proc/cpuinfo)" `find ../distrax/_src/ -name "*_test.py" | sort` -k 'not _float64_test'
 
 # Isolate tests that set double precision.
 pytest -n "$(grep -c ^processor /proc/cpuinfo)" `find ../distrax/_src/ -name "*_test.py" | sort` -k '_float64_test'
+unset JAX_DISABLE_MOST_OPTIMIZATIONS
 
 cd ..
 
