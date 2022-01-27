@@ -39,6 +39,7 @@ from distrax._src.distributions.distribution import DistributionLike
 from distrax._src.distributions.epsilon_greedy import EpsilonGreedy
 from distrax._src.distributions.gamma import Gamma
 from distrax._src.distributions.greedy import Greedy
+from distrax._src.distributions.gumbel import Gumbel
 from distrax._src.distributions.independent import Independent
 from distrax._src.distributions.laplace import Laplace
 from distrax._src.distributions.log_stddev_normal import LogStddevNormal
@@ -85,6 +86,7 @@ __all__ = (
     "estimate_kl_best_effort",
     "Gamma",
     "Greedy",
+    "Gumbel",
     "HMM",
     "importance_sampling_ratios",
     "Independent",

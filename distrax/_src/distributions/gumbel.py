@@ -18,11 +18,7 @@ import math
 from typing import Tuple, Union
 
 import chex
-from distrax._src.bijectors import gumbel_cdf
-from distrax._src.bijectors import inverse
 from distrax._src.distributions import distribution
-from distrax._src.distributions import transformed
-from distrax._src.distributions import uniform
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
@@ -32,9 +28,10 @@ tfd = tfp.distributions
 
 Array = chex.Array
 Numeric = chex.Numeric
+PRNGKey = chex.PRNGKey
 
 
-class Gumbel(transformed.Transformed):
+class Gumbel(distribution.Distribution):
   """Gumbel distribution with location `loc` and `scale` parameters."""
 
   equiv_tfp_cls = tfd.Gumbel
@@ -46,20 +43,11 @@ class Gumbel(transformed.Transformed):
       loc: Mean of the distribution.
       scale: Spread of the distribution.
     """
-    loc = conversion.as_float_array(loc)
-    scale = conversion.as_float_array(scale)
-    gumbel_bijector = gumbel_cdf.GumbelCDF(loc=loc, scale=scale)
-    dtype = jnp.result_type(loc, scale)
-    batch_shape = jax.lax.broadcast_shapes(loc.shape, scale.shape)
-    super().__init__(
-        distribution=uniform.Uniform(
-            low=jnp.broadcast_to(jnp.finfo(dtype).tiny, batch_shape),
-            high=jnp.ones_like(loc, dtype=dtype)),
-        bijector=inverse.Inverse(gumbel_bijector))
-    self._loc = loc
-    self._scale = scale
-    self._batch_shape = batch_shape
-    self._dtype = dtype
+    super().__init__()
+    self._loc = conversion.as_float_array(loc)
+    self._scale = conversion.as_float_array(scale)
+    self._batch_shape = jax.lax.broadcast_shapes(
+        self._loc.shape, self._scale.shape)
 
   @property
   def event_shape(self) -> Tuple[int, ...]:
@@ -89,6 +77,23 @@ class Gumbel(transformed.Transformed):
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
     return -(z + jnp.exp(-z)) - jnp.log(self._scale)
+
+  def _sample_from_std_gumbel(self, key: PRNGKey, n: int) -> Array:
+    out_shape = (n,) + self.batch_shape
+    dtype = jnp.result_type(self._loc, self._scale)
+    return jax.random.gumbel(key, shape=out_shape, dtype=dtype)
+
+  def _sample_n(self, key: PRNGKey, n: int) -> Array:
+    """See `Distribution._sample_n`."""
+    rnd = self._sample_from_std_gumbel(key, n)
+    return self._scale * rnd + self._loc
+
+  def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
+    """See `Distribution._sample_n_and_log_prob`."""
+    rnd = self._sample_from_std_gumbel(key, n)
+    samples = self._scale * rnd + self._loc
+    log_prob = -(rnd + jnp.exp(-rnd)) - jnp.log(self._scale)
+    return samples, log_prob
 
   def entropy(self) -> Array:  # pylint:disable=arguments-differ
     """Calculates the Shannon entropy (in nats)."""
