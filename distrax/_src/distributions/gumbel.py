@@ -95,7 +95,7 @@ class Gumbel(distribution.Distribution):
     log_prob = -(rnd + jnp.exp(-rnd)) - jnp.log(self._scale)
     return samples, log_prob
 
-  def entropy(self) -> Array:  # pylint:disable=arguments-differ
+  def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
     return jnp.log(self._scale) + 1. + jnp.euler_gamma
 
