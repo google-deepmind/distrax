@@ -14,52 +14,39 @@
 # ==============================================================================
 """GumbelCDF bijector."""
 
-from typing import Tuple, Union
+from typing import Tuple
 
 from distrax._src.bijectors import bijector as base
-from distrax._src.utils import conversion
 import jax.numpy as jnp
 
 Array = base.Array
-Numeric = Union[Array, float]
 
 
 class GumbelCDF(base.Bijector):
-  """A bijector that computes the Gumbel cumulative density function (CDF)."""
+  """A bijector that computes the Gumbel cumulative density function (CDF).
 
-  def __init__(self, loc: Numeric = 0., scale: Numeric = 1.):
-    """Initializes a Gumbel bijector."""
+  The Gumbel CDF is given by `y = f(x) = exp(-exp(-x))` for a scalar input `x`.
+  Its inverse is `x = -log(-log(y))`. The log-det Jacobian of the transformation
+  is `log df/dx = -exp(-x) - x`.
+  """
+
+  def __init__(self):
+    """Initializes a GumbelCDF bijector."""
     super().__init__(event_ndims_in=0)
-    self._loc = conversion.as_float_array(loc)
-    self._scale = conversion.as_float_array(scale)
-
-  @property
-  def loc(self) -> Numeric:
-    """The bijector's location."""
-    return self._loc
-
-  @property
-  def scale(self) -> Numeric:
-    """The bijector's scale."""
-    return self._scale
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
-    z = (x - self._loc) / self._scale
-    y = jnp.exp(-jnp.exp(-z))
-    log_det = -z - jnp.exp(-z) - jnp.log(self._scale)
+    exp_neg_x = jnp.exp(-x)
+    y = jnp.exp(-exp_neg_x)
+    log_det = - x - exp_neg_x
     return y, log_det
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
-    x = self._loc - self._scale * jnp.log(-jnp.log(y))
-    return x, jnp.log(self._scale / (-jnp.log(y) * y))
+    log_y = jnp.log(y)
+    x = -jnp.log(-log_y)
+    return x, x - log_y
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""
-    if type(other) is GumbelCDF:  # pylint: disable=unidiomatic-typecheck
-      return all((
-          self.loc is other.loc,
-          self.scale is other.scale,
-      ))
-    return False
+    return type(other) is GumbelCDF  # pylint: disable=unidiomatic-typecheck
