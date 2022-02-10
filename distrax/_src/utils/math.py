@@ -66,7 +66,11 @@ def normalize(
   """Normalize logits (via log_softmax) or probs (ensuring they sum to one)."""
   if logits is None:
     probs = jnp.asarray(probs)
-    return probs / probs.sum(axis=-1, keepdims=True)
+    probs = probs / probs.sum(axis=-1, keepdims=True)
+    is_valid = jnp.logical_and(
+        jnp.all(jnp.isfinite(probs)), jnp.all(probs >= 0))
+    assert jnp.all(is_valid)
+    return probs
   else:
     logits = jnp.asarray(logits)
     return jax.nn.log_softmax(logits, axis=-1)
