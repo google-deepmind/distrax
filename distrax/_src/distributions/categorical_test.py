@@ -48,6 +48,24 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertion_fn(dist.logits, math.normalize(logits=self.logits))
     self.assertion_fn(dist.probs, math.normalize(probs=self.p))
 
+  @chex.all_variants
+  def test_negative_probs(self):
+    """Check sample returns -1 if probs are negative after normalization."""
+    dist = self.distrax_cls(probs=np.asarray([0.1, -0.4, 0.2, 0.3]))
+    sample_fn = self.variant(
+        lambda key: dist.sample(seed=key, sample_shape=100))
+    samples = sample_fn(self.key)
+    self.assertion_fn(samples, -1 * np.ones_like((samples)))
+
+  @chex.all_variants
+  def test_nan_probs(self):
+    """Checks sample returns -1 if probs are nan after normalization."""
+    dist = self.distrax_cls(probs=np.asarray([-0.1, 0.1, 0.0, 0.0]))
+    sample_fn = self.variant(
+        lambda key: dist.sample(seed=key, sample_shape=100))
+    samples = sample_fn(self.key)
+    self.assertion_fn(samples, -1 * np.ones_like((samples)))
+
   def test_invalid_parameters(self):
     self._test_raises_error(
         dist_kwargs={'logits': self.logits, 'probs': self.p})
