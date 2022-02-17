@@ -89,9 +89,11 @@ class Categorical(distribution.Distribution):
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
     new_shape = (n,) + self.logits.shape[:-1]
-    draws = jax.random.categorical(
-        key=key, logits=self.logits, axis=-1, shape=new_shape)
-    return draws.astype(self._dtype)
+    is_valid = jnp.logical_and(jnp.all(jnp.isfinite(self.probs), axis=-1),
+                               jnp.all(self.probs >= 0, axis=-1))
+    draws = jax.random.categorical(key=key, logits=self.logits, axis=-1,
+                                   shape=new_shape).astype(self._dtype)
+    return jnp.where(is_valid, draws, jnp.ones_like(draws) * -1)
 
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""

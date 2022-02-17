@@ -59,10 +59,14 @@ class OneHotCategorical(categorical.Categorical):
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
     new_shape = (n,) + self.logits.shape[:-1]
+    is_valid = jnp.logical_and(
+        jnp.all(jnp.isfinite(self.probs), axis=-1, keepdims=True),
+        jnp.all(self.probs >= 0, axis=-1, keepdims=True))
     draws = jax.random.categorical(
         key=key, logits=self.logits, axis=-1, shape=new_shape)
-    draws_one_hot = jax.nn.one_hot(draws, num_classes=self.num_categories)
-    return draws_one_hot.astype(self._dtype)
+    draws_one_hot = jax.nn.one_hot(
+        draws, num_classes=self.num_categories).astype(self._dtype)
+    return jnp.where(is_valid, draws_one_hot, jnp.ones_like(draws_one_hot) * -1)
 
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""

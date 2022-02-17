@@ -54,6 +54,28 @@ class OneHotCategoricalTest(
     self.assertion_fn(dist.logits, math.normalize(logits=self.logits))
     self.assertion_fn(dist.probs, math.normalize(probs=self.p))
 
+  @chex.all_variants
+  def test_negative_probs(self):
+    """Check sample returns -1 if probs are negative after normalization."""
+    dist = self.distrax_cls(probs=np.asarray([[0.1, -0.4, 0.2, 0.3],
+                                              [0.1, 0.1, 0.6, 0.2]]))
+    sample_fn = self.variant(
+        lambda key: dist.sample(seed=key, sample_shape=100))
+    samples = sample_fn(self.key)
+    self.assertion_fn(samples[:, 0, :], -1)
+    np.testing.assert_array_compare(lambda x, y: x >= y, samples[:, 1, :], 0)
+
+  @chex.all_variants
+  def test_nan_probs(self):
+    """Checks sample returns -1 if probs are nan after normalization."""
+    dist = self.distrax_cls(
+        probs=np.asarray([[-0.1, 0.1, 0.0, 0.0], [0.1, 0.1, 0.6, 0.2]]))
+    sample_fn = self.variant(
+        lambda key: dist.sample(seed=key, sample_shape=100))
+    samples = sample_fn(self.key)
+    self.assertion_fn(samples[:, 0, :], -1)
+    np.testing.assert_array_compare(lambda x, y: x >= y, samples[:, 1, :], 0)
+
   @parameterized.named_parameters(
       ('from probs', False),
       ('from logits', True))
