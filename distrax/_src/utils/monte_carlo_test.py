@@ -17,6 +17,7 @@
 from absl.testing import absltest
 
 import chex
+from distrax._src.distributions import mvn_diag
 from distrax._src.distributions import normal
 from distrax._src.utils import monte_carlo
 import haiku as hk
@@ -25,7 +26,7 @@ import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
 
-class McKlTest(absltest.TestCase):
+class McTest(absltest.TestCase):
 
   def test_estimate_kl_with_dice(self):
     batch_size = 5
@@ -55,6 +56,29 @@ class McKlTest(absltest.TestCase):
                         tfp.distributions.Normal)
     _check_kl_estimator(monte_carlo.mc_estimate_kl_with_reparameterized,
                         normal.Normal)
+
+  def test_estimate_mode(self):
+    with self.subTest('ScalarEventShape'):
+      distribution = normal.Normal(
+          loc=np.zeros((4, 5, 100)),
+          scale=np.ones((4, 5, 100)))
+      mode_estimate = monte_carlo.mc_estimate_mode(
+          distribution, rng_key=42, num_samples=100)
+      mean_mode_estimate = np.abs(np.mean(mode_estimate))
+      self.assertLess(mean_mode_estimate, 1e-3)
+    with self.subTest('NonScalarEventShape'):
+      distribution = mvn_diag.MultivariateNormalDiag(
+          loc=np.zeros((4, 5, 100)),
+          scale_diag=np.ones((4, 5, 100)))
+      mv_mode_estimate = monte_carlo.mc_estimate_mode(
+          distribution, rng_key=42, num_samples=100)
+      mean_mv_mode_estimate = np.abs(np.mean(mv_mode_estimate))
+      self.assertLess(mean_mv_mode_estimate, 1e-1)
+      # The mean of the mode-estimate of the Normal should be a lot closer
+      # to 0 compared to the MultivariateNormal, because the 100 less samples
+      # are taken and most of the mass in a high-dimensional gaussian is NOT
+      # at 0!
+      self.assertLess(10 * mean_mode_estimate, mean_mv_mode_estimate)
 
 
 def _check_kl_estimator(estimator_fn, distribution_fn, num_samples=10000,
