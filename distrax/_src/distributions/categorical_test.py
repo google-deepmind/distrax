@@ -405,8 +405,13 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_with_two_distributions(
         attribute_string=function_string,
         mode_string=mode_string,
-        dist1_kwargs={'probs': jnp.asarray([[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])},
-        dist2_kwargs={'logits': jnp.asarray([0.0, 0.1, 0.1]),},
+        dist1_kwargs={
+            'probs':
+                jnp.asarray([[0.4, 0.0, 0.6], [0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])
+        },
+        dist2_kwargs={
+            'logits': jnp.asarray([0.0, 0.1, 0.1]),
+        },
         assertion_fn=self.assertion_fn)
 
   def test_jittable(self):

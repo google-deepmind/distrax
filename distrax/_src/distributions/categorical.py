@@ -167,6 +167,9 @@ def _kl_divergence_categorical_categorical(
     ) -> Array:
   """Obtain the KL divergence `KL(dist1 || dist2)` between two Categoricals.
 
+  The KL computation takes into account that `0 * log(0) = 0`; therefore,
+  `dist1` may have zeros in its probability vector.
+
   Args:
     dist1: A Categorical distribution.
     dist2: A Categorical distribution.
@@ -195,7 +198,12 @@ def _kl_divergence_categorical_categorical(
   else:
     probs1 = dist1.probs
 
-  log_probs1 = jax.nn.log_softmax(logits1, axis=-1)
+  # If any probabilities of the first distribution are 0, we ignore those
+  # components and set the corresponding log probabilities to 0 instead of
+  # computing its log softmax. By doing so, we still output a valid KL
+  # divergence because 0 * log(0) = 0 for those specific components.
+  log_probs1 = jnp.where(
+      probs1 == 0, 0., jax.nn.log_softmax(logits1, axis=-1))
   log_probs2 = jax.nn.log_softmax(logits2, axis=-1)
 
   return jnp.sum((probs1 * (log_probs1 - log_probs2)), axis=-1)
