@@ -308,6 +308,22 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
        'prob',
        {'probs': [0.0, 0.0, 1.0, 1.0]},
        [0, 1, 0, 1]),
+      ('cdf; from 2d logits',
+       'cdf',
+       {'probs': [[0.1, 0.5, 0.4], [0.3, 0.3, 0.4]]},
+       [[1, 0, 0], [1, 1, 0]]),
+      ('cdf; from 2d probs',
+       'cdf',
+       {'probs': [[0.1, 0.5, 0.4], [0.3, 0.3, 0.4]]},
+       [[1, 0, 0], [1, 1, 0]]),
+      ('log_cdf; from 2d logits',
+       'log_cdf',
+       {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
+       [[1, 0, 0], [1, 1, 0]]),
+      ('log_cdf; from 2d probs',
+       'log_cdf',
+       {'probs': [[0.1, 0.5, 0.4], [0.3, 0.3, 0.4]]},
+       [[1, 0, 0], [1, 1, 0]]),
   )
   def test_pdf(self, function_string, distr_params, value):
     distr_params = {k: jnp.asarray(v) for k, v in distr_params.items()}

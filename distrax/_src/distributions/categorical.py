@@ -146,6 +146,10 @@ class Categorical(distribution.Distribution):
         jnp.cumsum(self.probs, axis=-1), value_one_hot), axis=-1)
     return jnp.where(should_be_zero, jnp.array(0.), cdf)
 
+  def log_cdf(self, value: Array) -> Array:
+    """See `Distribution.log_cdf`."""
+    return jnp.log(self.cdf(value))
+
   def logits_parameter(self) -> Array:
     """Wrapper for `logits` property, for TFP API compatibility."""
     return self.logits

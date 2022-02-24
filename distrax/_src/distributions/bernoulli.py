@@ -122,6 +122,19 @@ class Bernoulli(distribution.Distribution):
     return (math.multiply_no_nan(probs0, 1 - value) +
             math.multiply_no_nan(probs1, value))
 
+  def cdf(self, value: Array) -> Array:
+    """See `Distribution.cdf`."""
+    # For value < 0 the output should be zero because support = {0, 1}.
+    return jnp.where(value < 0,
+                     jnp.array(0., dtype=self.probs.dtype),
+                     jnp.where(value >= 1,
+                               jnp.array(1.0, dtype=self.probs.dtype),
+                               1 - self.probs))
+
+  def log_cdf(self, value: Array) -> Array:
+    """See `Distribution.log_cdf`."""
+    return jnp.log(self.cdf(value))
+
   def entropy(self) -> Array:
     """See `Distribution.entropy`."""
     (probs0, probs1,

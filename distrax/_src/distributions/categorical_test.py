@@ -383,6 +383,14 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
        'cdf',
        {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
        ([[0, 1], [2, 1]],)),
+      ('log_cdf; from 2d logits',
+       'log_cdf',
+       {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
+       ([[0, 1], [2, 1]],)),
+      ('log_cdf; from 2d probs',
+       'log_cdf',
+       {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
+       ([[0, 1], [2, 1]],)),
   )
   def test_method(self, function_string, distr_params, values):
     distr_params = {k: jnp.asarray(v) for k, v in distr_params.items()}
