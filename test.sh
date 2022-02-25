@@ -29,10 +29,6 @@ pip install flake8 pytest-xdist pytype pylint pylint-exit
 pip install -r requirements/requirements.txt
 pip install -r requirements/requirements-tests.txt
 
-# Use TFP nightly builds in tests.
-pip uninstall tensorflow-probability -y
-pip install tfp-nightly
-
 # Lint with flake8.
 flake8 `find distrax -name '*.py' | xargs` --count --select=E9,F63,F7,F82,E225,E251 --show-source --statistics
 
@@ -49,6 +45,10 @@ pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0223,W021
 python setup.py sdist
 pip wheel --verbose --no-deps --no-clean dist/distrax*.tar.gz
 pip install distrax*.whl
+
+# Use TFP nightly builds in tests.
+pip uninstall tensorflow-probability -y
+pip install tfp-nightly
 
 # Check types with pytype.
 pytype `find distrax/_src/ -name "*py" | xargs` -k
