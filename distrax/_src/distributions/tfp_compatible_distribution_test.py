@@ -79,6 +79,15 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
         sample_fn(self._key),
         self.base_dist.sample(sample_shape=self._sample_shape, seed=self._key))
 
+  def test_experimental_local_measure(self):
+    samples = self.wrapped_dist.sample(seed=self._key)
+    expected_log_prob = self.wrapped_dist.log_prob(samples)
+
+    log_prob, space = self.wrapped_dist.experimental_local_measure(
+        samples, backward_compat=True)
+    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
+
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('mean', 'mean'),

@@ -14,7 +14,7 @@
 # ==============================================================================
 """Wrapper to adapt a Distrax distribution for use in TFP."""
 
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -29,6 +29,8 @@ ArrayNumpy = chex.ArrayNumpy
 Distribution = distribution.Distribution
 IntLike = distribution.IntLike
 PRNGKey = chex.PRNGKey
+tangent_spaces = tfp.experimental.tangent_spaces
+TangentSpace = tangent_spaces.TangentSpace
 
 
 def tfp_compatible_distribution(
@@ -135,5 +137,33 @@ def tfp_compatible_distribution(
       if not np.isscalar(sample_shape):
         sample_shape = tuple(sample_shape)
       return base_distribution.sample(sample_shape=sample_shape, seed=seed)
+
+    def experimental_local_measure(
+        self,
+        value: Array,
+        backward_compat: bool = True,
+        **unused_kwargs) -> Tuple[Array, TangentSpace]:
+      """Returns a log probability density together with a `TangentSpace`.
+
+      See `tfd.distribution.Distribution.experimental_local_measure`, and
+      Radul and Alexeev, AISTATS 2021, “The Base Measure Problem and its
+      Solution”, https://arxiv.org/abs/2010.09647.
+
+      Args:
+        value: `float` or `double` `Array`.
+        backward_compat: unused
+        **unused_kwargs: unused
+
+      Returns:
+        log_prob: see `log_prob`.
+        tangent_space: `tangent_spaces.FullSpace()`, representing R^n with the
+          standard basis.
+      """
+      del backward_compat
+      # We ignore the `backward_compat` flag and always act as though it's
+      # true because Distrax bijectors and distributions need not follow the
+      # base measure protocol from TFP.
+      del unused_kwargs
+      return self.log_prob(value), tangent_spaces.FullSpace()
 
   return TFPCompatibleDistribution()
