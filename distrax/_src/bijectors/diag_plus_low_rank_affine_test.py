@@ -46,6 +46,8 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     np.testing.assert_allclose(bij.diag, np.ones(4), atol=1e-6)
     np.testing.assert_allclose(bij.u_matrix, np.full((4, 2), 2.), atol=1e-6)
     np.testing.assert_allclose(bij.v_matrix, np.full((4, 2), 3.), atol=1e-6)
+    np.testing.assert_allclose(
+        bij.matrix, np.eye(4) + np.full((4, 4), 12.), atol=1e-6)
     np.testing.assert_allclose(bij.bias, np.zeros((4,)), atol=1e-6)
 
   @parameterized.named_parameters(

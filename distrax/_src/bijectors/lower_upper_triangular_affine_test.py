@@ -37,10 +37,11 @@ class LowerUpperTriangularAffineTest(parameterized.TestCase):
     bijector = LowerUpperTriangularAffine(
         matrix=jnp.array([[2., 3.], [4., 5.]]),
         bias=jnp.ones((2,)))
-    np.testing.assert_allclose(
-        bijector.lower, np.array([[1., 0.], [4., 1.]]), atol=1e-6)
-    np.testing.assert_allclose(
-        bijector.upper, np.array([[2., 3.], [0., 5.]]), atol=1e-6)
+    lower = np.array([[1., 0.], [4., 1.]])
+    upper = np.array([[2., 3.], [0., 5.]])
+    np.testing.assert_allclose(bijector.lower, lower, atol=1e-6)
+    np.testing.assert_allclose(bijector.upper, upper, atol=1e-6)
+    np.testing.assert_allclose(bijector.matrix, lower @ upper, atol=1e-6)
     np.testing.assert_allclose(bijector.bias, np.ones((2,)), atol=1e-6)
 
   @parameterized.named_parameters(

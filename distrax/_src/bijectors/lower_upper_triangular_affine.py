@@ -89,6 +89,11 @@ class LowerUpperTriangularAffine(chain.Chain):
     return self._upper_linear.matrix
 
   @property
+  def matrix(self) -> Array:
+    """The matrix `A = LU` of the transformation."""
+    return self.lower @ self.upper
+
+  @property
   def bias(self) -> Array:
     """The shift `b` of the transformation."""
     return self._lower_affine.bias

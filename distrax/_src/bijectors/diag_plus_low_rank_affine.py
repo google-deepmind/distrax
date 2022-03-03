@@ -226,6 +226,14 @@ class DiagPlusLowRankAffine(chain.Chain):
     return self._v_matrix
 
   @property
+  def matrix(self) -> Array:
+    """The matrix `A = S + UV^T` of the transformation."""
+    batched = jnp.vectorize(
+        lambda s, u, v: jnp.diag(s) + u @ v.T,
+        signature="(d),(d,k),(d,k)->(d,d)")
+    return batched(self._diag, self._u_matrix, self._v_matrix)
+
+  @property
   def bias(self) -> Array:
     """The bias `b` of the transformation."""
     return self._bias
