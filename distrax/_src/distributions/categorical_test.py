@@ -415,10 +415,32 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         mode_string=mode_string,
         dist1_kwargs={
             'probs':
-                jnp.asarray([[0.4, 0.0, 0.6], [0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])
+                jnp.asarray([[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])
         },
         dist2_kwargs={
             'logits': jnp.asarray([0.0, 0.1, 0.1]),
+        },
+        assertion_fn=self.assertion_fn)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('kl distrax_to_distrax', 'kl_divergence', 'distrax_to_distrax'),
+      ('kl distrax_to_tfp', 'kl_divergence', 'distrax_to_tfp'),
+      ('kl tfp_to_distrax', 'kl_divergence', 'tfp_to_distrax'),
+      ('cross-ent distrax_to_distrax', 'cross_entropy', 'distrax_to_distrax'),
+      ('cross-ent distrax_to_tfp', 'cross_entropy', 'distrax_to_tfp'),
+      ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax'))
+  def test_with_two_distributions_extreme_cases(
+      self, function_string, mode_string):
+    super()._test_with_two_distributions(
+        attribute_string=function_string,
+        mode_string=mode_string,
+        dist1_kwargs={
+            'probs':
+                jnp.asarray([[0.1, 0.5, 0.4], [0.4, 0.0, 0.6], [0.4, 0.6, 0.]])
+        },
+        dist2_kwargs={
+            'logits': jnp.asarray([0.0, 0.1, -jnp.inf]),
         },
         assertion_fn=self.assertion_fn)
 

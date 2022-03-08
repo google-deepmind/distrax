@@ -202,15 +202,14 @@ def _kl_divergence_categorical_categorical(
   else:
     probs1 = dist1.probs
 
-  # If any probabilities of the first distribution are 0, we ignore those
-  # components and set the corresponding log probabilities to 0 instead of
-  # computing its log softmax. By doing so, we still output a valid KL
-  # divergence because 0 * log(0) = 0 for those specific components.
-  log_probs1 = jnp.where(
-      probs1 == 0, 0., jax.nn.log_softmax(logits1, axis=-1))
+  log_probs1 = jax.nn.log_softmax(logits1, axis=-1)
   log_probs2 = jax.nn.log_softmax(logits2, axis=-1)
 
-  return jnp.sum((probs1 * (log_probs1 - log_probs2)), axis=-1)
+  # The KL is a sum over the support of `dist1`, that is, over the components of
+  # `dist1` that have non-zero probability. So we exclude terms with
+  # `probs1 == 0` by setting them to zero in the sum below.
+  return jnp.sum(
+      jnp.where(probs1 == 0, 0., probs1 * (log_probs1 - log_probs2)), axis=-1)
 
 
 # Register the KL functions with TFP.
