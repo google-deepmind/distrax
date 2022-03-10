@@ -14,11 +14,12 @@
 # ==============================================================================
 """MultivariateNormalDiag distribution."""
 
-import math
-from typing import Optional, Tuple, Union
+from typing import Optional
 
 import chex
+from distrax._src.bijectors.diag_affine import DiagAffine
 from distrax._src.distributions import distribution
+from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
@@ -27,13 +28,27 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 Array = chex.Array
-PRNGKey = chex.PRNGKey
-
-_half_log2pi = 0.5 * math.log(2 * math.pi)
 
 
-class MultivariateNormalDiag(distribution.Distribution):
-  """Multivariate normal distribution on `R^k`."""
+def _check_parameters(
+    loc: Optional[Array], scale_diag: Optional[Array]) -> None:
+  """Checks that the `loc` and `scale_diag` parameters are correct."""
+  chex.assert_not_both_none(loc, scale_diag)
+  if scale_diag is not None and not scale_diag.shape:
+    raise ValueError('If provided, argument `scale_diag` must have at least '
+                     '1 dimension.')
+  if loc is not None and not loc.shape:
+    raise ValueError('If provided, argument `loc` must have at least '
+                     '1 dimension.')
+  if loc is not None and scale_diag is not None and (
+      loc.shape[-1] != scale_diag.shape[-1]):
+    raise ValueError(f'The last dimension of arguments `loc` and '
+                     f'`scale_diag` must coincide, but {loc.shape[-1]} != '
+                     f'{scale_diag.shape[-1]}.')
+
+
+class MultivariateNormalDiag(MultivariateNormalFromBijector):
+  """Multivariate normal distribution on `R^k` with diagonal covariance."""
 
   equiv_tfp_cls = tfd.MultivariateNormalDiag
 
@@ -50,88 +65,43 @@ class MultivariateNormalDiag(distribution.Distribution):
         If not specified, it defaults to ones. At least one of `loc` and
         `scale_diag` must be specified.
     """
-    super().__init__()
-    chex.assert_not_both_none(loc, scale_diag)
-    if scale_diag is not None and not scale_diag.shape:
-      raise ValueError('If provided, argument `scale_diag` must have at least '
-                       '1 dimension.')
-    if loc is not None and not loc.shape:
-      raise ValueError('If provided, argument `loc` must have at least '
-                       '1 dimension.')
-    if loc is not None and scale_diag is not None and (
-        loc.shape[-1] != scale_diag.shape[-1]):
-      raise ValueError(f'The last dimension of arguments `loc` and '
-                       f'`scale_diag` must coincide, but {loc.shape[-1]} != '
-                       f'{scale_diag.shape[-1]}.')
+    _check_parameters(loc, scale_diag)
 
     if scale_diag is None:
-      self._loc = conversion.as_float_array(loc)
-      self._scale_diag = jnp.ones(self._loc.shape[-1], self._loc.dtype)
+      loc = conversion.as_float_array(loc)
+      scale_diag = jnp.ones(loc.shape[-1], loc.dtype)
     elif loc is None:
-      self._scale_diag = conversion.as_float_array(scale_diag)
-      self._loc = jnp.zeros(self._scale_diag.shape[-1], self._scale_diag.dtype)
+      scale_diag = conversion.as_float_array(scale_diag)
+      loc = jnp.zeros(scale_diag.shape[-1], scale_diag.dtype)
     else:
-      self._loc = conversion.as_float_array(loc)
-      self._scale_diag = conversion.as_float_array(scale_diag)
+      loc = conversion.as_float_array(loc)
+      scale_diag = conversion.as_float_array(scale_diag)
 
-    self._batch_shape = jax.lax.broadcast_shapes(
-        self._loc.shape[:-1], self._scale_diag.shape[:-1])
+    # Add leading dimensions to the paramteters to match the batch shape. This
+    # prevents automatic rank promotion.
+    broadcasted_shapes = jnp.broadcast_shapes(loc.shape, scale_diag.shape)
+    loc = jnp.expand_dims(
+        loc, axis=list(range(len(broadcasted_shapes) - loc.ndim)))
+    scale_diag = jnp.expand_dims(
+        scale_diag, axis=list(range(len(broadcasted_shapes) - scale_diag.ndim)))
 
-  @property
-  def event_shape(self) -> Tuple[int, ...]:
-    """Shape of event of distribution samples."""
-    return (self._num_dims(),)
-
-  @property
-  def batch_shape(self) -> Tuple[int, ...]:
-    """Shape of batch of distribution samples."""
-    return self._batch_shape
-
-  @property
-  def _parameters_shape(self) -> Tuple[int, ...]:
-    return self.batch_shape + self.event_shape
-
-  @property
-  def loc(self) -> Array:
-    """Mean of the distribution."""
-    return jnp.broadcast_to(self._loc, self._parameters_shape)
+    bias = jnp.zeros_like(loc, shape=loc.shape[-1:])
+    bias = jnp.expand_dims(
+        bias, axis=list(range(len(broadcasted_shapes) - bias.ndim)))
+    scale = DiagAffine(bias=jnp.zeros_like(loc), diag=scale_diag)
+    super().__init__(
+        loc=loc, scale=scale, batch_shape=broadcasted_shapes[:-1],
+        dtype=jnp.result_type(loc, scale_diag))
+    self._scale_diag = scale_diag
 
   @property
   def scale_diag(self) -> Array:
     """Scale of the distribution."""
-    return jnp.broadcast_to(self._scale_diag, self._parameters_shape)
+    return jnp.broadcast_to(
+        self._scale_diag, self.batch_shape + self.event_shape)
 
-  def _num_dims(self) -> int:
-    """Dimensionality of the events."""
-    return self._scale_diag.shape[-1]
-
-  def _sample_from_std_normal(self, key: PRNGKey, n: int) -> Array:
-    out_shape = (n,) + self._parameters_shape
-    dtype = jnp.result_type(self._loc, self._scale_diag)
-    return jax.random.normal(key, shape=out_shape, dtype=dtype)
-
-  def _sample_n(self, key: PRNGKey, n: int) -> Array:
-    """See `Distribution._sample_n`."""
-    rnd = self._sample_from_std_normal(key, n)
-    scale = jnp.expand_dims(self._scale_diag,
-                            range(rnd.ndim - self._scale_diag.ndim))
-    loc = jnp.expand_dims(self._loc, range(rnd.ndim - self._loc.ndim))
-    return scale * rnd + loc
-
-  def _sample_n_and_log_prob(self, key: PRNGKey, n: int) -> Tuple[Array, Array]:
-    """See `Distribution._sample_n_and_log_prob`."""
-    rnd = self._sample_from_std_normal(key, n)
-    samples = self._loc + self._scale_diag * rnd
-    log_prob = jnp.sum(
-        -0.5 * jnp.square(rnd) - _half_log2pi - jnp.log(self._scale_diag),
-        axis=-1)
-    return samples, log_prob
-
-  def log_prob(self, value: Array) -> Array:
-    """See `Distribution.log_prob`."""
-    log_unnormalized = -0.5 * jnp.square(self._standardize(value))
-    log_normalization = _half_log2pi + jnp.log(self._scale_diag)
-    return jnp.sum(log_unnormalized - log_normalization, axis=-1)
+  def _standardize(self, value: Array) -> Array:
+    return (value - self._loc) / self._scale_diag
 
   def cdf(self, value: Array) -> Array:
     """See `Distribution.cdf`."""
@@ -142,101 +112,8 @@ class MultivariateNormalDiag(distribution.Distribution):
     return jnp.sum(
         jax.scipy.special.log_ndtr(self._standardize(value)), axis=-1)
 
-  def _standardize(self, value: Array) -> Array:
-    return (value - self._loc) / self._scale_diag
-
-  def entropy(self) -> Array:
-    """Calculates the Shannon entropy (nats)."""
-    return (
-        self._num_dims() * (0.5 + _half_log2pi)
-        + jnp.sum(jnp.log(self.scale_diag), axis=-1))
-
-  def mean(self) -> Array:
-    """Calculates the mean."""
-    return self.loc
-
-  def mode(self) -> Array:
-    """Calculates the mode."""
-    return self.mean()
-
-  def median(self) -> Array:
-    """Calculates the median."""
-    return self.mean()
-
-  def stddev(self) -> Array:
-    """Calculates the standard deviation."""
-    return self.scale_diag
-
-  def variance(self) -> Array:
-    """Calculates the variance."""
-    return jnp.square(self.stddev())
-
-  def covariance(self) -> Array:
-    """Calculates the covariance.
-
-    Constructs a diagonal matrix with the variance vector as diagonal. Note that
-    TFP would drop leading dimensions in the covariance if
-    `self._scale_diag.ndims < self._loc.ndims`. To keep things simple and
-    predictable, and for consistency with other distributions, in Distrax the
-    `covariance` has shape `batch_shape + (num_dims, num_dims)`.
-
-    Returns:
-      Diagonal covariance matrix.
-    """
-    return jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(self.variance())
-
   def __getitem__(self, index) -> 'MultivariateNormalDiag':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return MultivariateNormalDiag(
         loc=self.loc[index], scale_diag=self.scale_diag[index])
-
-
-def _kl_divergence_mvndiag_mvndiag(
-    dist1: Union[MultivariateNormalDiag, tfd.MultivariateNormalDiag],
-    dist2: Union[MultivariateNormalDiag, tfd.MultivariateNormalDiag],
-    *unused_args, **unused_kwargs,
-    ) -> Array:
-  """Batched divergence KL(dist1 || dist2) between two MultivariateNormalDiag.
-
-  Args:
-    dist1: A MultivariateNormalDiag distribution.
-    dist2: A MultivariateNormalDiag distribution.
-
-  Returns:
-    Batchwise `KL(dist1 || dist2)`.
-  """
-  # pylint: disable=protected-access
-  def get_loc_parameter(dist):
-    # Converting to jnp array is needed for compatibility with TFP.
-    return 0.0 if dist._loc is None else jnp.asarray(dist._loc)
-
-  def get_scale_diag_parameter(dist):
-    if isinstance(dist, MultivariateNormalDiag):
-      scale_diag = dist._scale_diag
-    else:
-      # TFP distributions do not have the `_scale_diag` property.
-      scale_diag = dist.parameters['scale_diag']
-    if scale_diag is None:
-      return jnp.ones(shape=dist.event_shape, dtype=dist.dtype)
-    return jnp.asarray(scale_diag)
-
-  dist1_loc = get_loc_parameter(dist1)
-  dist2_loc = get_loc_parameter(dist2)
-  dist1_scale = get_scale_diag_parameter(dist1)
-  dist2_scale = get_scale_diag_parameter(dist2)
-
-  diff_log_scale = jnp.log(dist1_scale) - jnp.log(dist2_scale)
-  return jnp.sum(
-      0.5 * jnp.square(dist1_loc / dist2_scale - dist2_loc / dist2_scale) +
-      0.5 * jnp.expm1(2. * diff_log_scale) -
-      diff_log_scale, axis=-1)
-
-
-# Register the KL functions with TFP.
-tfd.RegisterKL(MultivariateNormalDiag, MultivariateNormalDiag)(
-    _kl_divergence_mvndiag_mvndiag)
-tfd.RegisterKL(MultivariateNormalDiag, MultivariateNormalDiag.equiv_tfp_cls)(
-    _kl_divergence_mvndiag_mvndiag)
-tfd.RegisterKL(MultivariateNormalDiag.equiv_tfp_cls, MultivariateNormalDiag)(
-    _kl_divergence_mvndiag_mvndiag)

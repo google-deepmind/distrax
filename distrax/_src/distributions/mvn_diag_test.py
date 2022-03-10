@@ -424,12 +424,13 @@ class MultivariateNormalDiagTest(
       ('cross-ent distrax_to_tfp', 'cross_entropy', 'distrax_to_tfp'),
       ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax'))
   def test_with_two_distributions(self, function_string, mode_string):
+    rng = np.random.default_rng(42)
     super()._test_with_two_distributions(
         attribute_string=function_string,
         mode_string=mode_string,
         dist1_kwargs={
-            'loc': np.random.randn(4, 1, 5).astype(np.float32),
-            'scale_diag': 0.1 + np.random.rand(3, 5).astype(np.float32),
+            'loc': rng.normal(size=(4, 1, 5)).astype(np.float32),
+            'scale_diag': 0.1 + rng.uniform(size=(3, 5)).astype(np.float32),
         },
         dist2_kwargs={
             'loc': np.asarray([-2.4, -1., 0., 1.2, 6.5]).astype(np.float32),
@@ -447,21 +448,24 @@ class MultivariateNormalDiagTest(
       ('range_2', (slice(None), slice(-1))),
   )
   def test_slice(self, slice_):
-    loc = jnp.array(np.random.randn(3, 4, 5))
-    scale_diag = jnp.array(np.random.randn(3, 4, 5))
+    rng = np.random.default_rng(42)
+    loc = jnp.array(rng.normal(size=(3, 4, 5)))
+    scale_diag = jnp.array(rng.uniform(size=(3, 4, 5)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
     self.assertion_fn(dist[slice_].mean(), loc[slice_])
 
   def test_slice_different_parameterization(self):
-    loc = jnp.array(np.random.randn(4))
-    scale_diag = jnp.array(np.random.randn(3, 4))
+    rng = np.random.default_rng(42)
+    loc = jnp.array(rng.normal(size=(4,)))
+    scale_diag = jnp.array(rng.uniform(size=(3, 4)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
     self.assertion_fn(dist[0].mean(), loc)  # Not slicing loc.
     self.assertion_fn(dist[0].stddev(), scale_diag[0])
 
   def test_slice_ellipsis(self):
-    loc = jnp.array(np.random.randn(3, 4, 5))
-    scale_diag = jnp.array(np.random.randn(3, 4, 5))
+    rng = np.random.default_rng(42)
+    loc = jnp.array(rng.normal(size=(3, 4, 5)))
+    scale_diag = jnp.array(rng.uniform(size=(3, 4, 5)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
     self.assertion_fn(dist[..., -1].mean(), loc[:, -1])
     self.assertion_fn(dist[..., -1].stddev(), scale_diag[:, -1])
