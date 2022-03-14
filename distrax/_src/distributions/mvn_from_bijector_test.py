@@ -22,7 +22,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.bijectors import bijector
 from distrax._src.bijectors.diag_affine import DiagAffine
-from distrax._src.bijectors.triangular_affine import TriangularAffine
+from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 
 import haiku as hk
@@ -158,10 +158,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     scale_tril = jnp.tril(jax.random.normal(next(prng), scale_shape))
     loc = jax.random.normal(next(prng), loc_shape)
-    scale = TriangularAffine(
-        matrix=scale_tril,
-        bias=jnp.zeros_like(scale_tril[..., 0]),
-        is_lower=True)
+    scale = TriangularLinear(matrix=scale_tril, is_lower=True)
     batch_shape = jnp.broadcast_shapes(scale_shape[:-2], loc_shape[:-1])
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
     for method in ['variance', 'stddev', 'covariance']:
@@ -234,7 +231,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc1 = jax.random.normal(next(prng), (1, 4))
     dist1_distrax = MultivariateNormalFromBijector(
         loc=loc1,
-        scale=TriangularAffine(matrix=scale_tril1, bias=jnp.zeros((4,))),
+        scale=TriangularLinear(matrix=scale_tril1),
         batch_shape=(3,),
     )
     dist1_tfp = tfd.MultivariateNormalTriL(loc=loc1, scale_tril=scale_tril1)
@@ -243,7 +240,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc2 = jax.random.normal(next(prng), (4,))
     dist2_distrax = MultivariateNormalFromBijector(
         loc=loc2,
-        scale=TriangularAffine(matrix=scale_tril2, bias=jnp.zeros((4,))),
+        scale=TriangularLinear(matrix=scale_tril2),
         batch_shape=(),
     )
     dist2_tfp = tfd.MultivariateNormalTriL(loc=loc2, scale_tril=scale_tril2)

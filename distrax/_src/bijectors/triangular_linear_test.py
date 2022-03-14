@@ -12,76 +12,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for `triangular_affine.py`."""
+"""Tests for `triangular_linear.py`."""
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
 from distrax._src.bijectors.tanh import Tanh
-from distrax._src.bijectors.triangular_affine import TriangularAffine
+from distrax._src.bijectors.triangular_linear import TriangularLinear
 import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
 
 
-class TriangularAffineTest(parameterized.TestCase):
+class TriangularLinearTest(parameterized.TestCase):
 
   def test_jacobian_is_constant_property(self):
-    bijector = TriangularAffine(
-        matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    bijector = TriangularLinear(matrix=jnp.eye(4))
     self.assertTrue(bijector.is_constant_jacobian)
     self.assertTrue(bijector.is_constant_log_det)
 
   @parameterized.parameters(True, False)
   def test_properties(self, is_lower):
-    bijector = TriangularAffine(
-        matrix=jnp.ones((4, 4)),
-        bias=jnp.ones((4,)),
-        is_lower=is_lower)
+    bijector = TriangularLinear(matrix=jnp.ones((4, 4)), is_lower=is_lower)
     tri = np.tril if is_lower else np.triu
     np.testing.assert_allclose(bijector.matrix, tri(np.ones(4)), atol=1e-6)
-    np.testing.assert_allclose(bijector.bias, np.ones((4,)), atol=1e-6)
     self.assertEqual(bijector.is_lower, is_lower)
 
   @parameterized.named_parameters(
-      ('matrix is 0d', {'matrix': np.zeros(()), 'bias': np.zeros((4,))}),
-      ('matrix is 1d', {'matrix': np.zeros((4,)), 'bias': np.zeros((4,))}),
-      ('bias is 0d', {'matrix': np.zeros((4, 4)), 'bias': np.zeros(())}),
-      ('matrix is not square',
-       {'matrix': np.zeros((3, 4)), 'bias': np.zeros((4,))}),
-      ('matrix and bias shapes do not agree',
-       {'matrix': np.zeros((4, 4)), 'bias': np.zeros((3,))}),
+      ('matrix is 0d', {'matrix': np.zeros(())}),
+      ('matrix is 1d', {'matrix': np.zeros((4,))}),
+      ('matrix is not square', {'matrix': np.zeros((3, 4))}),
   )
   def test_raises_with_invalid_parameters(self, bij_params):
     with self.assertRaises(ValueError):
-      TriangularAffine(**bij_params)
+      TriangularLinear(**bij_params)
 
   @chex.all_variants
   @parameterized.parameters(
-      ((5,), (5,), (5,)),
-      ((5,), (5,), ()),
-      ((5,), (), (5,)),
-      ((), (5,), (5,)),
-      ((), (), (5,)),
-      ((), (5,), ()),
-      ((5,), (), ()),
+      ((5,), (5,)),
+      ((5,), ()),
+      ((), (5,)),
   )
-  def test_batched_parameters(self, matrix_batch_shape, bias_batch_shape,
-                              input_batch_shape):
+  def test_batched_parameters(self, matrix_batch_shape, input_batch_shape):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     matrix = jax.random.uniform(
         next(prng), matrix_batch_shape + (4, 4)) + jnp.eye(4)
-    bias = jax.random.normal(next(prng), bias_batch_shape + (4,))
-    bijector = TriangularAffine(matrix, bias)
+    bijector = TriangularLinear(matrix)
 
     x = jax.random.normal(next(prng), input_batch_shape + (4,))
     y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
     z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_arrays(
-        matrix[..., 0, 0], bias[..., 0], x[..., 0])[0].shape
+        matrix[..., 0, 0], x[..., 0])[0].shape
 
     self.assertEqual(y.shape, output_batch_shape + (4,))
     self.assertEqual(z.shape, output_batch_shape + (4,))
@@ -90,7 +75,6 @@ class TriangularAffineTest(parameterized.TestCase):
 
     matrix = jnp.broadcast_to(
         matrix, output_batch_shape + (4, 4)).reshape((-1, 4, 4))
-    bias = jnp.broadcast_to(bias, output_batch_shape + (4,)).reshape((-1, 4))
     x = jnp.broadcast_to(x, output_batch_shape + (4,)).reshape((-1, 4))
     y = y.reshape((-1, 4))
     z = z.reshape((-1, 4))
@@ -98,25 +82,22 @@ class TriangularAffineTest(parameterized.TestCase):
     logdet_inv = logdet_inv.flatten()
 
     for i in range(np.prod(output_batch_shape)):
-      bijector = TriangularAffine(matrix[i], bias[i])
+      bijector = TriangularLinear(matrix[i])
       this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
       this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
-      np.testing.assert_allclose(this_y, y[i], atol=9e-3)
+      np.testing.assert_allclose(this_y, y[i], rtol=8e-3)
       np.testing.assert_allclose(this_z, z[i], atol=7e-6)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-7)
       np.testing.assert_allclose(this_logdet_inv, logdet_inv[i], atol=7e-6)
 
   @chex.all_variants
   @parameterized.parameters(
-      {'batch_shape': (), 'param_shape': (), 'is_lower': True},
-      {'batch_shape': (3,), 'param_shape': (3,), 'is_lower': True},
-      {'batch_shape': (2, 3), 'param_shape': (3,), 'is_lower': False},
+      {'batch_shape': (), 'is_lower': True},
+      {'batch_shape': (3,), 'is_lower': True},
+      {'batch_shape': (2, 3), 'is_lower': False},
   )
-  def test_identity_initialization(self, batch_shape, param_shape, is_lower):
-    bijector = TriangularAffine(
-        matrix=jnp.eye(4),
-        bias=jnp.zeros(param_shape + (4,)),
-        is_lower=is_lower)
+  def test_identity_initialization(self, batch_shape, is_lower):
+    bijector = TriangularLinear(matrix=jnp.eye(4), is_lower=is_lower)
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     x = jax.random.normal(next(prng), batch_shape + (4,))
 
@@ -139,8 +120,7 @@ class TriangularAffineTest(parameterized.TestCase):
   def test_inverse_methods(self, batch_shape, param_shape, is_lower):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     matrix = jax.random.uniform(next(prng), param_shape + (4, 4)) + jnp.eye(4)
-    bias = jax.random.normal(next(prng), param_shape + (4,))
-    bijector = TriangularAffine(matrix, bias, is_lower)
+    bijector = TriangularLinear(matrix, is_lower)
     x = jax.random.normal(next(prng), batch_shape + (4,))
     y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
     x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)
@@ -152,8 +132,7 @@ class TriangularAffineTest(parameterized.TestCase):
   def test_forward_jacobian_det(self, is_lower):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     matrix = jax.random.uniform(next(prng), (4, 4)) + jnp.eye(4)
-    bias = jax.random.normal(next(prng), (4,))
-    bijector = TriangularAffine(matrix, bias, is_lower)
+    bijector = TriangularLinear(matrix, is_lower)
 
     batched_x = jax.random.normal(next(prng), (10, 4))
     single_x = jax.random.normal(next(prng), (4,))
@@ -169,8 +148,7 @@ class TriangularAffineTest(parameterized.TestCase):
   def test_inverse_jacobian_det(self, is_lower):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     matrix = jax.random.uniform(next(prng), (4, 4)) + jnp.eye(4)
-    bias = jax.random.normal(next(prng), (4,))
-    bijector = TriangularAffine(matrix, bias, is_lower)
+    bijector = TriangularLinear(matrix, is_lower)
 
     batched_y = jax.random.normal(next(prng), (10, 4))
     single_y = jax.random.normal(next(prng), (4,))
@@ -182,7 +160,7 @@ class TriangularAffineTest(parameterized.TestCase):
       np.testing.assert_allclose(logdet, logdet_numerical, atol=5e-5)
 
   def test_raises_on_invalid_input_shape(self):
-    bij = TriangularAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    bij = TriangularLinear(matrix=jnp.eye(4))
     for fn in [bij.forward, bij.inverse,
                bij.forward_log_det_jacobian, bij.inverse_log_det_jacobian,
                bij.forward_and_log_det, bij.inverse_and_log_det]:
@@ -194,17 +172,17 @@ class TriangularAffineTest(parameterized.TestCase):
     def f(x, b):
       return b.forward(x)
 
-    bij = TriangularAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    bij = TriangularLinear(matrix=jnp.eye(4))
     x = np.zeros((4,))
     f(x, bij)
 
   def test_same_as_itself(self):
-    bij = TriangularAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    bij = TriangularLinear(matrix=jnp.eye(4))
     self.assertTrue(bij.same_as(bij))
 
   def test_not_same_as_others(self):
-    bij = TriangularAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
-    other = TriangularAffine(matrix=jnp.ones((4, 4)), bias=jnp.zeros((4,)))
+    bij = TriangularLinear(matrix=jnp.eye(4))
+    other = TriangularLinear(matrix=jnp.ones((4, 4)))
     self.assertFalse(bij.same_as(other))
     self.assertFalse(bij.same_as(Tanh()))
 

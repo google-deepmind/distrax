@@ -20,19 +20,15 @@ from distrax._src.bijectors import bijector as base
 import jax
 import jax.numpy as jnp
 
-
 Array = base.Array
 
 
-def common_batch_shape(matrix: Array, bias: Array) -> Tuple[int, ...]:
-  """Computes the common batch shape of `matrix` and `bias`.
+def check_affine_parameters(matrix: Array, bias: Array) -> None:
+  """Checks that `matrix` and `bias` have valid shapes.
 
   Args:
     matrix: a matrix, or a batch of matrices.
     bias: a vector, or a batch of vectors.
-
-  Returns:
-    The smallest batch shape that `matrix` and `bias` broadcast to.
 
   Raises:
     ValueError: if the shapes of `matrix` and `bias` are invalid.
@@ -48,36 +44,36 @@ def common_batch_shape(matrix: Array, bias: Array) -> Tuple[int, ...]:
   if matrix.shape[-1] != bias.shape[-1]:
     raise ValueError(f"`matrix` and `bias` have inconsistent shapes: `matrix`"
                      f" is {matrix.shape[-2:]}, `bias` is {bias.shape[-1:]}.")
-  return jax.lax.broadcast_shapes(matrix.shape[:-2], bias.shape[:-1])
 
 
 class UnconstrainedAffine(base.Bijector):
   """An unconstrained affine bijection.
 
   This bijector is a linear-plus-bias transformation `f(x) = Ax + b`, where `A`
-  is a square matrix.
+  is a `D x D` square matrix and `b` is a `D`-dimensional vector.
 
   The bijector is invertible if and only if `A` is an invertible matrix. It is
   the responsibility of the user to make sure that this is the case; the class
   will make no attempt to verify that the bijector is invertible.
 
-  The Jacobian determinant is equal to det(A). The inverse is computed by
+  The Jacobian determinant is equal to `det(A)`. The inverse is computed by
   solving the linear system `Ax = y - b`.
 
-  WARNING: Both the determinant and the inverse cost O(D^3) to compute. Thus,
-  this bijector is recommended only for small D.
+  WARNING: Both the determinant and the inverse cost `O(D^3)` to compute. Thus,
+  this bijector is recommended only for small `D`.
   """
 
   def __init__(self, matrix: Array, bias: Array):
-    """Initializes an UnconstrainedAffine bijector.
+    """Initializes an `UnconstrainedAffine` bijector.
 
     Args:
       matrix: the matrix `A` in `Ax + b`. Must be square and invertible. Can
         also be a batch of matrices.
       bias: the vector `b` in `Ax + b`. Can also be a batch of vectors.
     """
+    check_affine_parameters(matrix, bias)
     super().__init__(event_ndims_in=1, is_constant_jacobian=True)
-    self._batch_shape = common_batch_shape(matrix, bias)
+    self._batch_shape = jnp.broadcast_shapes(matrix.shape[:-2], bias.shape[:-1])
     self._matrix = matrix
     self._bias = bias
     self._logdet = jnp.linalg.slogdet(matrix)[1]

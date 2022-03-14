@@ -18,7 +18,7 @@ from typing import Optional
 
 import chex
 from distrax._src.bijectors.diag_affine import DiagAffine
-from distrax._src.bijectors.triangular_affine import TriangularAffine
+from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
@@ -113,10 +113,7 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
     else:
       tri_fn = jnp.tril if is_lower else jnp.triu
       self._scale_tri = tri_fn(scale_tri)
-      scale = TriangularAffine(
-          bias=jnp.zeros(loc.shape[-1:], dtype=dtype),
-          matrix=self._scale_tri,
-          is_lower=is_lower)
+      scale = TriangularLinear(matrix=self._scale_tri, is_lower=is_lower)
     self._is_lower = is_lower
     batch_shape = jax.lax.broadcast_shapes(
         loc.shape[:-1], self._scale_tri.shape[:-2])

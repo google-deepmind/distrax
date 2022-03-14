@@ -15,10 +15,12 @@
 """LU-decomposed affine bijector."""
 
 from distrax._src.bijectors import bijector as base
+from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
-from distrax._src.bijectors import triangular_affine
+from distrax._src.bijectors import shift
+from distrax._src.bijectors import triangular_linear
+from distrax._src.bijectors import unconstrained_affine
 import jax.numpy as jnp
-
 
 Array = base.Array
 
@@ -56,7 +58,7 @@ class LowerUpperTriangularAffine(chain.Chain):
   """
 
   def __init__(self, matrix: Array, bias: Array):
-    """Initializes a LowerUpperTriangularAffine bijector.
+    """Initializes a `LowerUpperTriangularAffine` bijector.
 
     Args:
       matrix: a square matrix parameterizing `L` and `U` as described in the
@@ -65,28 +67,24 @@ class LowerUpperTriangularAffine(chain.Chain):
         generally not equal to the product `LU`.
       bias: the vector `b` in `LUx + b`. Can also be a batch of vectors.
     """
-    if matrix.ndim < 2:
-      raise ValueError(f"`matrix` must have at least 2 dimensions, got"
-                       f" {matrix.ndim}.")
+    unconstrained_affine.check_affine_parameters(matrix, bias)
+    self._upper = triangular_linear.TriangularLinear(matrix, is_lower=False)
     dim = matrix.shape[-1]
-    # z = Ux
-    self._upper_linear = triangular_affine.TriangularAffine(
-        matrix, bias=jnp.zeros((dim,)), is_lower=False)
-    # y = Lz + b
     lower = jnp.eye(dim) + jnp.tril(matrix, -1)  # Replace diagonal with ones.
-    self._lower_affine = triangular_affine.TriangularAffine(
-        lower, bias, is_lower=True)
-    super().__init__([self._lower_affine, self._upper_linear])
+    self._lower = triangular_linear.TriangularLinear(lower, is_lower=True)
+    self._shift = block.Block(shift.Shift(bias), 1)
+    self._bias = bias
+    super().__init__([self._shift, self._lower, self._upper])
 
   @property
   def lower(self) -> Array:
     """The lower triangular matrix `L` with ones in the diagonal."""
-    return self._lower_affine.matrix
+    return self._lower.matrix
 
   @property
   def upper(self) -> Array:
     """The upper triangular matrix `U`."""
-    return self._upper_linear.matrix
+    return self._upper.matrix
 
   @property
   def matrix(self) -> Array:
@@ -96,7 +94,7 @@ class LowerUpperTriangularAffine(chain.Chain):
   @property
   def bias(self) -> Array:
     """The shift `b` of the transformation."""
-    return self._lower_affine.bias
+    return self._bias
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""
