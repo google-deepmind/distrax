@@ -22,6 +22,7 @@ from distrax._src.bijectors import bijector as base_bijector
 from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
 from distrax._src.bijectors import diag_affine
+from distrax._src.bijectors import shift
 from distrax._src.distributions import independent
 from distrax._src.distributions import normal
 from distrax._src.distributions import transformed
@@ -35,30 +36,6 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 Array = chex.Array
-Numeric = Union[Array, float]
-
-
-class _Shift(base_bijector.Bijector):
-  """An affine bijector that shifts the input scalar."""
-
-  def __init__(self, shift: Numeric):
-    super().__init__(
-        event_ndims_in=0, event_ndims_out=0, is_constant_jacobian=True)
-    self._shift = shift
-    self._batch_shape = jnp.shape(shift)
-
-  def _broadcast_log_det_jac(self, x: Array) -> Array:
-    """Returns log|det J(f)(x)| with the shape broadcasted to `x`."""
-    batch_shape = jax.lax.broadcast_shapes(self._batch_shape, x.shape)
-    return jnp.zeros(batch_shape, dtype=x.dtype)
-
-  def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
-    """Computes y = f(x) and log|det J(f)(x)|."""
-    return x + self._shift, self._broadcast_log_det_jac(x)
-
-  def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
-    """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
-    return y - self._shift, self._broadcast_log_det_jac(y)
 
 
 def _check_input_parameters_are_valid(
@@ -126,7 +103,7 @@ class MultivariateNormalFromBijector(transformed.Transformed):
             scale=1.),
         reinterpreted_batch_ndims=1)
     # Form the bijector `f(x) = Ax + b`.
-    bijector = chain.Chain([block.Block(_Shift(loc), ndims=1), scale])
+    bijector = chain.Chain([block.Block(shift.Shift(loc), ndims=1), scale])
     super().__init__(distribution=std_mvn_dist, bijector=bijector)
     self._scale = scale
     self._loc = loc
