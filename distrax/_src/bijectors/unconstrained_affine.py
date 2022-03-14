@@ -133,5 +133,4 @@ class UnconstrainedAffine(base.Bijector):
           self.matrix is other.matrix,
           self.bias is other.bias,
       ))
-    else:
-      return False
+    return False

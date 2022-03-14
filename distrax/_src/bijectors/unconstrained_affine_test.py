@@ -14,10 +14,13 @@
 # ==============================================================================
 """Tests for `unconstrained_affine.py`."""
 
+import copy
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
+from distrax._src.bijectors.tanh import Tanh
 from distrax._src.bijectors.unconstrained_affine import UnconstrainedAffine
 import haiku as hk
 import jax
@@ -183,6 +186,18 @@ class UnconstrainedAffineTest(parameterized.TestCase):
     bijector = UnconstrainedAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
     x = np.zeros((4,))
     f(x, bijector)
+
+  def test_same_as_itself(self):
+    bij = UnconstrainedAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    self.assertTrue(bij.same_as(bij))
+    self.assertTrue(bij.same_as(copy.copy(bij)))
+
+  def test_not_same_as_others(self):
+    bij = UnconstrainedAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
+    other = UnconstrainedAffine(matrix=jnp.eye(4), bias=jnp.ones((4,)))
+    self.assertFalse(bij.same_as(other))
+    self.assertFalse(bij.same_as(Tanh()))
+
 
 if __name__ == '__main__':
   absltest.main()

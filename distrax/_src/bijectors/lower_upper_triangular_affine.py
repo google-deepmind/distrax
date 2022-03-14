@@ -104,5 +104,4 @@ class LowerUpperTriangularAffine(chain.Chain):
           self.upper is other.upper,
           self.bias is other.bias,
       ))
-    else:
-      return False
+    return False
