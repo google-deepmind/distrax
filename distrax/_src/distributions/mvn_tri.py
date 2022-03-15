@@ -22,7 +22,6 @@ from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
-import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
@@ -113,11 +112,8 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
       self._scale_tri = tri_fn(scale_tri)
       scale = TriangularLinear(matrix=self._scale_tri, is_lower=is_lower)
     self._is_lower = is_lower
-    batch_shape = jax.lax.broadcast_shapes(
-        loc.shape[:-1], self._scale_tri.shape[:-2])
 
-    super().__init__(
-        loc=loc, scale=scale, batch_shape=batch_shape, dtype=dtype)
+    super().__init__(loc=loc, scale=scale)
 
   @property
   def scale_tri(self) -> Array:

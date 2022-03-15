@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalFromBijector distribution."""
 
-from typing import Callable, Tuple, Union
+from typing import Callable, Union
 
 import chex
 
@@ -39,8 +39,7 @@ Array = chex.Array
 
 
 def _check_input_parameters_are_valid(
-    scale: base_bijector.Bijector, loc: Array,
-    batch_shape: Tuple[int, ...]) -> None:
+    scale: base_bijector.Bijector, loc: Array) -> None:
   """Raises an error if the inputs `scale` and `loc` are not valid."""
   if scale.event_ndims_in != 1:
     raise ValueError(f'Incorrect value for the `event_ndims_in` '
@@ -54,11 +53,6 @@ def _check_input_parameters_are_valid(
     raise ValueError('The scale bijector should be a linear bijector.')
   if loc.ndim < 1:
     raise ValueError('`loc` must have at least 1 dimension.')
-  if loc.ndim - 1 > len(batch_shape):
-    raise ValueError(
-        f'`loc` must have fewer batch dimensions that `batch_shape`; got '
-        f'`loc.ndim - 1 = {loc.ndim - 1}` and `len(batch_shape) = '
-        f'{len(batch_shape)}`.')
 
 
 class MultivariateNormalFromBijector(transformed.Transformed):
@@ -79,24 +73,22 @@ class MultivariateNormalFromBijector(transformed.Transformed):
   raised.
   """
 
-  def __init__(self,
-               loc: Array,
-               scale: base_bijector.BijectorLike,
-               batch_shape: Tuple[int, ...],
-               dtype: jnp.dtype = jnp.float32):
+  def __init__(self, loc: Array, scale: base_bijector.BijectorLike):
     """Initializes the distribution.
 
     Args:
       loc: The term `b`, i.e., the mean of the multivariate normal distribution.
       scale: The bijector specifying the linear transformation `A @ z`, as
         described in the class docstring.
-      batch_shape: Shape of batch of distribution samples.
-      dtype: Type of the distribution samples.
     """
     scale = conversion.as_bijector(scale)
-    _check_input_parameters_are_valid(scale, loc, batch_shape)
+    _check_input_parameters_are_valid(scale, loc)
 
-    # Build a standard multivariate Gaussian with the right `batch_shape`.
+    # Build a standard multivariate Gaussian with the right `batch_shape` and
+    # `dtype`.
+    scale_matrix = jax.eval_shape(type(scale).matrix.fget, scale)
+    batch_shape = jnp.broadcast_shapes(loc.shape[:-1], scale_matrix.shape[:-2])
+    dtype = jnp.result_type(loc.dtype, scale_matrix.dtype)
     std_mvn_dist = independent.Independent(
         distribution=normal.Normal(
             loc=jnp.zeros(batch_shape + loc.shape[-1:], dtype=dtype),
@@ -164,7 +156,8 @@ class MultivariateNormalFromBijector(transformed.Transformed):
     if isinstance(self.scale, diag_linear.DiagLinear):
       result = jnp.square(self.scale.diag)
     else:
-      result = jnp.sum(self._scale_matrix * self._scale_matrix, axis=-1)
+      scale_matrix = self._scale_matrix
+      result = jnp.sum(scale_matrix * scale_matrix, axis=-1)
     return jnp.broadcast_to(result, self.batch_shape + self.event_shape)
 
   def stddev(self) -> Array:

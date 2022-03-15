@@ -22,7 +22,6 @@ from distrax._src.bijectors.diag_plus_low_rank_linear import DiagPlusLowRankLine
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
-import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
@@ -164,10 +163,6 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
     if scale_v_matrix is None:
       self._scale_v_matrix = self._scale_u_matrix
 
-    batch_shape = jax.lax.broadcast_shapes(
-        loc.shape[:-1], self._scale_diag.shape[:-1],
-        self._scale_u_matrix.shape[:-2], self._scale_v_matrix.shape[:-2])
-
     if scale_u_matrix is None:
       # The scale matrix is diagonal.
       scale = DiagLinear(self._scale_diag)
@@ -176,8 +171,7 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
           u_matrix=self._scale_u_matrix,
           v_matrix=self._scale_v_matrix,
           diag=self._scale_diag)
-    super().__init__(
-        loc=loc, scale=scale, batch_shape=batch_shape, dtype=dtype)
+    super().__init__(loc=loc, scale=scale)
 
   @property
   def scale_diag(self) -> Array:
