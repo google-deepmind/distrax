@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Diagonal affine bijector."""
+"""Diagonal linear bijector."""
 
 from distrax._src.bijectors import bijector as base
 from distrax._src.bijectors import block
@@ -22,31 +22,11 @@ import jax.numpy as jnp
 Array = base.Array
 
 
-def _check_shapes_are_valid(diag: Array, bias: Array):
-  """Checks array shapes are valid, raises `ValueError` if not."""
-  if diag.ndim < 1:
-    raise ValueError("`diag` must have at least one dimension.")
-  if bias.ndim < 1:
-    raise ValueError("`bias` must have at least one dimension.")
-  if bias.shape[-1] != diag.shape[-1]:
-    raise ValueError(
-        f"Both `bias` and `diag` must have the same number of dimensions; got "
-        f"`bias.shape[-1]={bias.shape[-1]}` and "
-        f"`diag.shape[-1]={diag.shape[-1]}`.")
-  try:
-    jnp.broadcast_shapes(diag.shape, bias.shape)
-  except ValueError:
-    raise ValueError(
-        f"The shapes of `bias` and `diag` are not broadcastable; got "
-        f"`bias.shape={bias.shape}` and `diag.shape={diag.shape}`.") from None
+class DiagLinear(block.Block):
+  """Linear bijector with a diagonal weight matrix.
 
-
-class DiagAffine(block.Block):
-  """Affine bijector with a diagonal weight matrix.
-
-  The bijector is defined as `f(x) = Ax + b` where `A` is a `DxD` diagonal
-  matrix and `b` is a `D`-dimensional vector. Additional dimensions, if any,
-  index batches.
+  The bijector is defined as `f(x) = Ax` where `A` is a `DxD` diagonal matrix.
+  Additional dimensions, if any, index batches.
 
   The Jacobian determinant is trivially computed by taking the product of the
   diagonal entries in `A`. The inverse transformation `x = f^{-1}(y)` is
@@ -58,29 +38,23 @@ class DiagAffine(block.Block):
   invertible.
   """
 
-  def __init__(self, diag: Array, bias: Array):
+  def __init__(self, diag: Array):
     """Initializes the bijector.
 
     Args:
       diag: a vector of length D, the diagonal of matrix `A`. Can also be a
         batch of such vectors.
-      bias: the vector `b` in `Ax + b`. Can also be a batch of such vectors.
     """
-    _check_shapes_are_valid(diag=diag, bias=bias)
-    bijector = scalar_affine.ScalarAffine(shift=bias, scale=diag)
+    if diag.ndim < 1:
+      raise ValueError("`diag` must have at least one dimension.")
+    bijector = scalar_affine.ScalarAffine(shift=0., scale=diag)
     super().__init__(bijector=bijector, ndims=1)
     self._diag = diag
-    self._bias = bias
 
   @property
   def diag(self) -> Array:
     """Vector of length D, the diagonal of matrix `A`."""
     return self._diag
-
-  @property
-  def bias(self) -> Array:
-    """The bias `b` of the transformation."""
-    return self._bias
 
   @property
   def matrix(self) -> Array:
@@ -89,9 +63,6 @@ class DiagAffine(block.Block):
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""
-    if type(other) is DiagAffine:  # pylint: disable=unidiomatic-typecheck
-      return all((
-          self.diag is other.diag,
-          self.bias is other.bias,
-      ))
+    if type(other) is DiagLinear:  # pylint: disable=unidiomatic-typecheck
+      return self.diag is other.diag
     return False

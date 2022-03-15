@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for `diag_affine.py`."""
+"""Tests for `diag_linear.py`."""
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
-from distrax._src.bijectors.diag_affine import DiagAffine
+from distrax._src.bijectors.diag_linear import DiagLinear
 from distrax._src.bijectors.tanh import Tanh
 import haiku as hk
 import jax
@@ -26,53 +26,39 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class DiagAffineTest(parameterized.TestCase):
+class DiagLinearTest(parameterized.TestCase):
 
   def test_jacobian_is_constant_property(self):
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
     self.assertTrue(bij.is_constant_jacobian)
     self.assertTrue(bij.is_constant_log_det)
 
   def test_properties(self):
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
     np.testing.assert_allclose(bij.diag, np.ones(4), atol=1e-6)
-    np.testing.assert_allclose(bij.bias, np.zeros((4,)), atol=1e-6)
     np.testing.assert_allclose(bij.matrix, np.eye(4), atol=1e-6)
 
-  @parameterized.named_parameters(
-      ('diag is 0d', {'diag': np.ones(()),
-                      'bias': np.zeros((4,))}),
-      ('bias is 0d', {'diag': np.ones((4,)),
-                      'bias': np.zeros(())}),
-      ('inconsistent dim', {'diag': np.ones((3,)),
-                            'bias': np.zeros((4,))}),
-      ('not broadcastable', {'diag': np.ones((3, 4)),
-                             'bias': np.zeros((2, 4))}),
-  )
-  def test_raises_with_invalid_parameters(self, params):
+  def test_raises_with_invalid_parameters(self):
     with self.assertRaises(ValueError):
-      DiagAffine(**params)
+      DiagLinear(diag=np.ones(()))
 
   @chex.all_variants
   @parameterized.parameters(
-      ((5,), (5,), (5,)),
-      ((5,), (), ()),
-      ((), (5,), ()),
-      ((), (), (5,)),
+      ((5,), (5,)),
+      ((5,), ()),
+      ((), (5,)),
   )
-  def test_batched_parameters(self, diag_batch_shape, bias_batch_shape,
-                              input_batch_shape):
+  def test_batched_parameters(self, diag_batch_shape, input_batch_shape):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.uniform(next(prng), diag_batch_shape + (4,)) + 0.5
-    bias = jax.random.normal(next(prng), bias_batch_shape + (4,))
-    bij = DiagAffine(diag, bias)
+    bij = DiagLinear(diag)
 
     x = jax.random.normal(next(prng), input_batch_shape + (4,))
     y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
     z, logdet_inv = self.variant(bij.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_shapes(
-        diag_batch_shape, bias_batch_shape, input_batch_shape)
+        diag_batch_shape, input_batch_shape)
 
     self.assertEqual(y.shape, output_batch_shape + (4,))
     self.assertEqual(z.shape, output_batch_shape + (4,))
@@ -80,7 +66,6 @@ class DiagAffineTest(parameterized.TestCase):
     self.assertEqual(logdet_inv.shape, output_batch_shape)
 
     diag = jnp.broadcast_to(diag, output_batch_shape + (4,)).reshape((-1, 4))
-    bias = jnp.broadcast_to(bias, output_batch_shape + (4,)).reshape((-1, 4))
     x = jnp.broadcast_to(x, output_batch_shape + (4,)).reshape((-1, 4))
     y = y.reshape((-1, 4))
     z = z.reshape((-1, 4))
@@ -88,7 +73,7 @@ class DiagAffineTest(parameterized.TestCase):
     logdet_inv = logdet_inv.flatten()
 
     for i in range(np.prod(output_batch_shape)):
-      bij = DiagAffine(diag=diag[i], bias=bias[i])
+      bij = DiagLinear(diag=diag[i])
       this_y, this_logdet_fwd = self.variant(bij.forward_and_log_det)(x[i])
       this_z, this_logdet_inv = self.variant(bij.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-6)
@@ -102,9 +87,7 @@ class DiagAffineTest(parameterized.TestCase):
       {'batch_shape': (2, 3), 'param_shape': (3,)},
   )
   def test_identity_initialization(self, batch_shape, param_shape):
-    bij = DiagAffine(
-        diag=jnp.ones(param_shape + (4,)),
-        bias=jnp.zeros(param_shape + (4,)))
+    bij = DiagLinear(diag=jnp.ones(param_shape + (4,)))
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     x = jax.random.normal(next(prng), batch_shape + (4,))
 
@@ -126,8 +109,7 @@ class DiagAffineTest(parameterized.TestCase):
   def test_inverse_methods(self, batch_shape, param_shape):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.uniform(next(prng), param_shape + (4,)) + 0.5
-    bias = jax.random.normal(next(prng), param_shape + (4,))
-    bij = DiagAffine(diag, bias)
+    bij = DiagLinear(diag)
     x = jax.random.normal(next(prng), batch_shape + (4,))
     y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
     x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)
@@ -138,8 +120,7 @@ class DiagAffineTest(parameterized.TestCase):
   def test_forward_jacobian_det(self):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.uniform(next(prng), (4,)) + 0.5
-    bias = jax.random.normal(next(prng), (4,))
-    bij = DiagAffine(diag, bias)
+    bij = DiagLinear(diag)
 
     batched_x = jax.random.normal(next(prng), (10, 4))
     single_x = jax.random.normal(next(prng), (4,))
@@ -154,8 +135,7 @@ class DiagAffineTest(parameterized.TestCase):
   def test_inverse_jacobian_det(self):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.uniform(next(prng), (4,)) + 0.5
-    bias = jax.random.normal(next(prng), (4,))
-    bij = DiagAffine(diag, bias)
+    bij = DiagLinear(diag)
 
     batched_y = jax.random.normal(next(prng), (10, 4))
     single_y = jax.random.normal(next(prng), (4,))
@@ -167,7 +147,7 @@ class DiagAffineTest(parameterized.TestCase):
       np.testing.assert_allclose(logdet, logdet_numerical, atol=5e-4)
 
   def test_raises_on_invalid_input_shape(self):
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
     for fn_name, fn in [
         ('forward', bij.forward),
         ('inverse', bij.inverse),
@@ -185,17 +165,17 @@ class DiagAffineTest(parameterized.TestCase):
     def f(x, b):
       return b.forward(x)
 
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
     x = np.zeros((4,))
     f(x, bij)
 
   def test_same_as_itself(self):
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
     self.assertTrue(bij.same_as(bij))
 
   def test_not_same_as_others(self):
-    bij = DiagAffine(diag=jnp.ones((4,)), bias=jnp.zeros((4,)))
-    other = DiagAffine(diag=jnp.ones((4,)), bias=jnp.ones((4,)))
+    bij = DiagLinear(diag=jnp.ones((4,)))
+    other = DiagLinear(diag=2. * jnp.ones((4,)))
     self.assertFalse(bij.same_as(other))
     self.assertFalse(bij.same_as(Tanh()))
 

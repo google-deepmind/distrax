@@ -17,7 +17,7 @@
 from typing import Optional
 
 import chex
-from distrax._src.bijectors.diag_affine import DiagAffine
+from distrax._src.bijectors.diag_linear import DiagLinear
 from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
@@ -107,9 +107,7 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
 
     if scale_tri is None:
       self._scale_tri = jnp.eye(num_dims, dtype=dtype)
-      scale = DiagAffine(
-          bias=jnp.zeros(loc.shape[-1:], dtype=dtype),
-          diag=jnp.ones(loc.shape[-1:], dtype=dtype))
+      scale = DiagLinear(diag=jnp.ones(loc.shape[-1:], dtype=dtype))
     else:
       tri_fn = jnp.tril if is_lower else jnp.triu
       self._scale_tri = tri_fn(scale_tri)

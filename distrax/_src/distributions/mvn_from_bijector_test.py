@@ -21,7 +21,7 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.bijectors import bijector
-from distrax._src.bijectors.diag_affine import DiagAffine
+from distrax._src.bijectors.diag_linear import DiagLinear
 from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 
@@ -66,7 +66,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
       ('broadcasted diag', np.ones((4,)), np.zeros((3, 4)), (3, 4)),
   )
   def test_loc_scale_and_shapes(self, diag, loc, expected_shape):
-    scale = DiagAffine(diag=diag, bias=jnp.zeros_like(diag))
+    scale = DiagLinear(diag)
     batch_shape = jnp.broadcast_shapes(diag.shape, loc.shape)[:-1]
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
     np.testing.assert_allclose(dist.loc, np.zeros(expected_shape))
@@ -79,7 +79,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = 0.5 + jax.random.uniform(next(prng), (4,))
     loc = jax.random.normal(next(prng), (4,))
-    scale = DiagAffine(diag=diag, bias=jnp.zeros_like(diag))
+    scale = DiagLinear(diag)
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape=())
     num_samples = 100_000
     sample_fn = lambda seed: dist.sample(seed=seed, sample_shape=num_samples)
@@ -93,7 +93,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = 0.5 + jax.random.uniform(next(prng), (4,))
     loc = jax.random.normal(next(prng), (4,))
-    scale = DiagAffine(diag=diag, bias=jnp.zeros_like(diag))
+    scale = DiagLinear(diag)
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape=())
     values = jax.random.normal(next(prng), (5, 4))
     tfp_dist = tfd.MultivariateNormalDiag(loc=loc, scale_diag=diag)
@@ -110,7 +110,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.normal(next(prng), diag_shape)
     loc = jax.random.normal(next(prng), loc_shape)
-    scale = DiagAffine(diag=diag, bias=jnp.zeros_like(diag))
+    scale = DiagLinear(diag)
     batch_shape = jnp.broadcast_shapes(diag_shape, loc_shape)[:-1]
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
     for method in ['mean', 'median', 'mode']:
@@ -129,7 +129,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     scale_diag = jax.random.normal(next(prng), scale_shape)
     loc = jax.random.normal(next(prng), loc_shape)
-    scale = DiagAffine(diag=scale_diag, bias=jnp.zeros_like(scale_diag))
+    scale = DiagLinear(scale_diag)
     batch_shape = jnp.broadcast_shapes(scale_shape[:-1], loc_shape[:-1])
     dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
     for method in ['variance', 'stddev', 'covariance']:
@@ -190,7 +190,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc1 = jax.random.normal(next(prng), (1, 4))
     dist1_distrax = MultivariateNormalFromBijector(
         loc=loc1,
-        scale=DiagAffine(diag=scale_diag1, bias=jnp.zeros((4,))),
+        scale=DiagLinear(scale_diag1),
         batch_shape=(3,),
     )
     dist1_tfp = tfd.MultivariateNormalDiag(
@@ -200,7 +200,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc2 = jax.random.normal(next(prng), (4,))
     dist2_distrax = MultivariateNormalFromBijector(
         loc=loc2,
-        scale=DiagAffine(diag=scale_diag2, bias=jnp.zeros((4,))),
+        scale=DiagLinear(scale_diag2),
         batch_shape=(),
     )
     dist2_tfp = tfd.MultivariateNormalDiag(
@@ -266,13 +266,13 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dim = 4
     dist1 = MultivariateNormalFromBijector(
         loc=jnp.zeros((dim,)),
-        scale=DiagAffine(diag=jnp.ones((dim,)), bias=jnp.zeros((dim,))),
+        scale=DiagLinear(diag=jnp.ones((dim,))),
         batch_shape=(),
     )
     dim = 5
     dist2 = MultivariateNormalFromBijector(
         loc=jnp.zeros((dim,)),
-        scale=DiagAffine(diag=jnp.ones((dim,)), bias=jnp.zeros((dim,))),
+        scale=DiagLinear(diag=jnp.ones((dim,))),
         batch_shape=(),
     )
     with self.assertRaises(ValueError):

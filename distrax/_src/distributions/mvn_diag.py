@@ -17,7 +17,7 @@
 from typing import Optional
 
 import chex
-from distrax._src.bijectors.diag_affine import DiagAffine
+from distrax._src.bijectors.diag_linear import DiagLinear
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
@@ -88,7 +88,7 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
     bias = jnp.zeros_like(loc, shape=loc.shape[-1:])
     bias = jnp.expand_dims(
         bias, axis=list(range(len(broadcasted_shapes) - bias.ndim)))
-    scale = DiagAffine(bias=jnp.zeros_like(loc), diag=scale_diag)
+    scale = DiagLinear(scale_diag)
     super().__init__(
         loc=loc, scale=scale, batch_shape=broadcasted_shapes[:-1],
         dtype=jnp.result_type(loc, scale_diag))

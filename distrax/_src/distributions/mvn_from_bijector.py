@@ -21,7 +21,7 @@ import chex
 from distrax._src.bijectors import bijector as base_bijector
 from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
-from distrax._src.bijectors import diag_affine
+from distrax._src.bijectors import diag_linear
 from distrax._src.bijectors import shift
 from distrax._src.distributions import independent
 from distrax._src.distributions import normal
@@ -51,7 +51,7 @@ def _check_input_parameters_are_valid(
                      f'attribute of the scale bijector: '
                      f'{scale.event_ndims_out} != 1.')
   if not scale.is_constant_jacobian:
-    raise ValueError('The scale bijector should be an affine bijector.')
+    raise ValueError('The scale bijector should be a linear bijector.')
   if loc.ndim < 1:
     raise ValueError('`loc` must have at least 1 dimension.')
   if loc.ndim - 1 > len(batch_shape):
@@ -151,7 +151,7 @@ class MultivariateNormalFromBijector(transformed.Transformed):
       The covariance matrix, of shape `k x k` (broadcasted to match the batch
       shape of the distribution).
     """
-    if isinstance(self.scale, diag_affine.DiagAffine):
+    if isinstance(self.scale, diag_linear.DiagLinear):
       result = jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(self.variance())
     else:
       result = jax.vmap(self.scale.forward, in_axes=-2, out_axes=-2)(
@@ -161,7 +161,7 @@ class MultivariateNormalFromBijector(transformed.Transformed):
 
   def variance(self) -> Array:
     """Calculates the variance of all one-dimensional marginals."""
-    if isinstance(self.scale, diag_affine.DiagAffine):
+    if isinstance(self.scale, diag_linear.DiagLinear):
       result = jnp.square(self.scale.diag)
     else:
       result = jnp.sum(self._scale_matrix * self._scale_matrix, axis=-1)
@@ -169,7 +169,7 @@ class MultivariateNormalFromBijector(transformed.Transformed):
 
   def stddev(self) -> Array:
     """Calculates the standard deviation (the square root of the variance)."""
-    if isinstance(self.scale, diag_affine.DiagAffine):
+    if isinstance(self.scale, diag_linear.DiagLinear):
       result = jnp.abs(self.scale.diag)
     else:
       result = jnp.sqrt(self.variance())
@@ -216,7 +216,7 @@ def _scale_matrix(d: MultivariateNormalLike) -> Array:
 def _has_diagonal_scale(d: MultivariateNormalLike) -> bool:
   """Determines if the scale matrix `A` is diagonal."""
   if (isinstance(d, MultivariateNormalFromBijector)
-      and isinstance(d.scale, diag_affine.DiagAffine)):
+      and isinstance(d.scale, diag_linear.DiagLinear)):
     return True
   elif isinstance(d, tfd.MultivariateNormalDiag):
     # This does not cover all cases, but we do not have access to the TFP
