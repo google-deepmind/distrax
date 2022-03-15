@@ -18,7 +18,7 @@ from typing import Optional
 
 import chex
 from distrax._src.bijectors.diag_linear import DiagLinear
-from distrax._src.bijectors.diag_plus_low_rank_affine import DiagPlusLowRankAffine
+from distrax._src.bijectors.diag_plus_low_rank_linear import DiagPlusLowRankLinear
 from distrax._src.distributions import distribution
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.utils import conversion
@@ -172,8 +172,7 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
       # The scale matrix is diagonal.
       scale = DiagLinear(self._scale_diag)
     else:
-      scale = DiagPlusLowRankAffine(
-          bias=jnp.zeros(loc.shape[-1:], dtype=dtype),
+      scale = DiagPlusLowRankLinear(
           u_matrix=self._scale_u_matrix,
           v_matrix=self._scale_v_matrix,
           diag=self._scale_diag)

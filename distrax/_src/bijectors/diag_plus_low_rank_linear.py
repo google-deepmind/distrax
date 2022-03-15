@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Diagonal-plus-low-rank affine bijector."""
+"""Diagonal-plus-low-rank linear bijector."""
 
 from typing import Tuple
 
 from distrax._src.bijectors import bijector as base
-from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
-from distrax._src.bijectors import scalar_affine
+from distrax._src.bijectors import diag_linear
 import jax
 import jax.numpy as jnp
 
@@ -124,13 +123,11 @@ class _IdentityPlusLowRankLinear(base.Bijector):
 
 def _check_shapes_are_valid(diag: Array,
                             u_matrix: Array,
-                            v_matrix: Array,
-                            bias: Array) -> None:
+                            v_matrix: Array) -> None:
   """Checks array shapes are valid, raises `ValueError` if not."""
   for x, name, n in [(diag, "diag", 1),
                      (u_matrix, "u_matrix", 2),
-                     (v_matrix, "v_matrix", 2),
-                     (bias, "bias", 1)]:
+                     (v_matrix, "v_matrix", 2)]:
     if x.ndim < n:
       raise ValueError(
           f"`{name}` must have at least {n} dimensions, got {x.ndim}.")
@@ -145,16 +142,12 @@ def _check_shapes_are_valid(diag: Array,
     raise ValueError(
         f"`u_matrix` and `v_matrix` must have the same shape; got "
         f"`u_matrix.shape = {u_shape}` and `v_matrix.shape = {v_shape}`.")
-  if bias.shape[-1] != dim:
-    raise ValueError(
-        f"`diag` and `bias` must be vectors of the same length. Got "
-        f"`diag.length = {dim}` and `bias.length = {bias.shape[-1]}`.")
 
 
-class DiagPlusLowRankAffine(chain.Chain):
-  """Affine bijector whose weights are a low-rank perturbation of a diagonal.
+class DiagPlusLowRankLinear(chain.Chain):
+  """Linear bijector whose weights are a low-rank perturbation of a diagonal.
 
-  The bijector is defined as `f(x) = Ax + b` where `A = S + UV^T` and:
+  The bijector is defined as `f(x) = Ax` where `A = S + UV^T` and:
   - `S` is a DxD diagonal matrix,
   - `U`, `V` are DxK matrices.
   When K < D, this bijector is computationally more efficient than an equivalent
@@ -180,11 +173,7 @@ class DiagPlusLowRankAffine(chain.Chain):
   is invertible.
   """
 
-  def __init__(self,
-               diag: Array,
-               u_matrix: Array,
-               v_matrix: Array,
-               bias: Array):
+  def __init__(self, diag: Array, u_matrix: Array, v_matrix: Array):
     """Initializes the bijector.
 
     Args:
@@ -194,21 +183,17 @@ class DiagPlusLowRankAffine(chain.Chain):
         batch of DxK matrices.
       v_matrix: a DxK matrix, the `V` matrix in `A = S + UV^T`. Can also be a
         batch of DxK matrices.
-      bias: the vector `b` in `Ax + b`. Can also be a batch of vectors.
     """
-    _check_shapes_are_valid(diag, u_matrix, v_matrix, bias)
+    _check_shapes_are_valid(diag, u_matrix, v_matrix)
     # Since `S + UV^T = S (I + WV^T)` where `W = S^{-1}U`, we can implement this
-    # bijector by composing `_IdentityPlusLowRankLinear` with `ScalarAffine`.
+    # bijector by composing `_IdentityPlusLowRankLinear` with `DiagLinear`.
     id_plus_low_rank_linear = _IdentityPlusLowRankLinear(
         u_matrix=u_matrix / diag[..., None],
         v_matrix=v_matrix)
-    diag_affine = block.Block(
-        scalar_affine.ScalarAffine(shift=bias, scale=diag), ndims=1)
-    super().__init__([diag_affine, id_plus_low_rank_linear])
+    super().__init__([diag_linear.DiagLinear(diag), id_plus_low_rank_linear])
     self._diag = diag
     self._u_matrix = u_matrix
     self._v_matrix = v_matrix
-    self._bias = bias
 
   @property
   def diag(self) -> Array:
@@ -233,18 +218,12 @@ class DiagPlusLowRankAffine(chain.Chain):
         signature="(d),(d,k),(d,k)->(d,d)")
     return batched(self._diag, self._u_matrix, self._v_matrix)
 
-  @property
-  def bias(self) -> Array:
-    """The bias `b` of the transformation."""
-    return self._bias
-
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""
-    if type(other) is DiagPlusLowRankAffine:  # pylint: disable=unidiomatic-typecheck
+    if type(other) is DiagPlusLowRankLinear:  # pylint: disable=unidiomatic-typecheck
       return all((
           self.diag is other.diag,
           self.u_matrix is other.u_matrix,
           self.v_matrix is other.v_matrix,
-          self.bias is other.bias,
       ))
     return False

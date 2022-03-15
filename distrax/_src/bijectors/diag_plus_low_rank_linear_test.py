@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for `diag_plus_low_rank_affine.py`."""
+"""Tests for `diag_plus_low_rank_linear.py`."""
 
 from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
-from distrax._src.bijectors.diag_plus_low_rank_affine import DiagPlusLowRankAffine
+from distrax._src.bijectors.diag_plus_low_rank_linear import DiagPlusLowRankLinear
 from distrax._src.bijectors.tanh import Tanh
 import haiku as hk
 import jax
@@ -26,86 +26,66 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class DiagPlusLowRankAffineTest(parameterized.TestCase):
+class DiagPlusLowRankLinearTest(parameterized.TestCase):
 
   def test_jacobian_is_constant_property(self):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=jnp.ones((4, 2)))
     self.assertTrue(bij.is_constant_jacobian)
     self.assertTrue(bij.is_constant_log_det)
 
   def test_properties(self):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=2. * jnp.ones((4, 2)),
-        v_matrix=3. * jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=3. * jnp.ones((4, 2)))
     np.testing.assert_allclose(bij.diag, np.ones(4), atol=1e-6)
     np.testing.assert_allclose(bij.u_matrix, np.full((4, 2), 2.), atol=1e-6)
     np.testing.assert_allclose(bij.v_matrix, np.full((4, 2), 3.), atol=1e-6)
     np.testing.assert_allclose(
         bij.matrix, np.eye(4) + np.full((4, 4), 12.), atol=1e-6)
-    np.testing.assert_allclose(bij.bias, np.zeros((4,)), atol=1e-6)
 
   @parameterized.named_parameters(
       ('diag is 0d', {'diag': np.ones(()),
                       'u_matrix': np.ones((4, 2)),
-                      'v_matrix': np.ones((4, 2)),
-                      'bias': np.zeros((4,))}),
+                      'v_matrix': np.ones((4, 2))}),
       ('u_matrix is 1d', {'diag': np.ones((4,)),
                           'u_matrix': np.ones((4,)),
-                          'v_matrix': np.ones((4, 2)),
-                          'bias': np.zeros((4,))}),
+                          'v_matrix': np.ones((4, 2))}),
       ('v_matrix is 1d', {'diag': np.ones((4,)),
                           'u_matrix': np.ones((4, 2)),
-                          'v_matrix': np.ones((4,)),
-                          'bias': np.zeros((4,))}),
-      ('bias is 0d', {'diag': np.ones((4,)),
-                      'u_matrix': np.ones((4, 2)),
-                      'v_matrix': np.ones((4, 2)),
-                      'bias': np.zeros(())}),
+                          'v_matrix': np.ones((4,))}),
       ('diag has wrong dim', {'diag': np.ones((3,)),
                               'u_matrix': np.ones((4, 2)),
-                              'v_matrix': np.ones((4, 2)),
-                              'bias': np.zeros((4,))}),
+                              'v_matrix': np.ones((4, 2))}),
       ('u_matrix has wrong dim', {'diag': np.ones((4,)),
                                   'u_matrix': np.ones((3, 2)),
-                                  'v_matrix': np.ones((4, 2)),
-                                  'bias': np.zeros((4,))}),
+                                  'v_matrix': np.ones((4, 2))}),
       ('v_matrix has wrong dim', {'diag': np.ones((4,)),
                                   'u_matrix': np.ones((4, 2)),
-                                  'v_matrix': np.ones((3, 2)),
-                                  'bias': np.zeros((4,))}),
-      ('bias has wrong dim', {'diag': np.ones((4,)),
-                              'u_matrix': np.ones((4, 2)),
-                              'v_matrix': np.ones((4, 2)),
-                              'bias': np.zeros((3,))}),
+                                  'v_matrix': np.ones((3, 2))}),
   )
   def test_raises_with_invalid_parameters(self, params):
     with self.assertRaises(ValueError):
-      DiagPlusLowRankAffine(**params)
+      DiagPlusLowRankLinear(**params)
 
   @chex.all_variants
   @parameterized.parameters(
-      ((5,), (5,), (5,), (5,), (5,)),
-      ((5,), (), (), (), ()),
-      ((), (5,), (), (), ()),
-      ((), (), (5,), (), ()),
-      ((), (), (), (5,), ()),
-      ((), (), (), (), (5,)),
+      ((5,), (5,), (5,), (5,)),
+      ((5,), (), (), ()),
+      ((), (5,), (), ()),
+      ((), (), (5,), ()),
+      ((), (), (), (5,)),
   )
   def test_batched_parameters(self, diag_batch_shape, u_matrix_batch_shape,
-                              v_matrix_batch_shape, bias_batch_shape,
-                              input_batch_shape):
+                              v_matrix_batch_shape, input_batch_shape):
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     diag = jax.random.uniform(next(prng), diag_batch_shape + (4,)) + 0.5
     u_matrix = jax.random.uniform(next(prng), u_matrix_batch_shape + (4, 1))
     v_matrix = jax.random.uniform(next(prng), v_matrix_batch_shape + (4, 1))
-    bias = jax.random.normal(next(prng), bias_batch_shape + (4,))
-    bij = DiagPlusLowRankAffine(diag, u_matrix, v_matrix, bias)
+    bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
 
     x = jax.random.normal(next(prng), input_batch_shape + (4,))
     y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
@@ -113,7 +93,7 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
 
     output_batch_shape = jnp.broadcast_shapes(
         diag_batch_shape, u_matrix_batch_shape, v_matrix_batch_shape,
-        bias_batch_shape, input_batch_shape)
+        input_batch_shape)
 
     self.assertEqual(y.shape, output_batch_shape + (4,))
     self.assertEqual(z.shape, output_batch_shape + (4,))
@@ -125,7 +105,6 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
         u_matrix, output_batch_shape + (4, 1)).reshape((-1, 4, 1))
     v_matrix = jnp.broadcast_to(
         v_matrix, output_batch_shape + (4, 1)).reshape((-1, 4, 1))
-    bias = jnp.broadcast_to(bias, output_batch_shape + (4,)).reshape((-1, 4))
     x = jnp.broadcast_to(x, output_batch_shape + (4,)).reshape((-1, 4))
     y = y.reshape((-1, 4))
     z = z.reshape((-1, 4))
@@ -133,7 +112,7 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     logdet_inv = logdet_inv.flatten()
 
     for i in range(np.prod(output_batch_shape)):
-      bij = DiagPlusLowRankAffine(diag[i], u_matrix[i], v_matrix[i], bias[i])
+      bij = DiagPlusLowRankLinear(diag[i], u_matrix[i], v_matrix[i])
       this_y, this_logdet_fwd = self.variant(bij.forward_and_log_det)(x[i])
       this_z, this_logdet_inv = self.variant(bij.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-6)
@@ -147,11 +126,10 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
       {'batch_shape': (2, 3), 'param_shape': (3,)},
   )
   def test_identity_initialization(self, batch_shape, param_shape):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones(param_shape + (4,)),
         u_matrix=jnp.zeros(param_shape + (4, 1)),
-        v_matrix=jnp.zeros(param_shape + (4, 1)),
-        bias=jnp.zeros(param_shape + (4,)))
+        v_matrix=jnp.zeros(param_shape + (4, 1)))
     prng = hk.PRNGSequence(jax.random.PRNGKey(42))
     x = jax.random.normal(next(prng), batch_shape + (4,))
 
@@ -175,8 +153,7 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     diag = jax.random.uniform(next(prng), param_shape + (4,)) + 0.5
     u_matrix = jax.random.uniform(next(prng), param_shape + (4, 1))
     v_matrix = jax.random.uniform(next(prng), param_shape + (4, 1))
-    bias = jax.random.normal(next(prng), param_shape + (4,))
-    bij = DiagPlusLowRankAffine(diag, u_matrix, v_matrix, bias)
+    bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
     x = jax.random.normal(next(prng), batch_shape + (4,))
     y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
     x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)
@@ -189,8 +166,7 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     diag = jax.random.uniform(next(prng), (4,)) + 0.5
     u_matrix = jax.random.uniform(next(prng), (4, 1))
     v_matrix = jax.random.uniform(next(prng), (4, 1))
-    bias = jax.random.normal(next(prng), (4,))
-    bij = DiagPlusLowRankAffine(diag, u_matrix, v_matrix, bias)
+    bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
 
     batched_x = jax.random.normal(next(prng), (10, 4))
     single_x = jax.random.normal(next(prng), (4,))
@@ -207,8 +183,7 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     diag = jax.random.uniform(next(prng), (4,)) + 0.5
     u_matrix = jax.random.uniform(next(prng), (4, 1))
     v_matrix = jax.random.uniform(next(prng), (4, 1))
-    bias = jax.random.normal(next(prng), (4,))
-    bij = DiagPlusLowRankAffine(diag, u_matrix, v_matrix, bias)
+    bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
 
     batched_y = jax.random.normal(next(prng), (10, 4))
     single_y = jax.random.normal(next(prng), (4,))
@@ -220,11 +195,10 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
       np.testing.assert_allclose(logdet, logdet_numerical, atol=5e-4)
 
   def test_raises_on_invalid_input_shape(self):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=jnp.ones((4, 2)))
     for fn in [bij.forward, bij.inverse,
                bij.forward_log_det_jacobian, bij.inverse_log_det_jacobian,
                bij.forward_and_log_det, bij.inverse_and_log_det]:
@@ -237,33 +211,29 @@ class DiagPlusLowRankAffineTest(parameterized.TestCase):
     def f(x, b):
       return b.forward(x)
 
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=jnp.ones((4, 2)))
     x = np.zeros((4,))
     f(x, bij)
 
   def test_same_as_itself(self):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=jnp.ones((4, 2)))
     self.assertTrue(bij.same_as(bij))
 
   def test_not_same_as_others(self):
-    bij = DiagPlusLowRankAffine(
+    bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
-    other = DiagPlusLowRankAffine(
+        v_matrix=jnp.ones((4, 2)))
+    other = DiagPlusLowRankLinear(
         diag=2. * jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
-        v_matrix=jnp.ones((4, 2)),
-        bias=jnp.zeros((4,)))
+        v_matrix=jnp.ones((4, 2)))
     self.assertFalse(bij.same_as(other))
     self.assertFalse(bij.same_as(Tanh()))
 
