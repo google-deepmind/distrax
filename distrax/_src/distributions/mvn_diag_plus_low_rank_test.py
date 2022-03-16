@@ -292,11 +292,15 @@ class MultivariateNormalDiagPlusLowRankTest(
     loc1 = rng.normal(size=(5, 1, 4))
     scale_diag1 = rng.normal(size=(3, 4))
     scale_u_matrix1 = 0.1 * rng.normal(size=(5, 1, 4, 2))
-    scale_v_matrix1 = 0.1 * rng.normal(size=(5, 1, 4, 2))
+    scale_perturb_diag1 = rng.normal(size=(5, 1, 2))
+    scale_v_matrix1 = scale_u_matrix1 * np.expand_dims(
+        scale_perturb_diag1, axis=-2)
     loc2 = rng.normal(size=(3, 4))
     scale_diag2 = rng.normal(size=(3, 4))
     scale_u_matrix2 = 0.1 * rng.normal(size=(4, 2))
-    scale_v_matrix2 = 0.1 * rng.normal(size=(4, 2))
+    scale_perturb_diag2 = rng.normal(size=(2,))
+    scale_v_matrix2 = scale_u_matrix2 * np.expand_dims(
+        scale_perturb_diag2, axis=-2)
     distrax_dist1 = MultivariateNormalDiagPlusLowRank(
         loc=loc1,
         scale_diag=scale_diag1,
@@ -309,15 +313,17 @@ class MultivariateNormalDiagPlusLowRankTest(
         scale_u_matrix=scale_u_matrix2,
         scale_v_matrix=scale_v_matrix2,
     )
-    tfp_dist1 = tfd.MultivariateNormalFullCovariance(
+    tfp_dist1 = tfd.MultivariateNormalDiagPlusLowRank(
         loc=loc1,
-        covariance_matrix=_covariance_matrix_from_low_rank(
-            scale_diag1, scale_u_matrix1, scale_v_matrix1)
+        scale_diag=scale_diag1,
+        scale_perturb_factor=scale_u_matrix1,
+        scale_perturb_diag=scale_perturb_diag1,
     )
-    tfp_dist2 = tfd.MultivariateNormalFullCovariance(
+    tfp_dist2 = tfd.MultivariateNormalDiagPlusLowRank(
         loc=loc2,
-        covariance_matrix=_covariance_matrix_from_low_rank(
-            scale_diag2, scale_u_matrix2, scale_v_matrix2)
+        scale_diag=scale_diag2,
+        scale_perturb_factor=scale_u_matrix2,
+        scale_perturb_diag=scale_perturb_diag2,
     )
     expected_result1 = getattr(tfp_dist1, function_string)(tfp_dist2)
     expected_result2 = getattr(tfp_dist2, function_string)(tfp_dist1)
