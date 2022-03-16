@@ -218,9 +218,14 @@ def _has_diagonal_scale(d: MultivariateNormalLike) -> bool:
   if (isinstance(d, MultivariateNormalFromBijector)
       and isinstance(d.scale, diag_linear.DiagLinear)):
     return True
-  elif isinstance(d, tfd.MultivariateNormalDiag):
-    # This does not cover all cases, but we do not have access to the TFP
-    # `LinearOperator` classes.
+  elif (isinstance(d, tfd.MultivariateNormalDiag) or
+        (isinstance(d, tfd.MultivariateNormalFullCovariance) and
+         d.parameters['covariance_matrix'] is None) or
+        (isinstance(d, tfd.MultivariateNormalTriL) and
+         not isinstance(d, tfd.MultivariateNormalFullCovariance) and
+         d.parameters['scale_tril'] is None) or
+        (isinstance(d, tfd.MultivariateNormalDiagPlusLowRank) and
+         d.parameters['scale_perturb_factor'] is None)):
     return True
   return False
 
