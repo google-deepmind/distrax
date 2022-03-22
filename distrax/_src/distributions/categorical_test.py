@@ -362,44 +362,52 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('entropy; from 2d logits',
        'entropy',
        {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
-       ()),
+       (),
+       5e-6),
       ('entropy; from 2d probs',
        'entropy',
        {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
-       ()),
+       (),
+       5e-5),
       ('mode; from 2d logits',
        'mode',
        {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
-       ()),
+       (),
+       1e-6),
       ('mode; from 2d probs',
        'mode',
        {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
-       ()),
+       (),
+       1e-6),
       ('cdf; from 2d logits',
        'cdf',
        {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
-       ([[0, 1], [2, 1]],)),
+       ([[0, 1], [2, 1]],),
+       1e-6),
       ('cdf; from 2d probs',
        'cdf',
        {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
-       ([[0, 1], [2, 1]],)),
+       ([[0, 1], [2, 1]],),
+       1e-6),
       ('log_cdf; from 2d logits',
        'log_cdf',
        {'logits': [[0.0, 0.5, -0.5], [-0.2, 0.3, 0.5]]},
-       ([[0, 1], [2, 1]],)),
+       ([[0, 1], [2, 1]],),
+       5e-6),
       ('log_cdf; from 2d probs',
        'log_cdf',
        {'probs': [[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]]},
-       ([[0, 1], [2, 1]],)),
+       ([[0, 1], [2, 1]],),
+       1e-6),
   )
-  def test_method(self, function_string, distr_params, values):
+  def test_method(self, function_string, distr_params, values, atol):
     distr_params = {k: jnp.asarray(v) for k, v in distr_params.items()}
     values = () if not values else jnp.asarray(values, dtype=jnp.int32)
     super()._test_attribute(
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=values,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=lambda x, y: np.testing.assert_allclose(x, y, atol=atol))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -424,14 +432,15 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
-      ('kl distrax_to_distrax', 'kl_divergence', 'distrax_to_distrax'),
-      ('kl distrax_to_tfp', 'kl_divergence', 'distrax_to_tfp'),
-      ('kl tfp_to_distrax', 'kl_divergence', 'tfp_to_distrax'),
-      ('cross-ent distrax_to_distrax', 'cross_entropy', 'distrax_to_distrax'),
-      ('cross-ent distrax_to_tfp', 'cross_entropy', 'distrax_to_tfp'),
-      ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax'))
+      ('kl distrax_to_distrax', 'kl_divergence', 'distrax_to_distrax', 5e-5),
+      ('kl distrax_to_tfp', 'kl_divergence', 'distrax_to_tfp', 5e-5),
+      ('kl tfp_to_distrax', 'kl_divergence', 'tfp_to_distrax', 1e-5),
+      ('cross-ent distrax_to_distrax', 'cross_entropy', 'distrax_to_distrax',
+       5e-5),
+      ('cross-ent distrax_to_tfp', 'cross_entropy', 'distrax_to_tfp', 5e-5),
+      ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax', 1e-5))
   def test_with_two_distributions_extreme_cases(
-      self, function_string, mode_string):
+      self, function_string, mode_string, atol):
     super()._test_with_two_distributions(
         attribute_string=function_string,
         mode_string=mode_string,
@@ -442,7 +451,7 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist2_kwargs={
             'logits': jnp.asarray([0.0, 0.1, -jnp.inf]),
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=lambda x, y: np.testing.assert_allclose(x, y, atol=atol))
 
   def test_jittable(self):
     super()._test_jittable((np.array([0., 4., -1., 4.]),))

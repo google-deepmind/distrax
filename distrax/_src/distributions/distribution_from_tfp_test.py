@@ -32,7 +32,7 @@ from tensorflow_probability.substrates import jax as tfp
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
-RTOL = 1e-4
+RTOL = 2e-4
 
 
 class DistributionFromTfpNormal(parameterized.TestCase):
