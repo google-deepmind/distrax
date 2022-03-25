@@ -48,6 +48,9 @@ from distrax._src.distributions.logistic import Logistic
 from distrax._src.distributions.mixture_same_family import MixtureSameFamily
 from distrax._src.distributions.multinomial import Multinomial
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
+from distrax._src.distributions.mvn_diag_plus_low_rank import MultivariateNormalDiagPlusLowRank
+from distrax._src.distributions.mvn_full_covariance import MultivariateNormalFullCovariance
+from distrax._src.distributions.mvn_tri import MultivariateNormalTri
 from distrax._src.distributions.normal import Normal
 from distrax._src.distributions.one_hot_categorical import OneHotCategorical
 from distrax._src.distributions.quantized import Quantized
@@ -69,7 +72,7 @@ from distrax._src.utils.monte_carlo import mc_estimate_kl_with_reparameterized
 from distrax._src.utils.monte_carlo import mc_estimate_mode
 from distrax._src.utils.transformations import register_inverse
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = (
     "as_bijector",
@@ -106,6 +109,9 @@ __all__ = (
     "Multinomial",
     "multiply_no_nan",
     "MultivariateNormalDiag",
+    "MultivariateNormalDiagPlusLowRank",
+    "MultivariateNormalFullCovariance",
+    "MultivariateNormalTri",
     "Normal",
     "OneHotCategorical",
     "Quantized",
