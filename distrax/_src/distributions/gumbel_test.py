@@ -23,15 +23,15 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 3e-2
-
 
 class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(gumbel.Gumbel)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+
+  def assertion_fn(self, rtol=3e-2):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @parameterized.named_parameters(
       ('1d std gumbel', (0, 1)),
@@ -98,7 +98,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=distr_params,
         dist_kwargs=dict(),
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn())
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -121,7 +121,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
             dist_args=distr_params,
             dist_kwargs={},
             call_args=(value,),
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -147,7 +147,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_attribute(
         attribute_string=function_string,
         dist_args=distr_params,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -159,7 +159,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),  # For TFP.
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(
+    self.assertion_fn()(
         self.variant(dist.median)(),
         dist.loc - dist.scale * jnp.log(jnp.log(2.)))
 
@@ -185,10 +185,10 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
             'loc': np.array(np.random.randn(3, 2), dtype=np.float32),
             'scale': 0.1 + np.array(np.random.rand(4, 1, 2), dtype=np.float32),
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=4e-2))
 
   def test_jittable(self):
-    super()._test_jittable((0.1, 1.2), assertion_fn=self.assertion_fn)
+    super()._test_jittable((0.1, 1.2), assertion_fn=self.assertion_fn())
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -200,15 +200,15 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
     loc = jnp.array(np.random.randn(3, 4, 5))
     scale = jnp.array(0.1 + np.random.rand(3, 4, 5))
     dist = self.distrax_cls(loc=loc, scale=scale)
-    self.assertion_fn(dist[slice_].loc, loc[slice_])
-    self.assertion_fn(dist[slice_].scale, scale[slice_])
+    self.assertion_fn()(dist[slice_].loc, loc[slice_])
+    self.assertion_fn()(dist[slice_].scale, scale[slice_])
 
   def test_slice_different_parameterization(self):
     loc = jnp.array(np.random.randn(4))
     scale = jnp.array(0.1 + np.random.rand(3, 4))
     dist = self.distrax_cls(loc=loc, scale=scale)
-    self.assertion_fn(dist[0].loc, loc)  # Not slicing loc.
-    self.assertion_fn(dist[0].scale, scale[0])
+    self.assertion_fn()(dist[0].loc, loc)  # Not slicing loc.
+    self.assertion_fn()(dist[0].scale, scale[0])
 
 
 if __name__ == '__main__':
