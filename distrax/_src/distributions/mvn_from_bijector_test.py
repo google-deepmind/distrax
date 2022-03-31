@@ -20,7 +20,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
-from distrax._src.bijectors import bijector
+from distrax._src.bijectors import linear
 from distrax._src.bijectors.diag_linear import DiagLinear
 from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
@@ -36,8 +36,11 @@ tfd = tfp.distributions
 Array = chex.Array
 
 
-class DummyBijector(bijector.Bijector):
-  """A dummy bijector."""
+class MockLinear(linear.Linear):
+  """A mock linear bijector."""
+
+  def __init__(self, event_dims: int):
+    super().__init__(event_dims, batch_shape=(), dtype=float)
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
@@ -47,18 +50,13 @@ class DummyBijector(bijector.Bijector):
 class MultivariateNormalFromBijectorTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
-      ('wrong event_ndims_in', 2, 1, True, np.zeros((4,))),
-      ('wrong event_ndims_out', 1, 2, True, np.zeros((4,))),
-      ('not constant Jacobian', 1, 1, False, np.zeros((4,))),
-      ('loc is 0d', 1, 1, True, np.zeros(shape=())),
-      ('loc has more dims than batch_shape', 1, 1, True,
-       np.zeros(shape=(2, 4))),
+      ('loc is 0d', 4, np.zeros(shape=())),
+      ('loc and scale dims not compatible', 3, np.zeros((4,))),
   )
-  def test_raises_on_wrong_inputs(
-      self, event_ndims_in, event_ndims_out, is_constant_jacobian, loc):
-    bij = DummyBijector(event_ndims_in, event_ndims_out, is_constant_jacobian)
+  def test_raises_on_wrong_inputs(self, event_dims, loc):
+    bij = MockLinear(event_dims)
     with self.assertRaises(ValueError):
-      MultivariateNormalFromBijector(loc, bij, batch_shape=())
+      MultivariateNormalFromBijector(loc, bij)
 
   @parameterized.named_parameters(
       ('no broadcast', np.ones((4,)), np.zeros((4,)), (4,)),
@@ -68,7 +66,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
   def test_loc_scale_and_shapes(self, diag, loc, expected_shape):
     scale = DiagLinear(diag)
     batch_shape = jnp.broadcast_shapes(diag.shape, loc.shape)[:-1]
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
+    dist = MultivariateNormalFromBijector(loc, scale)
     np.testing.assert_allclose(dist.loc, np.zeros(expected_shape))
     self.assertTrue(scale.same_as(dist.scale))
     self.assertEqual(dist.event_shape, (4,))
@@ -80,7 +78,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     diag = 0.5 + jax.random.uniform(next(prng), (4,))
     loc = jax.random.normal(next(prng), (4,))
     scale = DiagLinear(diag)
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape=())
+    dist = MultivariateNormalFromBijector(loc, scale)
     num_samples = 100_000
     sample_fn = lambda seed: dist.sample(seed=seed, sample_shape=num_samples)
     samples = self.variant(sample_fn)(jax.random.PRNGKey(2000))
@@ -94,7 +92,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     diag = 0.5 + jax.random.uniform(next(prng), (4,))
     loc = jax.random.normal(next(prng), (4,))
     scale = DiagLinear(diag)
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape=())
+    dist = MultivariateNormalFromBijector(loc, scale)
     values = jax.random.normal(next(prng), (5, 4))
     tfp_dist = tfd.MultivariateNormalDiag(loc=loc, scale_diag=diag)
     np.testing.assert_allclose(
@@ -112,7 +110,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc = jax.random.normal(next(prng), loc_shape)
     scale = DiagLinear(diag)
     batch_shape = jnp.broadcast_shapes(diag_shape, loc_shape)[:-1]
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
+    dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['mean', 'median', 'mode']:
       with self.subTest(method=method):
         fn = self.variant(getattr(dist, method))
@@ -131,7 +129,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc = jax.random.normal(next(prng), loc_shape)
     scale = DiagLinear(scale_diag)
     batch_shape = jnp.broadcast_shapes(scale_shape[:-1], loc_shape[:-1])
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
+    dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['variance', 'stddev', 'covariance']:
       with self.subTest(method=method):
         fn = self.variant(getattr(dist, method))
@@ -160,7 +158,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     loc = jax.random.normal(next(prng), loc_shape)
     scale = TriangularLinear(matrix=scale_tril, is_lower=True)
     batch_shape = jnp.broadcast_shapes(scale_shape[:-2], loc_shape[:-1])
-    dist = MultivariateNormalFromBijector(loc, scale, batch_shape)
+    dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['variance', 'stddev', 'covariance']:
       with self.subTest(method=method):
         fn = self.variant(getattr(dist, method))
@@ -191,7 +189,6 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist1_distrax = MultivariateNormalFromBijector(
         loc=loc1,
         scale=DiagLinear(scale_diag1),
-        batch_shape=(3,),
     )
     dist1_tfp = tfd.MultivariateNormalDiag(
         loc=loc1, scale_diag=scale_diag1)
@@ -201,7 +198,6 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist2_distrax = MultivariateNormalFromBijector(
         loc=loc2,
         scale=DiagLinear(scale_diag2),
-        batch_shape=(),
     )
     dist2_tfp = tfd.MultivariateNormalDiag(
         loc=loc2, scale_diag=scale_diag2)
@@ -232,7 +228,6 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist1_distrax = MultivariateNormalFromBijector(
         loc=loc1,
         scale=TriangularLinear(matrix=scale_tril1),
-        batch_shape=(3,),
     )
     dist1_tfp = tfd.MultivariateNormalTriL(loc=loc1, scale_tril=scale_tril1)
 
@@ -241,7 +236,6 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist2_distrax = MultivariateNormalFromBijector(
         loc=loc2,
         scale=TriangularLinear(matrix=scale_tril2),
-        batch_shape=(),
     )
     dist2_tfp = tfd.MultivariateNormalTriL(loc=loc2, scale_tril=scale_tril2)
 
@@ -267,13 +261,11 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist1 = MultivariateNormalFromBijector(
         loc=jnp.zeros((dim,)),
         scale=DiagLinear(diag=jnp.ones((dim,))),
-        batch_shape=(),
     )
     dim = 5
     dist2 = MultivariateNormalFromBijector(
         loc=jnp.zeros((dim,)),
         scale=DiagLinear(diag=jnp.ones((dim,))),
-        batch_shape=(),
     )
     with self.assertRaises(ValueError):
       dist1.kl_divergence(dist2)

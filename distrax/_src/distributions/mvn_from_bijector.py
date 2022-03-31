@@ -14,19 +14,18 @@
 # ==============================================================================
 """MultivariateNormalFromBijector distribution."""
 
-from typing import Callable, Tuple, Union
+from typing import Callable, Union
 
 import chex
 
-from distrax._src.bijectors import bijector as base_bijector
 from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
 from distrax._src.bijectors import diag_linear
+from distrax._src.bijectors import linear
 from distrax._src.bijectors import shift
 from distrax._src.distributions import independent
 from distrax._src.distributions import normal
 from distrax._src.distributions import transformed
-from distrax._src.utils import conversion
 
 import jax
 import jax.numpy as jnp
@@ -38,27 +37,15 @@ tfd = tfp.distributions
 Array = chex.Array
 
 
-def _check_input_parameters_are_valid(
-    scale: base_bijector.Bijector, loc: Array,
-    batch_shape: Tuple[int, ...]) -> None:
-  """Raises an error if the inputs `scale` and `loc` are not valid."""
-  if scale.event_ndims_in != 1:
-    raise ValueError(f'Incorrect value for the `event_ndims_in` '
-                     f'attribute of the scale bijector: '
-                     f'{scale.event_ndims_in} != 1.')
-  if scale.event_ndims_out != 1:
-    raise ValueError(f'Incorrect value for the `event_ndims_out` '
-                     f'attribute of the scale bijector: '
-                     f'{scale.event_ndims_out} != 1.')
-  if not scale.is_constant_jacobian:
-    raise ValueError('The scale bijector should be a linear bijector.')
+def _check_input_parameters_are_valid(scale: linear.Linear, loc: Array) -> None:
+  """Raises an error if `scale` and `loc` are not valid."""
   if loc.ndim < 1:
     raise ValueError('`loc` must have at least 1 dimension.')
-  if loc.ndim - 1 > len(batch_shape):
+  if scale.event_dims != loc.shape[-1]:
     raise ValueError(
-        f'`loc` must have fewer batch dimensions that `batch_shape`; got '
-        f'`loc.ndim - 1 = {loc.ndim - 1}` and `len(batch_shape) = '
-        f'{len(batch_shape)}`.')
+        f'`scale` and `loc` have inconsistent dimensionality: '
+        f'`scale.event_dims = {scale.event_dims} and '
+        f'`loc.shape[-1] = {loc.shape[-1]}.')
 
 
 class MultivariateNormalFromBijector(transformed.Transformed):
@@ -73,28 +60,21 @@ class MultivariateNormalFromBijector(transformed.Transformed):
   `C = A @ A.T` is the covariance matrix. Additional leading dimensions (if any)
   index batches.
 
-  The transformation `x = f(z)` must be specified by a scale bijector
-  implementing the operation `A @ z` and a shift (or location) term `b`. If the
-  `is_constant_jacobian` property of the scale bijector is False, an error is
-  raised.
+  The transformation `x = f(z)` must be specified by a linear scale bijector
+  implementing the operation `A @ z` and a shift (or location) term `b`.
   """
 
-  def __init__(self,
-               loc: Array,
-               scale: base_bijector.BijectorLike,
-               batch_shape: Tuple[int, ...],
-               dtype: jnp.dtype = jnp.float32):
+  def __init__(self, loc: Array, scale: linear.Linear):
     """Initializes the distribution.
 
     Args:
       loc: The term `b`, i.e., the mean of the multivariate normal distribution.
       scale: The bijector specifying the linear transformation `A @ z`, as
         described in the class docstring.
-      batch_shape: Shape of batch of distribution samples.
-      dtype: Type of the distribution samples.
     """
-    scale = conversion.as_bijector(scale)
-    _check_input_parameters_are_valid(scale, loc, batch_shape)
+    _check_input_parameters_are_valid(scale, loc)
+    batch_shape = jnp.broadcast_shapes(scale.batch_shape, loc.shape[:-1])
+    dtype = jnp.result_type(scale.dtype, loc.dtype)
 
     # Build a standard multivariate Gaussian with the right `batch_shape`.
     std_mvn_dist = independent.Independent(
@@ -112,15 +92,9 @@ class MultivariateNormalFromBijector(transformed.Transformed):
     self._dtype = dtype
 
   @property
-  def scale(self) -> base_bijector.Bijector:
+  def scale(self) -> linear.Linear:
     """The scale bijector."""
     return self._scale
-
-  @property
-  def _scale_matrix(self) -> Array:
-    """The scale matrix."""
-    # `getattr` needed to avoid compilation errors.
-    return getattr(self._scale, 'matrix')
 
   @property
   def loc(self) -> Array:
@@ -155,7 +129,7 @@ class MultivariateNormalFromBijector(transformed.Transformed):
       result = jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(self.variance())
     else:
       result = jax.vmap(self.scale.forward, in_axes=-2, out_axes=-2)(
-          self._scale_matrix)
+          self._scale.matrix)
     return jnp.broadcast_to(
         result, self.batch_shape + self.event_shape + self.event_shape)
 
@@ -164,7 +138,8 @@ class MultivariateNormalFromBijector(transformed.Transformed):
     if isinstance(self.scale, diag_linear.DiagLinear):
       result = jnp.square(self.scale.diag)
     else:
-      result = jnp.sum(self._scale_matrix * self._scale_matrix, axis=-1)
+      scale_matrix = self._scale.matrix
+      result = jnp.sum(scale_matrix * scale_matrix, axis=-1)
     return jnp.broadcast_to(result, self.batch_shape + self.event_shape)
 
   def stddev(self) -> Array:

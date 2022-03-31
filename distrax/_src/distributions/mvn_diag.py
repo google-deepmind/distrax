@@ -89,9 +89,7 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
     bias = jnp.expand_dims(
         bias, axis=list(range(len(broadcasted_shapes) - bias.ndim)))
     scale = DiagLinear(scale_diag)
-    super().__init__(
-        loc=loc, scale=scale, batch_shape=broadcasted_shapes[:-1],
-        dtype=jnp.result_type(loc, scale_diag))
+    super().__init__(loc=loc, scale=scale)
     self._scale_diag = scale_diag
 
   @property
