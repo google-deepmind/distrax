@@ -28,24 +28,41 @@ import numpy as np
 
 class DiagPlusLowRankLinearTest(parameterized.TestCase):
 
-  def test_jacobian_is_constant_property(self):
+  def test_static_properties(self):
     bij = DiagPlusLowRankLinear(
         diag=jnp.ones((4,)),
         u_matrix=jnp.ones((4, 2)),
         v_matrix=jnp.ones((4, 2)))
     self.assertTrue(bij.is_constant_jacobian)
     self.assertTrue(bij.is_constant_log_det)
+    self.assertEqual(bij.event_ndims_in, 1)
+    self.assertEqual(bij.event_ndims_out, 1)
 
-  def test_properties(self):
+  @parameterized.parameters(
+      {'batch_shape': (), 'dtype': jnp.float16},
+      {'batch_shape': (2, 3), 'dtype': jnp.float32},
+  )
+  def test_properties(self, batch_shape, dtype):
     bij = DiagPlusLowRankLinear(
-        diag=jnp.ones((4,)),
-        u_matrix=2. * jnp.ones((4, 2)),
-        v_matrix=3. * jnp.ones((4, 2)))
-    np.testing.assert_allclose(bij.diag, np.ones(4), atol=1e-6)
-    np.testing.assert_allclose(bij.u_matrix, np.full((4, 2), 2.), atol=1e-6)
-    np.testing.assert_allclose(bij.v_matrix, np.full((4, 2), 3.), atol=1e-6)
+        diag=jnp.ones(batch_shape + (4,), dtype),
+        u_matrix=2. * jnp.ones(batch_shape + (4, 2), dtype),
+        v_matrix=3. * jnp.ones(batch_shape + (4, 2), dtype))
+    self.assertEqual(bij.event_dims, 4)
+    self.assertEqual(bij.batch_shape, batch_shape)
+    self.assertEqual(bij.dtype, dtype)
+    self.assertEqual(bij.diag.shape, batch_shape + (4,))
+    self.assertEqual(bij.u_matrix.shape, batch_shape + (4, 2))
+    self.assertEqual(bij.v_matrix.shape, batch_shape + (4, 2))
+    self.assertEqual(bij.matrix.shape, batch_shape + (4, 4))
+    self.assertEqual(bij.diag.dtype, dtype)
+    self.assertEqual(bij.u_matrix.dtype, dtype)
+    self.assertEqual(bij.v_matrix.dtype, dtype)
+    self.assertEqual(bij.matrix.dtype, dtype)
+    np.testing.assert_allclose(bij.diag, 1., atol=1e-6)
+    np.testing.assert_allclose(bij.u_matrix, 2., atol=1e-6)
+    np.testing.assert_allclose(bij.v_matrix, 3., atol=1e-6)
     np.testing.assert_allclose(
-        bij.matrix, np.eye(4) + np.full((4, 4), 12.), atol=1e-6)
+        bij.matrix, np.tile(np.eye(4) + 12., batch_shape + (1, 1)), atol=1e-6)
 
   @parameterized.named_parameters(
       ('diag is 0d', {'diag': np.ones(()),

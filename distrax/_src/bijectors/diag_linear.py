@@ -14,15 +14,18 @@
 # ==============================================================================
 """Diagonal linear bijector."""
 
+from typing import Tuple
+
 from distrax._src.bijectors import bijector as base
 from distrax._src.bijectors import block
+from distrax._src.bijectors import linear
 from distrax._src.bijectors import scalar_affine
 import jax.numpy as jnp
 
 Array = base.Array
 
 
-class DiagLinear(block.Block):
+class DiagLinear(linear.Linear):
   """Linear bijector with a diagonal weight matrix.
 
   The bijector is defined as `f(x) = Ax` where `A` is a `DxD` diagonal matrix.
@@ -47,9 +50,18 @@ class DiagLinear(block.Block):
     """
     if diag.ndim < 1:
       raise ValueError("`diag` must have at least one dimension.")
-    bijector = scalar_affine.ScalarAffine(shift=0., scale=diag)
-    super().__init__(bijector=bijector, ndims=1)
+    self._bijector = block.Block(
+        scalar_affine.ScalarAffine(shift=0., scale=diag), ndims=1)
+    super().__init__(
+        event_dims=diag.shape[-1],
+        batch_shape=diag.shape[:-1],
+        dtype=diag.dtype)
     self._diag = diag
+    self.forward = self._bijector.forward
+    self.forward_log_det_jacobian = self._bijector.forward_log_det_jacobian
+    self.inverse = self._bijector.inverse
+    self.inverse_log_det_jacobian = self._bijector.inverse_log_det_jacobian
+    self.inverse_and_log_det = self._bijector.inverse_and_log_det
 
   @property
   def diag(self) -> Array:
@@ -60,6 +72,10 @@ class DiagLinear(block.Block):
   def matrix(self) -> Array:
     """The full matrix `A`."""
     return jnp.vectorize(jnp.diag, signature="(k)->(k,k)")(self.diag)
+
+  def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
+    """Computes y = f(x) and log|det J(f)(x)|."""
+    return self._bijector.forward_and_log_det(x)
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""

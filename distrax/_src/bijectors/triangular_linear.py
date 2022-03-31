@@ -18,6 +18,7 @@ import functools
 from typing import Tuple
 
 from distrax._src.bijectors import bijector as base
+from distrax._src.bijectors import linear
 import jax
 import jax.numpy as jnp
 
@@ -37,7 +38,7 @@ def _inverse_unbatched(y: Array, matrix: Array, is_lower: bool) -> Array:
   return jax.scipy.linalg.solve_triangular(matrix, y, lower=is_lower)
 
 
-class TriangularLinear(base.Bijector):
+class TriangularLinear(linear.Linear):
   """A linear bijector whose weight matrix is triangular.
 
   The bijector is defined as `f(x) = Ax` where `A` is a DxD triangular matrix.
@@ -70,8 +71,10 @@ class TriangularLinear(base.Bijector):
     if matrix.shape[-2] != matrix.shape[-1]:
       raise ValueError(f"`matrix` must be square; instead, it has shape"
                        f" {matrix.shape[-2:]}.")
-    super().__init__(event_ndims_in=1, is_constant_jacobian=True)
-    self._batch_shape = matrix.shape[:-2]
+    super().__init__(
+        event_dims=matrix.shape[-1],
+        batch_shape=matrix.shape[:-2],
+        dtype=matrix.dtype)
     self._matrix = jnp.tril(matrix) if is_lower else jnp.triu(matrix)
     self._is_lower = is_lower
     triangular_logdet = jnp.vectorize(_triangular_logdet, signature="(m,m)->()")
@@ -96,7 +99,7 @@ class TriangularLinear(base.Bijector):
   def forward_log_det_jacobian(self, x: Array) -> Array:
     """Computes log|det J(f)(x)|."""
     self._check_forward_input_shape(x)
-    batch_shape = jax.lax.broadcast_shapes(self._batch_shape, x.shape[:-1])
+    batch_shape = jax.lax.broadcast_shapes(self.batch_shape, x.shape[:-1])
     return jnp.broadcast_to(self._logdet, batch_shape)
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:

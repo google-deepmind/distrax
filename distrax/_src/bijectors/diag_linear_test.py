@@ -28,15 +28,29 @@ import numpy as np
 
 class DiagLinearTest(parameterized.TestCase):
 
-  def test_jacobian_is_constant_property(self):
+  def test_static_properties(self):
     bij = DiagLinear(diag=jnp.ones((4,)))
     self.assertTrue(bij.is_constant_jacobian)
     self.assertTrue(bij.is_constant_log_det)
+    self.assertEqual(bij.event_ndims_in, 1)
+    self.assertEqual(bij.event_ndims_out, 1)
 
-  def test_properties(self):
-    bij = DiagLinear(diag=jnp.ones((4,)))
-    np.testing.assert_allclose(bij.diag, np.ones(4), atol=1e-6)
-    np.testing.assert_allclose(bij.matrix, np.eye(4), atol=1e-6)
+  @parameterized.parameters(
+      {'batch_shape': (), 'dtype': jnp.float16},
+      {'batch_shape': (2, 3), 'dtype': jnp.float32},
+  )
+  def test_properties(self, batch_shape, dtype):
+    bij = DiagLinear(diag=jnp.ones(batch_shape + (4,), dtype))
+    self.assertEqual(bij.event_dims, 4)
+    self.assertEqual(bij.batch_shape, batch_shape)
+    self.assertEqual(bij.dtype, dtype)
+    self.assertEqual(bij.diag.shape, batch_shape + (4,))
+    self.assertEqual(bij.matrix.shape, batch_shape + (4, 4))
+    self.assertEqual(bij.diag.dtype, dtype)
+    self.assertEqual(bij.matrix.dtype, dtype)
+    np.testing.assert_allclose(bij.diag, 1., atol=1e-6)
+    np.testing.assert_allclose(
+        bij.matrix, np.tile(np.eye(4), batch_shape + (1, 1)), atol=1e-6)
 
   def test_raises_with_invalid_parameters(self):
     with self.assertRaises(ValueError):

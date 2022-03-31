@@ -28,17 +28,30 @@ import numpy as np
 
 class TriangularLinearTest(parameterized.TestCase):
 
-  def test_jacobian_is_constant_property(self):
-    bijector = TriangularLinear(matrix=jnp.eye(4))
-    self.assertTrue(bijector.is_constant_jacobian)
-    self.assertTrue(bijector.is_constant_log_det)
+  def test_static_properties(self):
+    bij = TriangularLinear(matrix=jnp.eye(4))
+    self.assertTrue(bij.is_constant_jacobian)
+    self.assertTrue(bij.is_constant_log_det)
+    self.assertEqual(bij.event_ndims_in, 1)
+    self.assertEqual(bij.event_ndims_out, 1)
 
-  @parameterized.parameters(True, False)
-  def test_properties(self, is_lower):
-    bijector = TriangularLinear(matrix=jnp.ones((4, 4)), is_lower=is_lower)
+  @parameterized.parameters(
+      {'batch_shape': (), 'dtype': jnp.float16, 'is_lower': True},
+      {'batch_shape': (2, 3), 'dtype': jnp.float32, 'is_lower': False},
+  )
+  def test_properties(self, batch_shape, dtype, is_lower):
+    bij = TriangularLinear(
+        matrix=jnp.ones(batch_shape + (4, 4), dtype), is_lower=is_lower)
+    self.assertEqual(bij.event_dims, 4)
+    self.assertEqual(bij.batch_shape, batch_shape)
+    self.assertEqual(bij.dtype, dtype)
+    self.assertEqual(bij.matrix.shape, batch_shape + (4, 4))
+    self.assertEqual(bij.matrix.dtype, dtype)
     tri = np.tril if is_lower else np.triu
-    np.testing.assert_allclose(bijector.matrix, tri(np.ones(4)), atol=1e-6)
-    self.assertEqual(bijector.is_lower, is_lower)
+    np.testing.assert_allclose(
+        bij.matrix, np.tile(tri(np.ones((4, 4))), batch_shape + (1, 1)),
+        atol=1e-6)
+    self.assertEqual(bij.is_lower, is_lower)
 
   @parameterized.named_parameters(
       ('matrix is 0d', {'matrix': np.zeros(())}),

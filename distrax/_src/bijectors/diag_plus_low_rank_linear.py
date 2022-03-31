@@ -19,6 +19,7 @@ from typing import Tuple
 from distrax._src.bijectors import bijector as base
 from distrax._src.bijectors import chain
 from distrax._src.bijectors import diag_linear
+from distrax._src.bijectors import linear
 import jax
 import jax.numpy as jnp
 
@@ -144,7 +145,7 @@ def _check_shapes_are_valid(diag: Array,
         f"`u_matrix.shape = {u_shape}` and `v_matrix.shape = {v_shape}`.")
 
 
-class DiagPlusLowRankLinear(chain.Chain):
+class DiagPlusLowRankLinear(linear.Linear):
   """Linear bijector whose weights are a low-rank perturbation of a diagonal.
 
   The bijector is defined as `f(x) = Ax` where `A = S + UV^T` and:
@@ -190,10 +191,21 @@ class DiagPlusLowRankLinear(chain.Chain):
     id_plus_low_rank_linear = _IdentityPlusLowRankLinear(
         u_matrix=u_matrix / diag[..., None],
         v_matrix=v_matrix)
-    super().__init__([diag_linear.DiagLinear(diag), id_plus_low_rank_linear])
+    self._bijector = chain.Chain(
+        [diag_linear.DiagLinear(diag), id_plus_low_rank_linear])
+    batch_shape = jnp.broadcast_shapes(
+        diag.shape[:-1], u_matrix.shape[:-2], v_matrix.shape[:-2])
+    dtype = jnp.result_type(diag, u_matrix, v_matrix)
+    super().__init__(
+        event_dims=diag.shape[-1], batch_shape=batch_shape, dtype=dtype)
     self._diag = diag
     self._u_matrix = u_matrix
     self._v_matrix = v_matrix
+    self.forward = self._bijector.forward
+    self.forward_log_det_jacobian = self._bijector.forward_log_det_jacobian
+    self.inverse = self._bijector.inverse
+    self.inverse_log_det_jacobian = self._bijector.inverse_log_det_jacobian
+    self.inverse_and_log_det = self._bijector.inverse_and_log_det
 
   @property
   def diag(self) -> Array:
@@ -217,6 +229,10 @@ class DiagPlusLowRankLinear(chain.Chain):
         lambda s, u, v: jnp.diag(s) + u @ v.T,
         signature="(d),(d,k),(d,k)->(d,d)")
     return batched(self._diag, self._u_matrix, self._v_matrix)
+
+  def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
+    """Computes y = f(x) and log|det J(f)(x)|."""
+    return self._bijector.forward_and_log_det(x)
 
   def same_as(self, other: base.Bijector) -> bool:
     """Returns True if this bijector is guaranteed to be the same as `other`."""
