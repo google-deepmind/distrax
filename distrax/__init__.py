@@ -19,16 +19,21 @@ from distrax._src.bijectors.bijector import Bijector
 from distrax._src.bijectors.bijector import BijectorLike
 from distrax._src.bijectors.block import Block
 from distrax._src.bijectors.chain import Chain
+from distrax._src.bijectors.diag_linear import DiagLinear
+from distrax._src.bijectors.diag_plus_low_rank_linear import DiagPlusLowRankLinear
 from distrax._src.bijectors.gumbel_cdf import GumbelCDF
 from distrax._src.bijectors.inverse import Inverse
 from distrax._src.bijectors.lambda_bijector import Lambda
+from distrax._src.bijectors.linear import Linear
 from distrax._src.bijectors.lower_upper_triangular_affine import LowerUpperTriangularAffine
 from distrax._src.bijectors.masked_coupling import MaskedCoupling
 from distrax._src.bijectors.rational_quadratic_spline import RationalQuadraticSpline
 from distrax._src.bijectors.scalar_affine import ScalarAffine
+from distrax._src.bijectors.shift import Shift
 from distrax._src.bijectors.sigmoid import Sigmoid
 from distrax._src.bijectors.split_coupling import SplitCoupling
 from distrax._src.bijectors.tanh import Tanh
+from distrax._src.bijectors.triangular_linear import TriangularLinear
 from distrax._src.bijectors.unconstrained_affine import UnconstrainedAffine
 
 # Distributions.
@@ -49,6 +54,7 @@ from distrax._src.distributions.mixture_same_family import MixtureSameFamily
 from distrax._src.distributions.multinomial import Multinomial
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
 from distrax._src.distributions.mvn_diag_plus_low_rank import MultivariateNormalDiagPlusLowRank
+from distrax._src.distributions.mvn_from_bijector import MultivariateNormalFromBijector
 from distrax._src.distributions.mvn_full_covariance import MultivariateNormalFullCovariance
 from distrax._src.distributions.mvn_tri import MultivariateNormalTri
 from distrax._src.distributions.normal import Normal
@@ -84,6 +90,8 @@ __all__ = (
     "Block",
     "Categorical",
     "Chain",
+    "DiagLinear",
+    "DiagPlusLowRankLinear",
     "Distribution",
     "DistributionLike",
     "EpsilonGreedy",
@@ -98,6 +106,7 @@ __all__ = (
     "Inverse",
     "Lambda",
     "Laplace",
+    "Linear",
     "LogStddevNormal",
     "Logistic",
     "LowerUpperTriangularAffine",
@@ -110,6 +119,7 @@ __all__ = (
     "multiply_no_nan",
     "MultivariateNormalDiag",
     "MultivariateNormalDiagPlusLowRank",
+    "MultivariateNormalFromBijector",
     "MultivariateNormalFullCovariance",
     "MultivariateNormalTri",
     "Normal",
@@ -118,11 +128,13 @@ __all__ = (
     "RationalQuadraticSpline",
     "register_inverse",
     "ScalarAffine",
+    "Shift",
     "Sigmoid",
     "Softmax",
     "SplitCoupling",
     "to_tfp",
     "Transformed",
+    "TriangularLinear",
     "UnconstrainedAffine",
     "Uniform",
 )
