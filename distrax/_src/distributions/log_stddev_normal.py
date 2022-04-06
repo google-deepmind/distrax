@@ -91,7 +91,7 @@ def _kl_logstddevnormal_logstddevnormal(p, q, *unused_args, **unused_kwargs):
   # (s_a^2 + (u_a - u_b)^2)/(2*s_b^2) + log(s_b) - log(s_a) - 1/2
   p_variance = jnp.square(p.scale)
   q_variance = jnp.square(q.scale)
-  return ((p_variance + jnp.square(p.loc - q.loc))/(2.0 * q_variance) +
+  return ((p_variance + jnp.square(p.loc - q.loc)) / (2.0 * q_variance) +
           q.log_scale - p.log_scale - 0.5)
 
 
