@@ -103,6 +103,10 @@ class Gamma(distribution.Distribution):
     """See `Distribution.cdf`."""
     return jax.lax.igamma(self._concentration, self._rate * value)
 
+  def log_cdf(self, value: Array) -> Array:
+    """See `Distribution.log_cdf`."""
+    return jnp.log(self.cdf(value))
+
   def mean(self) -> Array:
     """Calculates the mean."""
     return self._concentration / self._rate
