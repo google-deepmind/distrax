@@ -38,6 +38,7 @@ from distrax._src.bijectors.unconstrained_affine import UnconstrainedAffine
 
 # Distributions.
 from distrax._src.distributions.bernoulli import Bernoulli
+from distrax._src.distributions.beta import Beta
 from distrax._src.distributions.categorical import Categorical
 from distrax._src.distributions.deterministic import Deterministic
 from distrax._src.distributions.distribution import Distribution
@@ -84,6 +85,7 @@ __all__ = (
     "as_bijector",
     "as_distribution",
     "Bernoulli",
+    "Beta",
     "Bijector",
     "BijectorLike",
     "Block",

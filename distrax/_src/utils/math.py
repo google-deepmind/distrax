@@ -89,3 +89,18 @@ def log_expbig_minus_expsmall(big: Array, small: Array) -> Array:
     The resulting `log(exp(big) - exp(small))`.
   """
   return big + jnp.log1p(-jnp.exp(small - big))
+
+
+def log_beta(a: Array, b: Array) -> Array:
+  """Obtains the log of the beta function `log B(a, b)`.
+
+  Args:
+    a: First input. It must be positive.
+    b: Second input. It must be positive.
+
+  Returns:
+    The value `log B(a, b) = log Gamma(a) + log Gamma(b) - log Gamma(a + b)`,
+    where `Gamma` is the Gamma function, obtained through stable computation of
+    `log Gamma`.
+  """
+  return jax.lax.lgamma(a) + jax.lax.lgamma(b) - jax.lax.lgamma(a + b)

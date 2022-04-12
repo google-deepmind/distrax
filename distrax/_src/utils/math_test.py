@@ -20,6 +20,7 @@ from distrax._src.utils import math
 import jax
 import jax.numpy as jnp
 import numpy as np
+import scipy
 
 
 class MathTest(absltest.TestCase):
@@ -67,6 +68,11 @@ class MathTest(absltest.TestCase):
     np.testing.assert_allclose(
         math.log_expbig_minus_expsmall(big, small), expected_result, atol=1e-4)
 
+  def test_log_beta(self):
+    a = jnp.abs(jax.random.normal(jax.random.PRNGKey(42), (2, 3, 4)))
+    b = jnp.abs(jax.random.normal(jax.random.PRNGKey(43), (3, 4)))
+    expected_result = scipy.special.betaln(a, b)
+    np.testing.assert_allclose(math.log_beta(a, b), expected_result, atol=2e-4)
 
 if __name__ == '__main__':
   absltest.main()
