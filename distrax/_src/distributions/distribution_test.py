@@ -129,7 +129,7 @@ class DistributionTest(parameterized.TestCase):
   )
   def test_convert_seed(self, dtype):
     rng, _ = distribution.convert_seed_and_sample_shape(dtype(0), 2)
-    assert isinstance(rng, distribution.PRNGKey)
+    jax.random.split(rng)  # Should not raise an error.
 
   @parameterized.named_parameters(
       ('int', 2, (2,)),
