@@ -96,7 +96,10 @@ class ScalarAffine(base.Bijector):
 
   def forward(self, x: Array) -> Array:
     """Computes y = f(x)."""
-    return self._scale * x + self._shift
+    batch_shape = jax.lax.broadcast_shapes(self._batch_shape, x.shape)
+    batched_scale = jnp.broadcast_to(self._scale, batch_shape)
+    batched_shift = jnp.broadcast_to(self._shift, batch_shape)
+    return batched_scale * x + batched_shift
 
   def forward_log_det_jacobian(self, x: Array) -> Array:
     """Computes log|det J(f)(x)|."""
@@ -109,7 +112,10 @@ class ScalarAffine(base.Bijector):
 
   def inverse(self, y: Array) -> Array:
     """Computes x = f^{-1}(y)."""
-    return self._inv_scale * (y - self._shift)
+    batch_shape = jax.lax.broadcast_shapes(self._batch_shape, y.shape)
+    batched_inv_scale = jnp.broadcast_to(self._inv_scale, batch_shape)
+    batched_shift = jnp.broadcast_to(self._shift, batch_shape)
+    return batched_inv_scale * (y - batched_shift)
 
   def inverse_log_det_jacobian(self, y: Array) -> Array:
     """Computes log|det J(f^{-1})(y)|."""
