@@ -104,3 +104,19 @@ def log_beta(a: Array, b: Array) -> Array:
     `log Gamma`.
   """
   return jax.lax.lgamma(a) + jax.lax.lgamma(b) - jax.lax.lgamma(a + b)
+
+
+def log_beta_multivariate(a: Array) -> Array:
+  """Obtains the log of the multivariate beta function `log B(a)`.
+
+  Args:
+    a: An array of length `K` containing positive values.
+
+  Returns:
+    The value
+    `log B(a) = sum_{k=1}^{K} log Gamma(a_k) - log Gamma(sum_{k=1}^{K} a_k)`,
+    where `Gamma` is the Gamma function, obtained through stable computation of
+    `log Gamma`.
+  """
+  return (
+      jnp.sum(jax.lax.lgamma(a), axis=-1) - jax.lax.lgamma(jnp.sum(a, axis=-1)))

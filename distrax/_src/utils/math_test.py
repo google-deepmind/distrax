@@ -74,5 +74,18 @@ class MathTest(absltest.TestCase):
     expected_result = scipy.special.betaln(a, b)
     np.testing.assert_allclose(math.log_beta(a, b), expected_result, atol=2e-4)
 
+  def test_log_beta_bivariate(self):
+    a = jnp.abs(jax.random.normal(jax.random.PRNGKey(42), (4, 3, 2)))
+    expected_result = scipy.special.betaln(a[..., 0], a[..., 1])
+    np.testing.assert_allclose(
+        math.log_beta_multivariate(a), expected_result, atol=2e-4)
+
+  def test_log_beta_multivariate(self):
+    a = jnp.abs(jax.random.normal(jax.random.PRNGKey(42), (2, 3, 4)))
+    expected_result = (jnp.sum(scipy.special.gammaln(a), axis=-1)
+                       - scipy.special.gammaln(jnp.sum(a, axis=-1)))
+    np.testing.assert_allclose(
+        math.log_beta_multivariate(a), expected_result, atol=1e-3)
+
 if __name__ == '__main__':
   absltest.main()

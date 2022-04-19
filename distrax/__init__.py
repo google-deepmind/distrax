@@ -41,6 +41,7 @@ from distrax._src.distributions.bernoulli import Bernoulli
 from distrax._src.distributions.beta import Beta
 from distrax._src.distributions.categorical import Categorical
 from distrax._src.distributions.deterministic import Deterministic
+from distrax._src.distributions.dirichlet import Dirichlet
 from distrax._src.distributions.distribution import Distribution
 from distrax._src.distributions.distribution import DistributionLike
 from distrax._src.distributions.epsilon_greedy import EpsilonGreedy
@@ -94,6 +95,7 @@ __all__ = (
     "Deterministic",
     "DiagLinear",
     "DiagPlusLowRankLinear",
+    "Dirichlet",
     "Distribution",
     "DistributionLike",
     "EpsilonGreedy",
