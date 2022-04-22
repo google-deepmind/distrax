@@ -89,6 +89,8 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('log_prob', 'log_prob'),
       ('prob', 'prob'),
       ('cdf', 'cdf'),
+      ('survival_function', 'survival_function'),
+      ('log_survival_function', 'log_survival_function')
   )
   def test_method_with_inputs(self, function_string):
     inputs = 10. * np.random.normal(size=(100,))

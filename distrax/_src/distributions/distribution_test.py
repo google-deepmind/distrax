@@ -205,6 +205,12 @@ class DistributionTest(parameterized.TestCase):
       distribution.to_batch_shape_index(
           batch_shape=(2, 3, 4), index=index)
 
+  def test_multivariate_survival_function_raises(self):
+    mult_dist = DummyMultivariateDist(42)
+    with self.assertRaises(NotImplementedError):
+      mult_dist.survival_function(jnp.zeros(42))
+    with self.assertRaises(NotImplementedError):
+      mult_dist.log_survival_function(jnp.zeros(42))
 
 if __name__ == '__main__':
   absltest.main()

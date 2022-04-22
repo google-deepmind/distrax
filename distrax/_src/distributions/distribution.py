@@ -188,6 +188,49 @@ class Distribution(jittable.Jittable, metaclass=abc.ABCMeta):
     """
     return jnp.exp(self.log_cdf(value))
 
+  def survival_function(self, value: Array) -> Array:
+    """Evaluates the survival function at `value`.
+
+    Note that by default we use a numerically not necessarily stable definition
+    of the survival function in terms of the CDF.
+    More stable definitions should be implemented in subclasses for
+    distributions for which they exist.
+
+    Args:
+      value: An event.
+
+    Returns:
+      The survival function evaluated at `value`, i.e. P[X > value]
+    """
+    if not self.event_shape:
+      # Defined for univariate distributions only.
+      return 1. - self.cdf(value)
+    else:
+      raise NotImplementedError('`survival_function` is not defined for '
+                                f'distribution `{self.name}`.')
+
+  def log_survival_function(self, value: Array) -> Array:
+    """Evaluates the log of the survival function at `value`.
+
+    Note that by default we use a numerically not necessarily stable definition
+    of the log of the survival function in terms of the CDF.
+    More stable definitions should be implemented in subclasses for
+    distributions for which they exist.
+
+    Args:
+      value: An event.
+
+    Returns:
+      The log of the survival function evaluated at `value`, i.e.
+      log P[X > value]
+    """
+    if not self.event_shape:
+      # Defined for univariate distributions only.
+      return jnp.log1p(-self.cdf(value))
+    else:
+      raise NotImplementedError('`log_survival_function` is not defined for '
+                                f'distribution `{self.name}`.')
+
   def mean(self) -> Array:
     """Calculates the mean."""
     raise NotImplementedError(
