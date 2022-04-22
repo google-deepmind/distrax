@@ -104,6 +104,14 @@ class Normal(distribution.Distribution):
     """See `Distribution.log_cdf`."""
     return jax.scipy.special.log_ndtr(self._standardize(value))
 
+  def survival_function(self, value: Array) -> Array:
+    """See `Distribution.survival_function`."""
+    return jax.scipy.special.ndtr(-self._standardize(value))
+
+  def log_survival_function(self, value: Array) -> Array:
+    """See `Distribution.log_survival_function`."""
+    return jax.scipy.special.log_ndtr(-self._standardize(value))
+
   def _standardize(self, value: Array) -> Array:
     return (value - self._loc) / self._scale
 

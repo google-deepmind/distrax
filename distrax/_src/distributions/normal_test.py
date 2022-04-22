@@ -103,7 +103,8 @@ class NormalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     value = np.asarray(value, dtype=np.float32)
-    for method in ['log_prob', 'prob', 'cdf', 'log_cdf']:
+    for method in ['log_prob', 'prob', 'cdf', 'log_cdf', 'survival_function',
+                   'log_survival_function']:
       with self.subTest(method):
         super()._test_attribute(
             attribute_string=method,
