@@ -101,6 +101,14 @@ class Logistic(distribution.Distribution):
     """See `Distribution.log_cdf`."""
     return -jax.nn.softplus(-self._standardize(value))
 
+  def survival_function(self, value: Array) -> Array:
+    """See `Distribution.survival_function`."""
+    return jax.nn.sigmoid(-self._standardize(value))
+
+  def log_survival_function(self, value: Array) -> Array:
+    """See `Distribution.log_survival_function`."""
+    return -jax.nn.softplus(self._standardize(value))
+
   def mean(self) -> Array:
     """Calculates the mean."""
     return self.loc
