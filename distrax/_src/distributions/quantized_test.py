@@ -22,6 +22,7 @@ from distrax._src.distributions import independent
 from distrax._src.distributions import quantized
 from distrax._src.distributions import uniform
 from distrax._src.utils import equivalence
+import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
@@ -120,7 +121,8 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
       ('high cutoffs, 1-d array', (None, 50.), np.array([20, 30])),
   )
   def test_method_with_value(self, distr_params, value):
-    for method in ['log_cdf', 'cdf', 'prob']:
+    for method in ['log_cdf', 'cdf', 'prob', 'survival_function',
+                   'log_survival_function']:
       with self.subTest(method):
         super()._test_attribute(
             attribute_string=method,
@@ -298,10 +300,16 @@ class QuantizedTFPUniform2D(
        ([10., 15.], 80.), np.array([[15, 15], [10, 20], [15, 15]])),
   )
   def test_method_with_value(self, distr_params, value):
+    # For `prob`, `log_prob`, `survival_function`, and `log_survival_function`
+    # distrax and TFP agree on integer values. We do not test equivalence on
+    # non-integer values where they may disagree.
+    # We also do not test equivalence on values outside of the cutoff, where
+    # `log_prob` values can be different (`NaN` vs. `-jnp.inf`).
     distr_params = tuple(map(
         lambda x: None if x is None else np.asarray(x, np.float32),
         distr_params))
-    for method in ['log_cdf', 'cdf', 'prob', 'log_prob']:
+    for method in ['log_cdf', 'cdf', 'prob', 'log_prob', 'survival_function',
+                   'log_survival_function']:
       with self.subTest(method):
         super()._test_attribute(
             attribute_string=method,
@@ -388,6 +396,47 @@ class QuantizedSlicingTest(parameterized.TestCase):
     self.assertion_fn(rtol=1e-2)(
         sliced_dist.high,
         np.broadcast_to(self.high, self.base.batch_shape)[slice_])
+
+
+class QuantizedSurvivalFunctionConsistencyTest(parameterized.TestCase):
+  """Class to test whether `survival_function` = `1. - cdf`.
+
+  Test evaluates on both integer values and non-integer values.
+  """
+
+  def setUp(self):
+    super().setUp()
+    self.base_distribution = uniform.Uniform(0., 10.)
+    self.values = np.linspace(-2., 12, num=57)  # -2, -1.75, -1.5, ..., 12.
+
+  @chex.all_variants
+  @parameterized.named_parameters(
+      ('no cutoffs', (None, None)),
+      ('noop cutoffs', (-10., 20.)),
+      ('low cutoff', (1., None)),
+      ('high cutoff', (None, 5.)),
+      ('both cutoffs', (1., 5.)),
+  )
+  def test_survival_function_cdf_consistency(self, dist_params):
+    dist = quantized.Quantized(self.base_distribution, *dist_params)
+    results = self.variant(
+        lambda x: dist.cdf(x) + dist.survival_function(x))(self.values)
+    np.testing.assert_allclose(results, np.ones_like(self.values), rtol=1e-2)
+
+  @chex.all_variants
+  @parameterized.named_parameters(
+      ('no cutoffs', (None, None)),
+      ('noop cutoffs', (-10., 20.)),
+      ('low cutoff', (1., None)),
+      ('high cutoff', (None, 5.)),
+      ('both cutoffs', (1., 5.)),
+  )
+  def test_log_survival_function_log_cdf_consistency(self, dist_params):
+    def _sum_exps(dist, x):
+      return jnp.exp(dist.log_cdf(x)) + jnp.exp(dist.log_survival_function(x))
+    dist = quantized.Quantized(self.base_distribution, *dist_params)
+    results = self.variant(_sum_exps)(dist, self.values)
+    np.testing.assert_allclose(results, np.ones_like(self.values), rtol=1e-2)
 
 
 if __name__ == '__main__':
