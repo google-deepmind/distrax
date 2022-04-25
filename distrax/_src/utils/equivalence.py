@@ -25,8 +25,9 @@ import jax
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
+
+Array = chex.Array
 
 
 def get_tfp_equiv(distrax_cls):
@@ -81,6 +82,11 @@ class EquivalenceTest(absltest.TestCase):
       self.tfp_cls = distrax_cls.equiv_tfp_cls
     else:
       self.tfp_cls = get_tfp_equiv(distrax_cls)
+
+  def assertion_fn(self, **kwargs) -> Callable[[Array, Array], None]:
+    def fn(x: Array, y: Array) -> None:
+      np.testing.assert_allclose(x, y, **kwargs)
+    return fn
 
   def _test_attribute(
       self,

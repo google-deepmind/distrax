@@ -14,8 +14,6 @@
 # ==============================================================================
 """Tests for `mixture_same_family.py`."""
 
-import functools
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -30,10 +28,7 @@ import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
-
-RTOL = 2e-3
 
 
 class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
@@ -84,8 +79,6 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
     key_loc, key_scale = jax.random.split(jax.random.PRNGKey(42))
     self.components_dist = self._make_components(key_loc, key_scale)
     self.tfp_components_dist = self._make_tfp_components(key_loc, key_scale)
-
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_event_shape(self):
     super()._test_event_shape(
@@ -169,7 +162,7 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
             'components_distribution': self.tfp_components_dist
         },
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   # `pmap` must have at least one non-None value in `in_axes`.
   @chex.all_variants(with_pmap=False)
@@ -189,14 +182,14 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
             'mixture_distribution': self.tfp_mixture_dist,
             'components_distribution': self.tfp_components_dist
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   def test_jittable(self):
     super()._test_jittable(
         dist_kwargs={
             'mixture_distribution': self.mixture_dist,
             'components_distribution': self.components_dist},
-        assertion_fn=functools.partial(np.testing.assert_allclose, rtol=RTOL))
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
 
 class TFPLogitsCategoricalTFPUnivariateComponents(
@@ -291,7 +284,6 @@ class MixtureSameFamilySlicingTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
     self.loc = np.random.randn(2, 3, 4, 5)
     self.scale_diag = np.abs(np.random.randn(2, 3, 4, 5))
     self.components_dist = MultivariateNormalDiag(
@@ -299,6 +291,9 @@ class MixtureSameFamilySlicingTest(parameterized.TestCase):
     self.logits = np.random.randn(2, 3, 4)
     self.mixture_dist = Categorical(logits=self.logits)
     self.dist = MixtureSameFamily(self.mixture_dist, self.components_dist)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @parameterized.named_parameters(
       ('single element', 1, (3,)),
@@ -315,8 +310,9 @@ class MixtureSameFamilySlicingTest(parameterized.TestCase):
     self.assertIsInstance(
         sliced_dist.components_distribution, MultivariateNormalDiag)
     self.assertIsInstance(sliced_dist.mixture_distribution, Categorical)
-    self.assertion_fn(sliced_dist.components_distribution.loc, self.loc[slice_])
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
+        sliced_dist.components_distribution.loc, self.loc[slice_])
+    self.assertion_fn(rtol=2e-3)(
         sliced_dist.components_distribution.scale_diag, self.scale_diag[slice_])
 
   def test_slice_ellipsis(self):
@@ -330,10 +326,10 @@ class MixtureSameFamilySlicingTest(parameterized.TestCase):
     self.assertIsInstance(
         sliced_dist.components_distribution, MultivariateNormalDiag)
     self.assertIsInstance(sliced_dist.mixture_distribution, Categorical)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         sliced_dist.components_distribution.loc,
         self.loc[:, -1, ...])
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         sliced_dist.components_distribution.scale_diag,
         self.scale_diag[:, -1, ...])
 

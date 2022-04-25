@@ -23,15 +23,12 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 2e-2
-
 
 class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(gamma.Gamma)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   @parameterized.named_parameters(
       ('0d params', (), (), ()),
@@ -47,9 +44,9 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = gamma.Gamma(concentration, rate)
     self.assertEqual(dist.event_shape, ())
     self.assertEqual(dist.batch_shape, batch_shape)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-2)(
         dist.concentration, np.broadcast_to(concentration, batch_shape))
-    self.assertion_fn(dist.rate, np.broadcast_to(rate, batch_shape))
+    self.assertion_fn(rtol=2e-2)(dist.rate, np.broadcast_to(rate, batch_shape))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -104,7 +101,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=distr_params,
         dist_kwargs=dict(),
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -125,7 +122,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
             attribute_string=method,
             dist_args=distr_params,
             call_args=(value,),
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn(rtol=2e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -141,7 +138,7 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
         super()._test_attribute(
             attribute_string=method,
             dist_args=distr_params,
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn(rtol=2e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -172,7 +169,8 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
         assertion_fn=lambda x, y: np.testing.assert_allclose(x, y, rtol, atol))
 
   def test_jitable(self):
-    super()._test_jittable((0.1, 1.5), assertion_fn=self.assertion_fn)
+    super()._test_jittable(
+        (0.1, 1.5), assertion_fn=self.assertion_fn(rtol=2e-2))
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -184,15 +182,16 @@ class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
     concentration = jnp.array(np.abs(np.random.randn(3, 4, 5)))
     rate = jnp.array(np.abs(np.random.randn(3, 4, 5)))
     dist = self.distrax_cls(concentration, rate)
-    self.assertion_fn(dist[slice_].concentration, concentration[slice_])
-    self.assertion_fn(dist[slice_].rate, rate[slice_])
+    self.assertion_fn(rtol=2e-2)(
+        dist[slice_].concentration, concentration[slice_])
+    self.assertion_fn(rtol=2e-2)(dist[slice_].rate, rate[slice_])
 
   def test_slice_different_parameterization(self):
     concentration = jnp.array(np.abs(np.random.randn(3, 4, 5)))
     rate = jnp.array(np.abs(np.random.randn(4, 5)))
     dist = self.distrax_cls(concentration, rate)
-    self.assertion_fn(dist[0].concentration, concentration[0])
-    self.assertion_fn(dist[0].rate, rate)  # Not slicing rate.
+    self.assertion_fn(rtol=2e-2)(dist[0].concentration, concentration[0])
+    self.assertion_fn(rtol=2e-2)(dist[0].rate, rate)  # Not slicing rate.
 
 
 if __name__ == '__main__':

@@ -23,20 +23,17 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 1e-3
-
 
 class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(deterministic.Deterministic)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_loc(self):
     dist_params = {'loc': [0.1, 0.5, 1.5]}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(dist.loc, dist_params['loc'])
+    self.assertion_fn(rtol=1e-3)(dist.loc, dist_params['loc'])
 
   @parameterized.named_parameters(
       ('None', None),
@@ -46,7 +43,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist_params = {'loc': np.asarray([0.1, 0.5, 1.5]), 'atol': atol}
     dist = self.distrax_cls(**dist_params)
     broadcasted_atol = np.zeros((3,)) if atol is None else atol * np.ones((3,))
-    self.assertion_fn(dist.atol, broadcasted_atol)
+    self.assertion_fn(rtol=1e-3)(dist.atol, broadcasted_atol)
 
   @parameterized.named_parameters(
       ('None', None),
@@ -56,7 +53,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist_params = {'loc': np.asarray([0.1, 0.5, 1.5]), 'rtol': rtol}
     dist = self.distrax_cls(**dist_params)
     broadcasted_rtol = np.zeros((3,)) if rtol is None else rtol * np.ones((3,))
-    self.assertion_fn(dist.rtol, broadcasted_rtol)
+    self.assertion_fn(rtol=1e-3)(dist.rtol, broadcasted_rtol)
 
   @parameterized.named_parameters(
       ('atol_None_rtol_None', None, None),
@@ -69,7 +66,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         0 if rtol is None else rtol) * np.abs(loc)
     dist_params = {'loc': loc, 'rtol': rtol, 'atol': atol}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(dist.slack, target_value)
+    self.assertion_fn(rtol=1e-3)(dist.slack, target_value)
 
   def test_invalid_parameters(self):
     self._test_raises_error(
@@ -132,7 +129,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(),
         dist_kwargs=dist_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -149,7 +146,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=dist_params,
         call_args=(inputs,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -166,7 +163,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=dist_params,
         call_args=(inputs,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -193,7 +190,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=dist_params,
         call_args=(inputs,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -209,7 +206,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_attribute(
         attribute_string=function_string,
         dist_kwargs={'loc': np.asarray(distr_params)},
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -231,7 +228,7 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist2_kwargs={
             'loc': loc2,
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   def test_jittable(self):
     super()._test_jittable((np.array([0., 4., -1., 4.]),))
@@ -247,18 +244,18 @@ class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
     atol = jnp.array(np.random.randn(3, 4, 5))
     rtol = jnp.array(np.random.randn(3, 4, 5))
     dist = self.distrax_cls(loc=loc, atol=atol, rtol=rtol)
-    self.assertion_fn(dist[slice_].loc, loc[slice_])
-    self.assertion_fn(dist[slice_].atol, atol[slice_])
-    self.assertion_fn(dist[slice_].rtol, rtol[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].loc, loc[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].atol, atol[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].rtol, rtol[slice_])
 
   def test_slice_different_parameterization(self):
     loc = jnp.array(np.random.randn(3, 4, 5))
     atol = jnp.array(np.random.randn(4, 5))
     rtol = jnp.array(np.random.randn(4, 5))
     dist = self.distrax_cls(loc=loc, atol=atol, rtol=rtol)
-    self.assertion_fn(dist[0].loc, loc[0])
-    self.assertion_fn(dist[0].atol, atol)  # Not slicing atol.
-    self.assertion_fn(dist[0].rtol, rtol)  # Not slicing rtol.
+    self.assertion_fn(rtol=1e-3)(dist[0].loc, loc[0])
+    self.assertion_fn(rtol=1e-3)(dist[0].atol, atol)  # Not slicing atol.
+    self.assertion_fn(rtol=1e-3)(dist[0].rtol, rtol)  # Not slicing rtol.
 
 
 if __name__ == '__main__':

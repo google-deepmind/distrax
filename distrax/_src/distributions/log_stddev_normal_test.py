@@ -28,7 +28,6 @@ from tensorflow_probability.substrates import jax as tfp
 
 
 kl_module = tfp.distributions.kullback_leibler
-RTOL = 1e-3
 
 
 class LogStddevNormalTest(parameterized.TestCase):
@@ -164,9 +163,9 @@ class LogStddevNormalTest(parameterized.TestCase):
     log_scale = jnp.array(np.random.randn(3, 4, 5))
     dist = lsn.LogStddevNormal(loc=loc, log_scale=log_scale)
     sliced_dist = dist[slice_]
-    np.testing.assert_allclose(sliced_dist.mean(), loc[slice_], rtol=RTOL)
+    np.testing.assert_allclose(sliced_dist.mean(), loc[slice_], rtol=1e-3)
     np.testing.assert_allclose(
-        sliced_dist.log_scale, log_scale[slice_], rtol=RTOL)
+        sliced_dist.log_scale, log_scale[slice_], rtol=1e-3)
     self.assertIsInstance(sliced_dist, lsn.LogStddevNormal)
 
   def test_slice_different_parameterization(self):
@@ -174,8 +173,8 @@ class LogStddevNormalTest(parameterized.TestCase):
     log_scale = jnp.array(np.random.randn(3, 4))
     dist = lsn.LogStddevNormal(loc=loc, log_scale=log_scale)
     np.testing.assert_allclose(
-        dist[0].mean(), loc, rtol=RTOL)  # Not slicing loc
-    np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=RTOL)
+        dist[0].mean(), loc, rtol=1e-3)  # Not slicing loc.
+    np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=1e-3)
 
 if __name__ == '__main__':
   absltest.main()

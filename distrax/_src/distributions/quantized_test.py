@@ -25,10 +25,7 @@ from distrax._src.utils import equivalence
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
-
-RTOL = 1e-2
 
 
 class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
@@ -49,7 +46,6 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
     super().setUp(quantized.Quantized)
     self.tfd_base_distribution = self._make_tfp_base_distribution()
     self.distrax_base_distribution = self._make_distrax_base_distribution()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_event_shape(self):
     super()._test_event_shape((self.distrax_base_distribution,),
@@ -64,8 +60,8 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_low_and_high(self):
     distr_params = (uniform.Uniform(0., 100.), 0.5, 90.5)
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(dist.low, 1.)
-    self.assertion_fn(dist.high, 90.)
+    self.assertion_fn(rtol=1e-2)(dist.low, 1.)
+    self.assertion_fn(rtol=1e-2)(dist.high, 90.)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -106,7 +102,7 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_kwargs=dict(),
         tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -131,7 +127,7 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
             dist_args=(self.distrax_base_distribution,) + distr_params,
             tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
             call_args=(value,),
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -162,7 +158,7 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(self.distrax_base_distribution,) + distr_params,
         tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -192,7 +188,7 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(self.distrax_base_distribution,) + distr_params,
         dist_kwargs=dict(),
         tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   def test_jittable(self):
     super()._test_jittable((self.tfd_base_distribution, 0., 1.))
@@ -227,7 +223,6 @@ class QuantizedTFPUniform2D(
     super().setUp(quantized.Quantized)
     self.tfd_base_distribution = self._make_tfp_base_distribution()
     self.distrax_base_distribution = self._make_distrax_base_distribution()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_event_shape(self):
     kwargs = {
@@ -287,7 +282,7 @@ class QuantizedTFPUniform2D(
         dist_kwargs=dict(),
         tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -313,7 +308,7 @@ class QuantizedTFPUniform2D(
             dist_args=(self.distrax_base_distribution,) + distr_params,
             tfp_dist_args=(self.tfd_base_distribution,) + distr_params,
             call_args=(value,),
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn(rtol=1e-2))
 
   def test_jittable(self):
     super()._test_jittable((self.tfd_base_distribution, 0., 1.))
@@ -361,13 +356,15 @@ class QuantizedSlicingTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
     self.uniform_low = np.random.randn(2, 3, 4)
     self.uniform_high = self.uniform_low + np.abs(np.random.randn(2, 3, 4))
     self.base = uniform.Uniform(self.uniform_low, self.uniform_high)
     self.low = np.ceil(np.random.randn(3, 4))
     self.high = np.floor(np.random.randn(3, 4))
     self.dist = quantized.Quantized(self.base, self.low, self.high)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @parameterized.named_parameters(
       ('single element', 1, (3, 4)),
@@ -381,12 +378,16 @@ class QuantizedSlicingTest(parameterized.TestCase):
     self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
     self.assertIsInstance(sliced_dist, quantized.Quantized)
     self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
-    self.assertion_fn(sliced_dist.distribution.low, self.uniform_low[slice_])
-    self.assertion_fn(sliced_dist.distribution.high, self.uniform_high[slice_])
-    self.assertion_fn(sliced_dist.low,
-                      np.broadcast_to(self.low, self.base.batch_shape)[slice_])
-    self.assertion_fn(sliced_dist.high,
-                      np.broadcast_to(self.high, self.base.batch_shape)[slice_])
+    self.assertion_fn(rtol=1e-2)(
+        sliced_dist.distribution.low, self.uniform_low[slice_])
+    self.assertion_fn(rtol=1e-2)(
+        sliced_dist.distribution.high, self.uniform_high[slice_])
+    self.assertion_fn(rtol=1e-2)(
+        sliced_dist.low,
+        np.broadcast_to(self.low, self.base.batch_shape)[slice_])
+    self.assertion_fn(rtol=1e-2)(
+        sliced_dist.high,
+        np.broadcast_to(self.high, self.base.batch_shape)[slice_])
 
 
 if __name__ == '__main__':

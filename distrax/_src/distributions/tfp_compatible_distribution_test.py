@@ -31,11 +31,8 @@ import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfb = tfp.bijectors
 tfd = tfp.distributions
-
-RTOL = 1e-4
 
 
 class TFPCompatibleDistributionNormal(parameterized.TestCase):
@@ -46,11 +43,13 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     self._sample_shape = (np.int32(10),)
     self._seed = 42
     self._key = jax.random.PRNGKey(self._seed)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
     self.base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
     self.values = jnp.array([1., -1.])
     self.distrax_second_dist = Normal(loc=-1., scale=0.8)
     self.tfp_second_dist = tfd.Normal(loc=-1., scale=0.8)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @property
   def wrapped_dist(self):
@@ -75,7 +74,7 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     def sample_fn(key):
       return self.wrapped_dist.sample(seed=key, sample_shape=self._sample_shape)
     sample_fn = self.variant(sample_fn)
-    self.assertion_fn(
+    self.assertion_fn(rtol=1e-4)(
         sample_fn(self._key),
         self.base_dist.sample(sample_shape=self._sample_shape, seed=self._key))
 
@@ -85,7 +84,7 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
 
     log_prob, space = self.wrapped_dist.experimental_local_measure(
         samples, backward_compat=True)
-    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertion_fn(rtol=1e-4)(log_prob, expected_log_prob)
     self.assertIsInstance(space, tfp.experimental.tangent_spaces.FullSpace)
 
   @chex.all_variants(with_pmap=False)
@@ -105,7 +104,7 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     except AttributeError:
       return
     result = self.variant(getattr(self.wrapped_dist, method))()
-    self.assertion_fn(result, expected_result)
+    self.assertion_fn(rtol=1e-4)(result, expected_result)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -123,7 +122,7 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     except AttributeError:
       return
     result = self.variant(getattr(self.wrapped_dist, method))(self.values)
-    self.assertion_fn(result, expected_result)
+    self.assertion_fn(rtol=1e-4)(result, expected_result)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -158,10 +157,10 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
         self.wrapped_dist)
     tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.tfp_second_dist)
-    self.assertion_fn(distrax_result1, expected_result1)
-    self.assertion_fn(distrax_result2, expected_result2)
-    self.assertion_fn(tfp_result1, expected_result1)
-    self.assertion_fn(tfp_result2, expected_result2)
+    self.assertion_fn(rtol=1e-4)(distrax_result1, expected_result1)
+    self.assertion_fn(rtol=1e-4)(distrax_result2, expected_result2)
+    self.assertion_fn(rtol=1e-4)(tfp_result1, expected_result1)
+    self.assertion_fn(rtol=1e-4)(tfp_result2, expected_result2)
 
 
 class TFPCompatibleDistributionMvnNormal(TFPCompatibleDistributionNormal):
@@ -213,7 +212,9 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
     self._sample_shape = (np.int32(10),)
     self._seed = 42
     self._key = jax.random.PRNGKey(self._seed)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   def test_with_independent(self):
     base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
@@ -226,7 +227,7 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
     distrax_meta_dist = Independent(base_dist, 1)
     expected_log_prob = distrax_meta_dist.log_prob(samples)
 
-    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertion_fn(rtol=1e-4)(log_prob, expected_log_prob)
 
   def test_with_transformed_distribution(self):
     base_dist = Normal(loc=jnp.array([0., 0.]), scale=jnp.array([1., 1.]))
@@ -241,7 +242,7 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
         distribution=base_dist, bijector=tfb.Exp())
     expected_log_prob = distrax_meta_dist.log_prob(samples)
 
-    self.assertion_fn(log_prob, expected_log_prob)
+    self.assertion_fn(rtol=1e-4)(log_prob, expected_log_prob)
 
   def test_with_sample(self):
     base_dist = Normal(0., 1.)
@@ -277,9 +278,8 @@ class TfpMetaDistributionsWithWrappedBaseDistribution(parameterized.TestCase):
 class TFPCompatibleDistributionSlicing(parameterized.TestCase):
   """Class to test the `getitem` method."""
 
-  def setUp(self):
-    super().setUp()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -295,7 +295,7 @@ class TFPCompatibleDistributionSlicing(parameterized.TestCase):
     self.assertIsInstance(sliced_dist, base_dist.__class__)
     self.assertIsInstance(sliced_dist.batch_shape, tfp.tf2jax.TensorShape)
     self.assertTrue(sliced_dist.allow_nan_stats)
-    self.assertion_fn(sliced_dist.loc, loc[slice_])
+    self.assertion_fn(rtol=1e-4)(sliced_dist.loc, loc[slice_])
 
 
 if __name__ == '__main__':

@@ -52,9 +52,6 @@ class MultivariateNormalDiagPlusLowRankTest(
     # pylint: disable=too-many-function-args
     super().setUp(MultivariateNormalDiagPlusLowRank)
 
-  def assertion_fn(self, rtol):
-    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
-
   @parameterized.named_parameters(
       ('all inputs are None', {}),
       ('scale_v_matrix is provided but scale_u_matrix is None', {

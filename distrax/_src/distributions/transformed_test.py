@@ -34,12 +34,8 @@ import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
 tfb = tfp.bijectors
-
-
-RTOL = 1e-2
 
 
 def _with_additional_parameters(params, all_named_parameters):
@@ -209,8 +205,8 @@ class TransformedTest(parameterized.TestCase):
     tfp_log_prob = tfp_dist.log_prob(samples)
 
     chex.assert_equal_shape([samples, tfp_samples])
-    np.testing.assert_allclose(log_prob, tfp_log_prob, rtol=RTOL)
-    np.testing.assert_allclose(samples, expected_samples, rtol=RTOL)
+    np.testing.assert_allclose(log_prob, tfp_log_prob, rtol=1e-2)
+    np.testing.assert_allclose(samples, expected_samples, rtol=1e-2)
 
   @parameterized.named_parameters(
       ('1d-batched bijector,  unbatched sample', (2,), ()),
@@ -287,12 +283,12 @@ class TransformedTest(parameterized.TestCase):
     with self.subTest('log_prob(dx_sample) matches TFP'):
       dx_logp_dx = self.variant(dx_dist.log_prob)(dx_sample)
       tfp_logp_dx = self.variant(tfp_dist.log_prob)(dx_sample)
-      np.testing.assert_allclose(dx_logp_dx, tfp_logp_dx, rtol=RTOL)
+      np.testing.assert_allclose(dx_logp_dx, tfp_logp_dx, rtol=1e-2)
 
     with self.subTest('log_prob(tfp_sample) matches TFP'):
       dx_logp_tfp = self.variant(dx_dist.log_prob)(tfp_sample)
       tfp_logp_tfp = self.variant(tfp_dist.log_prob)(tfp_sample)
-      np.testing.assert_allclose(dx_logp_tfp, tfp_logp_tfp, rtol=RTOL)
+      np.testing.assert_allclose(dx_logp_tfp, tfp_logp_tfp, rtol=1e-2)
 
     with self.subTest('sample/lp shape is self-consistent'):
       second_sample, log_prob = self.variant(dx_dist.sample_and_log_prob)(
@@ -407,8 +403,8 @@ class TransformedTest(parameterized.TestCase):
       result_fwd = tfp_dist1.kl_divergence(distrax_dist2)
       result_inv = tfp_dist2.kl_divergence(distrax_dist1)
 
-    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=RTOL)
-    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=RTOL)
+    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=1e-2)
+    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=1e-2)
 
   @chex.all_variants(with_pmap=False)
   def test_kl_divergence_on_same_instance_of_distrax_bijector(self):
@@ -421,8 +417,8 @@ class TransformedTest(parameterized.TestCase):
     expected_result_inv = base_dist2.kl_divergence(base_dist1)
     result_fwd = self.variant(distrax_dist1.kl_divergence)(distrax_dist2)
     result_inv = self.variant(distrax_dist2.kl_divergence)(distrax_dist1)
-    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=RTOL)
-    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=RTOL)
+    np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=1e-2)
+    np.testing.assert_allclose(result_inv, expected_result_inv, rtol=1e-2)
 
   def test_kl_divergence_raises_on_event_shape(self):
     base_dist1 = tfd.MultivariateNormalDiag([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])

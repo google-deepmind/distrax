@@ -27,16 +27,12 @@ import jax.numpy as jnp
 import numpy as np
 
 
-RTOL = 2e-3
-
-
 class StraightThroughTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(straight_through.straight_through_wrapper(
         one_hot_categorical.OneHotCategorical))
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -135,7 +131,7 @@ class StraightThroughTest(equivalence.EquivalenceTest, parameterized.TestCase):
     # TEST: the samples have the same size, and the straight-through gradient
     # doesn't affect the tfp sample.
     chex.assert_equal_shape((sample, tfp_sample))
-    self.assertion_fn(tfp_sample, tfp_st_sample)
+    self.assertion_fn(rtol=2e-3)(tfp_sample, tfp_st_sample)
     # TEST: the TFP gradient is zero.
     assert (jnp.asarray(*tfp_sample_grad.values()) == 0).all()
     # TEST: the TFP straight-through gradient is non zero.
@@ -148,7 +144,7 @@ class StraightThroughTest(equivalence.EquivalenceTest, parameterized.TestCase):
     sample_grad_v = jnp.stack(jnp.array(*sample_grad.values()))
     tfp_st_sample_grad_v = jnp.stack(jnp.array(*tfp_st_sample_grad.values()))
     if np.all(sample == tfp_st_sample):
-      self.assertion_fn(sample_grad_v, tfp_st_sample_grad_v)
+      self.assertion_fn(rtol=2e-3)(sample_grad_v, tfp_st_sample_grad_v)
 
 
 if __name__ == '__main__':

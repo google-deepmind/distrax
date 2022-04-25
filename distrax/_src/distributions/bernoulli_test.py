@@ -26,9 +26,6 @@ import numpy as np
 from scipy import special as sp_special
 
 
-RTOL = 1e-2
-
-
 class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
@@ -36,17 +33,16 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super().setUp(bernoulli.Bernoulli)
     self.p = np.asarray([0.2, 0.4, 0.6, 0.8])
     self.logits = sp_special.logit(self.p)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_parameters_from_probs(self):
     dist = self.distrax_cls(probs=self.p)
-    self.assertion_fn(dist.logits, self.logits)
-    self.assertion_fn(dist.probs, self.p)
+    self.assertion_fn(rtol=1e-2)(dist.logits, self.logits)
+    self.assertion_fn(rtol=1e-2)(dist.probs, self.p)
 
   def test_parameters_from_logits(self):
     dist = self.distrax_cls(logits=self.logits)
-    self.assertion_fn(dist.logits, self.logits)
-    self.assertion_fn(dist.probs, self.p)
+    self.assertion_fn(rtol=1e-2)(dist.logits, self.logits)
+    self.assertion_fn(rtol=1e-2)(dist.probs, self.p)
 
   @parameterized.named_parameters(
       ('probs and logits', {'logits': [0.1, -0.2], 'probs': [0.5, 0.4]}),
@@ -66,8 +62,8 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = {'logits': self.logits} if from_logits else {'probs': self.p}
     dist = self.distrax_cls(**distr_params)
     log_probs0, log_probs1 = self.variant(dist._log_probs_parameter)()
-    self.assertion_fn(log_probs1, np.log(self.p))
-    self.assertion_fn(log_probs0, np.log(1 - self.p))
+    self.assertion_fn(rtol=1e-2)(log_probs1, np.log(self.p))
+    self.assertion_fn(rtol=1e-2)(log_probs0, np.log(1 - self.p))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -78,10 +74,10 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(**distr_params)
     probs0, probs1, log_probs0, log_probs1 = self.variant(
         bernoulli._probs_and_log_probs)(dist)
-    self.assertion_fn(probs1, self.p)
-    self.assertion_fn(probs0, 1.0 - self.p)
-    self.assertion_fn(log_probs1, np.log(self.p))
-    self.assertion_fn(log_probs0, np.log(1.0 - self.p))
+    self.assertion_fn(rtol=1e-2)(probs1, self.p)
+    self.assertion_fn(rtol=1e-2)(probs0, 1.0 - self.p)
+    self.assertion_fn(rtol=1e-2)(log_probs1, np.log(self.p))
+    self.assertion_fn(rtol=1e-2)(log_probs0, np.log(1.0 - self.p))
 
   @parameterized.named_parameters(
       ('1d logits', {'logits': [0.0, 1.0, -0.5]}),
@@ -160,7 +156,7 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(),
         dist_kwargs=distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -329,7 +325,7 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -348,7 +344,7 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -357,7 +353,8 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
   def test_median(self, from_logits):
     distr_params = {'logits': self.logits} if from_logits else {'probs': self.p}
     dist = self.distrax_cls(**distr_params)
-    self.assertion_fn(self.variant(dist.median)(), self.variant(dist.mean)())
+    self.assertion_fn(rtol=1e-2)(
+        self.variant(dist.median)(), self.variant(dist.mean)())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -373,11 +370,12 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
         mode_string=mode_string,
         dist1_kwargs={'probs': jnp.asarray([[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])},
         dist2_kwargs={'logits': jnp.asarray([0.0, -0.1, 0.1]),},
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   def test_jittable(self):
     super()._test_jittable(
-        (np.array([0., 4., -1., 4.]),), assertion_fn=self.assertion_fn)
+        (np.array([0., 4., -1., 4.]),),
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -390,8 +388,8 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)
     dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(dist1[slice_].logits, logits[slice_])
-    self.assertion_fn(dist2[slice_].probs, probs[slice_])
+    self.assertion_fn(rtol=1e-2)(dist1[slice_].logits, logits[slice_])
+    self.assertion_fn(rtol=1e-2)(dist2[slice_].probs, probs[slice_])
 
 
 if __name__ == '__main__':

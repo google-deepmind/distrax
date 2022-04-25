@@ -34,9 +34,6 @@ class DirichletTest(equivalence.EquivalenceTest, parameterized.TestCase):
     # pylint: disable=too-many-function-args
     super().setUp(dirichlet.Dirichlet)
 
-  def assertion_fn(self, rtol: float):
-    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
-
   @parameterized.named_parameters(
       ('1d params', (3,), ()),
       ('2d params', (4, 3), (4,)),

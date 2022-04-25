@@ -23,8 +23,6 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 1e-2
-
 
 class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
   """Logistic tests."""
@@ -32,7 +30,6 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(logistic.Logistic)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   @parameterized.named_parameters(
       ('1d std logistic', (0, 1)),
@@ -97,7 +94,7 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=distr_params,
         dist_kwargs=dict(),
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -121,7 +118,7 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
             dist_args=distr_params,
             dist_kwargs={},
             call_args=(value,),
-            assertion_fn=self.assertion_fn)
+            assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -141,7 +138,7 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_attribute(
         function_string,
         distr_params,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-2))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -153,7 +150,7 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(self.variant(dist.median)(), dist.mean())
+    self.assertion_fn(rtol=1e-2)(self.variant(dist.median)(), dist.mean())
 
   def test_jitable(self):
     super()._test_jittable((0., 1.))
@@ -168,14 +165,14 @@ class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
     loc = jnp.array(np.random.randn(3, 4, 5))
     scale = jnp.array(np.random.randn(3, 4, 5))
     dist = self.distrax_cls(loc=loc, scale=scale)
-    self.assertion_fn(dist[slice_].mean(), loc[slice_])
+    self.assertion_fn(rtol=1e-2)(dist[slice_].mean(), loc[slice_])
 
   def test_slice_different_parameterization(self):
     loc = jnp.array(np.random.randn(4))
     scale = jnp.array(np.random.randn(3, 4))
     dist = self.distrax_cls(loc=loc, scale=scale)
-    self.assertion_fn(dist[0].loc, loc)  # Not slicing loc.
-    self.assertion_fn(dist[0].scale, scale[0])
+    self.assertion_fn(rtol=1e-2)(dist[0].loc, loc)  # Not slicing loc.
+    self.assertion_fn(rtol=1e-2)(dist[0].scale, scale[0])
 
 
 if __name__ == '__main__':

@@ -30,9 +30,6 @@ class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
     # pylint: disable=too-many-function-args
     super().setUp(base_beta.Beta)
 
-  def assertion_fn(self, rtol: float):
-    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
-
   @parameterized.named_parameters(
       ('0d params', (), (), ()),
       ('1d params', (2,), (2,), (2,)),

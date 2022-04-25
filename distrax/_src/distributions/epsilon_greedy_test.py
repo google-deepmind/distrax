@@ -25,8 +25,6 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 2e-3
-
 
 class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
@@ -35,13 +33,12 @@ class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super().setUp(epsilon_greedy.EpsilonGreedy)
     self.epsilon = 0.2
     self.preferences = jnp.array([0., 4., -1., 4.])
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_parameters_from_preferences(self):
     dist = self.distrax_cls(preferences=self.preferences, epsilon=self.epsilon)
     expected_probs = jnp.array([0.05, 0.45, 0.05, 0.45])
-    self.assertion_fn(dist.logits, jnp.log(expected_probs))
-    self.assertion_fn(dist.probs, expected_probs)
+    self.assertion_fn(rtol=2e-3)(dist.logits, jnp.log(expected_probs))
+    self.assertion_fn(rtol=2e-3)(dist.probs, expected_probs)
 
   def test_num_categories(self):
     dist = self.distrax_cls(preferences=self.preferences, epsilon=self.epsilon)
@@ -76,8 +73,8 @@ class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(preferences, self.epsilon, dtype=dtype)
     dist_sliced = dist[slice_]
     self.assertIsInstance(dist_sliced, epsilon_greedy.EpsilonGreedy)
-    self.assertion_fn(dist_sliced.preferences, preferences[slice_])
-    self.assertion_fn(dist_sliced.epsilon, self.epsilon)
+    self.assertion_fn(rtol=2e-3)(dist_sliced.preferences, preferences[slice_])
+    self.assertion_fn(rtol=2e-3)(dist_sliced.epsilon, self.epsilon)
     self.assertEqual(dist_sliced.dtype, dtype)
 
   def test_slice_ellipsis(self):
@@ -86,8 +83,8 @@ class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(preferences, self.epsilon, dtype=dtype)
     dist_sliced = dist[..., -1]
     self.assertIsInstance(dist_sliced, epsilon_greedy.EpsilonGreedy)
-    self.assertion_fn(dist_sliced.preferences, preferences[:, -1])
-    self.assertion_fn(dist_sliced.epsilon, self.epsilon)
+    self.assertion_fn(rtol=2e-3)(dist_sliced.preferences, preferences[:, -1])
+    self.assertion_fn(rtol=2e-3)(dist_sliced.epsilon, self.epsilon)
     self.assertEqual(dist_sliced.dtype, dtype)
 
 

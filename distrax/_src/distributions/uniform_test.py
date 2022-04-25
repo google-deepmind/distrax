@@ -25,15 +25,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-RTOL = 1e-3
-
-
 class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(uniform.Uniform)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   @parameterized.named_parameters(
       ('1d', (0., 1.)),
@@ -82,7 +78,7 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=distr_params,
         dist_kwargs=dict(),
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -142,7 +138,7 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
             'low': -1.0 + np.random.rand(3, 2),
             'high': 1.5 + np.random.rand(4, 1, 2),
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   def test_jittable(self):
     super()._test_jittable((0.0, 1.0))
@@ -157,16 +153,16 @@ class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
     low = jnp.zeros((3, 4, 5))
     high = jnp.ones((3, 4, 5))
     dist = self.distrax_cls(low=low, high=high)
-    self.assertion_fn(dist[slice_].low, low[slice_])
-    self.assertion_fn(dist[slice_].high, high[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].low, low[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].high, high[slice_])
 
   def test_slice_different_parameterization(self):
     low = jnp.zeros((3, 4, 5))
     high = 1.
     dist = self.distrax_cls(low=low, high=high)
-    self.assertion_fn(dist[..., -1].low, low[..., -1])
+    self.assertion_fn(rtol=1e-3)(dist[..., -1].low, low[..., -1])
     self.assertEqual(dist[..., -1].high.shape, (3, 4))
-    self.assertion_fn(dist[..., -1].high, high)  # Not slicing high.
+    self.assertion_fn(rtol=1e-3)(dist[..., -1].high, high)  # Not slicing high.
 
 if __name__ == '__main__':
   absltest.main()

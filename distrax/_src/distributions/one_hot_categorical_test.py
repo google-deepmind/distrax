@@ -28,10 +28,7 @@ import numpy as np
 import scipy
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
-
-RTOL = 2e-3
 
 
 class OneHotCategoricalTest(
@@ -42,17 +39,18 @@ class OneHotCategoricalTest(
     super().setUp(one_hot_categorical.OneHotCategorical)
     self.p = np.asarray([0.1, 0.4, 0.2, 0.3])
     self.logits = np.log(self.p) - 1.0  # intended unnormalization
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_parameters_from_probs(self):
     dist = self.distrax_cls(probs=self.p)
-    self.assertion_fn(dist.logits, math.normalize(logits=np.log(self.p)))
-    self.assertion_fn(dist.probs, math.normalize(probs=self.p))
+    self.assertion_fn(rtol=2e-3)(
+        dist.logits, math.normalize(logits=np.log(self.p)))
+    self.assertion_fn(rtol=2e-3)(dist.probs, math.normalize(probs=self.p))
 
   def test_parameters_from_logits(self):
     dist = self.distrax_cls(logits=self.logits)
-    self.assertion_fn(dist.logits, math.normalize(logits=self.logits))
-    self.assertion_fn(dist.probs, math.normalize(probs=self.p))
+    self.assertion_fn(rtol=2e-3)(
+        dist.logits, math.normalize(logits=self.logits))
+    self.assertion_fn(rtol=2e-3)(dist.probs, math.normalize(probs=self.p))
 
   @parameterized.named_parameters(
       ('probs and logits', {'logits': [0.1, -0.2], 'probs': [0.6, 0.4]}),
@@ -73,7 +71,7 @@ class OneHotCategoricalTest(
     sample_fn = self.variant(
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
-    self.assertion_fn(samples[:, 0, :], -1)
+    self.assertion_fn(rtol=2e-3)(samples[:, 0, :], -1)
     np.testing.assert_array_compare(lambda x, y: x >= y, samples[:, 1, :], 0)
 
   @chex.all_variants
@@ -84,7 +82,7 @@ class OneHotCategoricalTest(
     sample_fn = self.variant(
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
-    self.assertion_fn(samples[:, 0, :], -1)
+    self.assertion_fn(rtol=2e-3)(samples[:, 0, :], -1)
     np.testing.assert_array_compare(lambda x, y: x >= y, samples[:, 1, :], 0)
 
   @parameterized.named_parameters(
@@ -172,7 +170,7 @@ class OneHotCategoricalTest(
         dist_args=(),
         dist_kwargs=distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -291,7 +289,7 @@ class OneHotCategoricalTest(
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -311,8 +309,8 @@ class OneHotCategoricalTest(
     distr_params = {k: jnp.asarray(v) for k, v in distr_params.items()}
     value = np.array(value)
     dist = self.distrax_cls(**distr_params)
-    self.assertion_fn(self.variant(getattr(dist, function_string))(value),
-                      expected)
+    self.assertion_fn(rtol=2e-3)(
+        self.variant(getattr(dist, function_string))(value), expected)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -331,7 +329,7 @@ class OneHotCategoricalTest(
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -351,7 +349,7 @@ class OneHotCategoricalTest(
     else:
       probs = scipy.special.softmax(distr_params['logits'], axis=-1)
     expected = np.sum(np.cumsum(probs, axis=-1) * values, axis=-1)
-    self.assertion_fn(self.variant(dist.cdf)(values), expected)
+    self.assertion_fn(rtol=2e-3)(self.variant(dist.cdf)(values), expected)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -367,7 +365,7 @@ class OneHotCategoricalTest(
         mode_string=mode_string,
         dist1_kwargs={'probs': np.array([[0.1, 0.5, 0.4], [0.2, 0.4, 0.4]])},
         dist2_kwargs={'logits': np.array([0.0, 0.1, 0.1]),},
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -407,8 +405,8 @@ class OneHotCategoricalTest(
     tfp_comp_dist1_dist2 = getattr(tfp_dist1, function_string)(tfp_dist2_aux)
     tfp_comp_dist2_dist1 = getattr(tfp_dist2_aux, function_string)(tfp_dist1)
 
-    self.assertion_fn(comp_dist1_dist2, tfp_comp_dist1_dist2)
-    self.assertion_fn(comp_dist2_dist1, tfp_comp_dist2_dist1)
+    self.assertion_fn(rtol=2e-3)(comp_dist1_dist2, tfp_comp_dist1_dist2)
+    self.assertion_fn(rtol=2e-3)(comp_dist2_dist1, tfp_comp_dist2_dist1)
 
   def test_jittable(self):
     super()._test_jittable((np.zeros((3,)),))
@@ -425,10 +423,10 @@ class OneHotCategoricalTest(
     dist2 = self.distrax_cls(probs=probs)
     dist1_sliced = dist1[slice_]
     dist2_sliced = dist2[slice_]
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist1_sliced.logits, axis=-1),
         jax.nn.softmax(logits[slice_], axis=-1))
-    self.assertion_fn(dist2_sliced.probs, probs[slice_])
+    self.assertion_fn(rtol=2e-3)(dist2_sliced.probs, probs[slice_])
     self.assertIsInstance(dist1_sliced, one_hot_categorical.OneHotCategorical)
     self.assertIsInstance(dist2_sliced, one_hot_categorical.OneHotCategorical)
 
@@ -437,10 +435,10 @@ class OneHotCategoricalTest(
     probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)
     dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist1[..., -1].logits, axis=-1),
         jax.nn.softmax(logits[:, -1], axis=-1))
-    self.assertion_fn(dist2[..., -1].probs, probs[:, -1])
+    self.assertion_fn(rtol=2e-3)(dist2[..., -1].probs, probs[:, -1])
 
 
 if __name__ == '__main__':

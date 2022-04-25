@@ -14,8 +14,6 @@
 # ==============================================================================
 """Tests for `independent.py`."""
 
-import functools
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -28,10 +26,7 @@ import jax
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
-
-RTOL = 1e-3
 
 
 class IndependentTest(parameterized.TestCase):
@@ -39,11 +34,13 @@ class IndependentTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
     self.loc = np.random.randn(2, 3, 4)
     self.scale = np.abs(np.random.randn(2, 3, 4))
     self.base = normal.Normal(loc=self.loc, scale=self.scale)
     self.dist = independent.Independent(self.base, reinterpreted_batch_ndims=1)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @parameterized.parameters(None, 0, 1, 2)
   def test_constructor_is_jittable_given_ndims(self, ndims):
@@ -61,8 +58,10 @@ class IndependentTest(parameterized.TestCase):
     self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
     self.assertIsInstance(sliced_dist, independent.Independent)
     self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
-    self.assertion_fn(sliced_dist.distribution.loc, self.loc[slice_])
-    self.assertion_fn(sliced_dist.distribution.scale, self.scale[slice_])
+    self.assertion_fn(rtol=1e-3)(
+        sliced_dist.distribution.loc, self.loc[slice_])
+    self.assertion_fn(rtol=1e-3)(
+        sliced_dist.distribution.scale, self.scale[slice_])
 
   def test_slice_ellipsis(self):
     sliced_dist = self.dist[..., -1]
@@ -71,8 +70,10 @@ class IndependentTest(parameterized.TestCase):
     self.assertEqual(sliced_dist.event_shape, self.dist.event_shape)
     self.assertIsInstance(sliced_dist, independent.Independent)
     self.assertIsInstance(sliced_dist.distribution, self.base.__class__)
-    self.assertion_fn(sliced_dist.distribution.loc, self.loc[:, -1, :])
-    self.assertion_fn(sliced_dist.distribution.scale, self.scale[:, -1, :])
+    self.assertion_fn(rtol=1e-3)(
+        sliced_dist.distribution.loc, self.loc[:, -1, :])
+    self.assertion_fn(rtol=1e-3)(
+        sliced_dist.distribution.scale, self.scale[:, -1, :])
 
 
 class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
@@ -118,8 +119,6 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
                                                    self.normal_scale2)
     self.tfp_base_dist2 = self._make_tfp_base_distribution(self.normal_loc2,
                                                            self.normal_scale2)
-
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_invalid_parameters(self):
     self._test_raises_error(
@@ -209,7 +208,7 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
         tfp_dist_kwargs={'distribution': self.tfp_base_dist,
                          'reinterpreted_batch_ndims': batch_ndims},
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -227,7 +226,7 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
         tfp_dist_kwargs={'distribution': self.tfp_base_dist,
                          'reinterpreted_batch_ndims': batch_ndims},
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -254,7 +253,7 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
                      'reinterpreted_batch_ndims': batch_ndims},
         tfp_dist_kwargs={'distribution': self.tfp_base_dist,
                          'reinterpreted_batch_ndims': batch_ndims},
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants(with_jit=False, with_pmap=False)
   @parameterized.named_parameters(
@@ -296,7 +295,7 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
                           'reinterpreted_batch_ndims': batch_ndims},
         tfp_dist2_kwargs={'distribution': self.tfp_base_dist2,
                           'reinterpreted_batch_ndims': batch_ndims},
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
 
 class TFPUnivariateNormalTest(TFPMultivariateNormalTest):
@@ -316,7 +315,7 @@ class TFPUnivariateNormalTest(TFPMultivariateNormalTest):
     super()._test_jittable(
         dist_kwargs={'distribution': self.base_dist,
                      'reinterpreted_batch_ndims': 1},
-        assertion_fn=functools.partial(np.testing.assert_allclose, rtol=1e-4))
+        assertion_fn=self.assertion_fn(rtol=1e-4))
 
 
 class DistraxUnivariateNormalTest(TFPMultivariateNormalTest):

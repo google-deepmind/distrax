@@ -26,9 +26,6 @@ import jax.numpy as jnp
 import numpy as np
 
 
-RTOL = 2e-3
-
-
 class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
@@ -36,17 +33,18 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super().setUp(categorical.Categorical)
     self.p = np.asarray([0.1, 0.4, 0.2, 0.3])
     self.logits = np.log(self.p) - 1.0  # intended unnormalization
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_parameters_from_probs(self):
     dist = self.distrax_cls(probs=self.p)
-    self.assertion_fn(dist.logits, math.normalize(logits=np.log(self.p)))
-    self.assertion_fn(dist.probs, math.normalize(probs=self.p))
+    self.assertion_fn(rtol=2e-3)(
+        dist.logits, math.normalize(logits=np.log(self.p)))
+    self.assertion_fn(rtol=2e-3)(dist.probs, math.normalize(probs=self.p))
 
   def test_parameters_from_logits(self):
     dist = self.distrax_cls(logits=self.logits)
-    self.assertion_fn(dist.logits, math.normalize(logits=self.logits))
-    self.assertion_fn(dist.probs, math.normalize(probs=self.p))
+    self.assertion_fn(rtol=2e-3)(
+        dist.logits, math.normalize(logits=self.logits))
+    self.assertion_fn(rtol=2e-3)(dist.probs, math.normalize(probs=self.p))
 
   @chex.all_variants
   def test_negative_probs(self):
@@ -56,7 +54,7 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     sample_fn = self.variant(
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
-    self.assertion_fn(samples[..., 0], -1)
+    self.assertion_fn(rtol=2e-3)(samples[..., 0], -1)
     np.testing.assert_array_compare(lambda x, y: x >= y, samples[..., 1], 0)
 
   @chex.all_variants
@@ -67,7 +65,7 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     sample_fn = self.variant(
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
-    self.assertion_fn(samples[..., 0], -1)
+    self.assertion_fn(rtol=2e-3)(samples[..., 0], -1)
     np.testing.assert_array_compare(lambda x, y: x >= y, samples[..., 1], 0)
 
   @parameterized.named_parameters(
@@ -214,7 +212,7 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(),
         dist_kwargs=distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -343,14 +341,14 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants
   def test_pdf_outside_domain(self):
     probs = jnp.asarray([0.2, 0.3, 0.5])
     dist = self.distrax_cls(probs=probs)
     value = jnp.asarray([-1, -2, 3, 4], dtype=jnp.int32)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         self.variant(dist.prob)(value), np.asarray([0., 0., 0., 0.]))
     self.assertTrue(np.all(jnp.isinf(self.variant(dist.log_prob)(value))))
 
@@ -425,7 +423,7 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist2_kwargs={
             'logits': jnp.asarray([0.0, 0.1, 0.1]),
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=2e-3))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -463,20 +461,20 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     probs = jax.nn.softmax(jnp.array(np.random.randn(3, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)
     dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist1[slice_].logits, axis=-1),
         jax.nn.softmax(logits[slice_], axis=-1))
-    self.assertion_fn(dist2[slice_].probs, probs[slice_])
+    self.assertion_fn(rtol=2e-3)(dist2[slice_].probs, probs[slice_])
 
   def test_slice_ellipsis(self):
     logits = jnp.array(np.random.randn(4, 4, 5))
     probs = jax.nn.softmax(jnp.array(np.random.randn(4, 4, 5)), axis=-1)
     dist1 = self.distrax_cls(logits=logits)
     dist2 = self.distrax_cls(probs=probs)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist1[..., -1].logits, axis=-1),
         jax.nn.softmax(logits[:, -1], axis=-1))
-    self.assertion_fn(dist2[..., -1].probs, probs[:, -1])
+    self.assertion_fn(rtol=2e-3)(dist2[..., -1].probs, probs[:, -1])
 
 
 if __name__ == '__main__':

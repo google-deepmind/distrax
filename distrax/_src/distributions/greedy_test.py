@@ -23,8 +23,6 @@ from distrax._src.utils import equivalence
 import jax.numpy as jnp
 import numpy as np
 
-RTOL = 2e-3
-
 
 class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
@@ -32,13 +30,12 @@ class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     # pylint: disable=too-many-function-args
     super().setUp(greedy.Greedy)
     self.preferences = jnp.array([0., 4., -1., 4.])
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_parameters_from_preferences(self):
     dist = self.distrax_cls(preferences=self.preferences)
     expected_probs = jnp.array([0., 0.5, 0., 0.5])
-    self.assertion_fn(dist.logits, jnp.log(expected_probs))
-    self.assertion_fn(dist.probs, expected_probs)
+    self.assertion_fn(rtol=2e-3)(dist.logits, jnp.log(expected_probs))
+    self.assertion_fn(rtol=2e-3)(dist.probs, expected_probs)
 
   def test_num_categories(self):
     dist = self.distrax_cls(preferences=self.preferences)
@@ -70,7 +67,7 @@ class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(preferences, dtype=dtype)
     dist_sliced = dist[slice_]
     self.assertIsInstance(dist_sliced, greedy.Greedy)
-    self.assertion_fn(dist_sliced.preferences, preferences[slice_])
+    self.assertion_fn(rtol=2e-3)(dist_sliced.preferences, preferences[slice_])
     self.assertEqual(dist_sliced.dtype, dtype)
 
   def test_slice_ellipsis(self):
@@ -79,7 +76,7 @@ class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(preferences, dtype=dtype)
     dist_sliced = dist[..., -1]
     self.assertIsInstance(dist_sliced, greedy.Greedy)
-    self.assertion_fn(dist_sliced.preferences, preferences[:, -1])
+    self.assertion_fn(rtol=2e-3)(dist_sliced.preferences, preferences[:, -1])
     self.assertEqual(dist_sliced.dtype, dtype)
 
 

@@ -32,8 +32,6 @@ from tensorflow_probability.substrates import jax as tfp
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
-RTOL = 2e-4
-
 
 class DistributionFromTfpNormal(parameterized.TestCase):
   """Tests for normal distribution."""
@@ -43,11 +41,13 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     self._sample_shape = (np.int32(10),)
     self._seed = 42
     self._key = jax.random.PRNGKey(self._seed)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
     self.base_dist = tfd.Normal(loc=0., scale=1.)
     self.values = jnp.array([1., -1.])
     self.distrax_second_dist = Normal(loc=-1., scale=0.8)
     self.tfp_second_dist = tfd.Normal(loc=-1., scale=0.8)
+
+  def assertion_fn(self, rtol):
+    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   @property
   def wrapped_dist(self):
@@ -69,7 +69,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
   def test_sample(self):
     def sample_fn(key):
       return self.wrapped_dist.sample(sample_shape=self._sample_shape, seed=key)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-4)(
         self.variant(sample_fn)(self._key),
         self.base_dist.sample(sample_shape=self._sample_shape, seed=self._key))
 
@@ -91,7 +91,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     except AttributeError:
       return
     result = getattr(self.wrapped_dist, method)()
-    self.assertion_fn(result, expected_result)
+    self.assertion_fn(rtol=2e-4)(result, expected_result)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -115,7 +115,7 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     except AttributeError:
       return
     result = self.variant(getattr(self.wrapped_dist, method))(self.values)
-    self.assertion_fn(result, expected_result)
+    self.assertion_fn(rtol=2e-4)(result, expected_result)
 
   @chex.all_variants
   def test_sample_and_log_prob(self):
@@ -127,8 +127,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       return self.wrapped_dist.sample_and_log_prob(
           sample_shape=self._sample_shape, seed=key)
     samples, log_prob = self.variant(sample_fn)(self._key)
-    self.assertion_fn(samples, base_samples)
-    self.assertion_fn(log_prob, base_logprob)
+    self.assertion_fn(rtol=2e-4)(samples, base_samples)
+    self.assertion_fn(rtol=2e-4)(log_prob, base_logprob)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -163,10 +163,10 @@ class DistributionFromTfpNormal(parameterized.TestCase):
         self.wrapped_dist)
     tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.tfp_second_dist)
-    self.assertion_fn(distrax_result1, expected_result1)
-    self.assertion_fn(distrax_result2, expected_result2)
-    self.assertion_fn(tfp_result1, expected_result1)
-    self.assertion_fn(tfp_result2, expected_result2)
+    self.assertion_fn(rtol=2e-4)(distrax_result1, expected_result1)
+    self.assertion_fn(rtol=2e-4)(distrax_result2, expected_result2)
+    self.assertion_fn(rtol=2e-4)(tfp_result1, expected_result1)
+    self.assertion_fn(rtol=2e-4)(tfp_result2, expected_result2)
 
 
 class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
@@ -192,7 +192,7 @@ class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
         tfd.MultivariateNormalDiag(loc=loc, scale_diag=scale_diag))
     sliced_dist = dist[slice_]
     self.assertIsInstance(sliced_dist, Distribution)
-    self.assertion_fn(sliced_dist.mean(), loc[slice_])
+    self.assertion_fn(rtol=2e-4)(sliced_dist.mean(), loc[slice_])
 
 
 class DistributionFromTfpCategorical(DistributionFromTfpNormal):
@@ -221,10 +221,10 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
     self.assertIsInstance(sliced_dist2, Distribution)
     self.assertIsInstance(sliced_dist1, tfd.Categorical)
     self.assertIsInstance(sliced_dist2, tfd.Categorical)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-4)(
         jax.nn.softmax(sliced_dist1.logits, axis=-1),
         jax.nn.softmax(logits[slice_], axis=-1))
-    self.assertion_fn(sliced_dist2.probs, probs[slice_])
+    self.assertion_fn(rtol=2e-4)(sliced_dist2.probs, probs[slice_])
 
   def test_slice_ellipsis(self):
     logits = np.random.randn(3, 4, 5)
@@ -237,10 +237,10 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
     self.assertIsInstance(sliced_dist2, Distribution)
     self.assertIsInstance(sliced_dist1, tfd.Categorical)
     self.assertIsInstance(sliced_dist2, tfd.Categorical)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-4)(
         jax.nn.softmax(sliced_dist1.logits, axis=-1),
         jax.nn.softmax(logits[:, -1], axis=-1))
-    self.assertion_fn(sliced_dist2.probs, probs[:, -1])
+    self.assertion_fn(rtol=2e-4)(sliced_dist2.probs, probs[:, -1])
 
 
 class DistributionFromTfpTransformed(DistributionFromTfpNormal):

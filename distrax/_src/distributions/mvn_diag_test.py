@@ -26,16 +26,12 @@ import jax.numpy as jnp
 import numpy as np
 
 
-RTOL = 1e-3
-
-
 class MultivariateNormalDiagTest(
     equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
     # pylint: disable=too-many-function-args
     super().setUp(mvn_diag.MultivariateNormalDiag)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   @parameterized.named_parameters(
       ('1d std normal', {'scale_diag': np.ones((1,))}),
@@ -212,7 +208,7 @@ class MultivariateNormalDiagTest(
         dist_args=(),
         dist_kwargs=distr_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -274,7 +270,7 @@ class MultivariateNormalDiagTest(
         attribute_string=function_string,
         dist_kwargs=distr_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -330,7 +326,7 @@ class MultivariateNormalDiagTest(
     elif function_string == 'log_cdf':
       reduce_fn = lambda x: jnp.sum(x, axis=-1)
     expected_result = reduce_fn(expected_result)
-    self.assertion_fn(result, expected_result)
+    self.assertion_fn(rtol=1e-3)(result, expected_result)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -406,14 +402,14 @@ class MultivariateNormalDiagTest(
     super()._test_attribute(
         function_string,
         dist_kwargs=distr_params,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @chex.all_variants(with_pmap=False)
   def test_median(self):
     dist_params = {'loc': np.array([0.3, -0.1, 0.0]),
                    'scale_diag': np.array([0.1, 1.4, 0.5])}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(self.variant(dist.median)(), dist.mean())
+    self.assertion_fn(rtol=1e-3)(self.variant(dist.median)(), dist.mean())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -436,11 +432,12 @@ class MultivariateNormalDiagTest(
             'loc': np.asarray([-2.4, -1., 0., 1.2, 6.5]).astype(np.float32),
             'scale_diag': None,
         },
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   def test_jittable(self):
     super()._test_jittable(
-        (np.zeros((2, 3,)), np.ones((2, 3,))), assertion_fn=self.assertion_fn)
+        (np.zeros((2, 3,)), np.ones((2, 3,))),
+        assertion_fn=self.assertion_fn(rtol=1e-3))
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -452,23 +449,23 @@ class MultivariateNormalDiagTest(
     loc = jnp.array(rng.normal(size=(3, 4, 5)))
     scale_diag = jnp.array(rng.uniform(size=(3, 4, 5)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
-    self.assertion_fn(dist[slice_].mean(), loc[slice_])
+    self.assertion_fn(rtol=1e-3)(dist[slice_].mean(), loc[slice_])
 
   def test_slice_different_parameterization(self):
     rng = np.random.default_rng(42)
     loc = jnp.array(rng.normal(size=(4,)))
     scale_diag = jnp.array(rng.uniform(size=(3, 4)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
-    self.assertion_fn(dist[0].mean(), loc)  # Not slicing loc.
-    self.assertion_fn(dist[0].stddev(), scale_diag[0])
+    self.assertion_fn(rtol=1e-3)(dist[0].mean(), loc)  # Not slicing loc.
+    self.assertion_fn(rtol=1e-3)(dist[0].stddev(), scale_diag[0])
 
   def test_slice_ellipsis(self):
     rng = np.random.default_rng(42)
     loc = jnp.array(rng.normal(size=(3, 4, 5)))
     scale_diag = jnp.array(rng.uniform(size=(3, 4, 5)))
     dist = self.distrax_cls(loc=loc, scale_diag=scale_diag)
-    self.assertion_fn(dist[..., -1].mean(), loc[:, -1])
-    self.assertion_fn(dist[..., -1].stddev(), scale_diag[:, -1])
+    self.assertion_fn(rtol=1e-3)(dist[..., -1].mean(), loc[:, -1])
+    self.assertion_fn(rtol=1e-3)(dist[..., -1].stddev(), scale_diag[:, -1])
 
 
 if __name__ == '__main__':

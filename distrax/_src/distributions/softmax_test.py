@@ -26,9 +26,6 @@ import jax.numpy as jnp
 import numpy as np
 
 
-RTOL = 2e-3
-
-
 class SoftmaxUnitTemperatureTest(
     equivalence.EquivalenceTest, parameterized.TestCase):
 
@@ -38,7 +35,6 @@ class SoftmaxUnitTemperatureTest(
     self.temperature = 1.
     self.probs = jnp.array([0.2, 0.4, 0.1, 0.3])
     self.logits = jnp.log(self.probs)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_num_categories(self):
     dist = self.distrax_cls(logits=self.logits)
@@ -46,8 +42,8 @@ class SoftmaxUnitTemperatureTest(
 
   def test_parameters(self):
     dist = self.distrax_cls(logits=self.logits)
-    self.assertion_fn(dist.logits, self.logits)
-    self.assertion_fn(dist.probs, self.probs)
+    self.assertion_fn(rtol=2e-3)(dist.logits, self.logits)
+    self.assertion_fn(rtol=2e-3)(dist.probs, self.probs)
 
 
 class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
@@ -58,7 +54,6 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.temperature = 10.
     self.logits = jnp.array([2., 4., 1., 3.])
     self.probs = jax.nn.softmax(self.logits / self.temperature)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(x, y, rtol=RTOL)
 
   def test_num_categories(self):
     dist = self.distrax_cls(logits=self.logits, temperature=self.temperature)
@@ -66,9 +61,9 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def test_parameters(self):
     dist = self.distrax_cls(logits=self.logits, temperature=self.temperature)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(
         dist.logits, math.normalize(logits=self.logits / self.temperature))
-    self.assertion_fn(dist.probs, self.probs)
+    self.assertion_fn(rtol=2e-3)(dist.probs, self.probs)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -97,8 +92,8 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
     scaled_logits = logits / temperature
     dist = self.distrax_cls(logits=logits, temperature=temperature)
     self.assertIsInstance(dist[slice_], self.distrax_cls)
-    self.assertion_fn(dist[slice_].temperature, temperature)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(dist[slice_].temperature, temperature)
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist[slice_].logits, axis=-1),
         jax.nn.softmax(scaled_logits[slice_], axis=-1))
 
@@ -109,8 +104,8 @@ class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
     dist = self.distrax_cls(logits=logits, temperature=temperature)
     dist_sliced = dist[..., -1]
     self.assertIsInstance(dist_sliced, self.distrax_cls)
-    self.assertion_fn(dist_sliced.temperature, temperature)
-    self.assertion_fn(
+    self.assertion_fn(rtol=2e-3)(dist_sliced.temperature, temperature)
+    self.assertion_fn(rtol=2e-3)(
         jax.nn.softmax(dist_sliced.logits, axis=-1),
         jax.nn.softmax(scaled_logits[:, -1], axis=-1))
 

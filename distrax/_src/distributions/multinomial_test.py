@@ -14,8 +14,6 @@
 # ==============================================================================
 """Tests for `multinomial.py`."""
 
-import functools
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -29,10 +27,6 @@ import numpy as np
 from scipy import stats
 
 
-RTOL = 1e-3
-ATOL = 1e-6
-
-
 class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   def setUp(self):
@@ -42,8 +36,6 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         [4, 3], dtype=np.float32)  # float dtype required for TFP
     self.probs = 0.5 * np.asarray([0.1, 0.4, 0.2, 0.3])  # unnormalized
     self.logits = np.log(self.probs)
-    self.assertion_fn = lambda x, y: np.testing.assert_allclose(  # pylint: disable=g-long-lambda
-        x, y, rtol=RTOL, atol=ATOL)
 
   @parameterized.named_parameters(
       ('from probs', False),
@@ -54,10 +46,10 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     else:
       dist_params = {'probs': self.probs, 'total_count': self.total_count}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(dist.logits,
-                      np.tile(math.normalize(logits=self.logits), (2, 1)))
-    self.assertion_fn(dist.probs,
-                      np.tile(math.normalize(probs=self.probs), (2, 1)))
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        dist.logits, np.tile(math.normalize(logits=self.logits), (2, 1)))
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        dist.probs, np.tile(math.normalize(probs=self.probs), (2, 1)))
 
   @parameterized.named_parameters(
       ('probs and logits', {
@@ -338,8 +330,9 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         lambda key: dist.sample(seed=key, sample_shape=sample_shape))
     samples = sample_fn(self.key)
     sum_samples = jnp.sum(samples, axis=-1)
-    self.assertion_fn(np.asarray(sum_samples, dtype=np.float32),
-                      np.broadcast_to(total_count, sum_samples.shape))
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        np.asarray(sum_samples, dtype=np.float32),
+        np.broadcast_to(total_count, sum_samples.shape))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -401,7 +394,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist_args=(),
         dist_kwargs=dist_params,
         sample_shape=sample_shape,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(atol=1e-6, rtol=1e-3))
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -465,7 +458,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         attribute_string='log_prob',
         dist_kwargs=dist_params,
         call_args=(value,),
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(atol=1e-6, rtol=1e-3))
 
   @chex.all_variants(with_jit=False, with_pmap=False)
   def test_log_prob_extreme_probs(self):
@@ -496,7 +489,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     entropy = list()
     for probs, counts in zip(dist.probs, dist.total_count):
       entropy.append(stats.multinomial(n=counts, p=probs).entropy())
-    self.assertion_fn(
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
         self.variant(dist.entropy)(), np.asarray(entropy))
 
   @chex.all_variants(with_pmap=False)
@@ -519,7 +512,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     scipy_entropy = stats.multinomial(n=total_count, p=probs).entropy()
     distrax_entropy_fn = self.variant(
         lambda x, y: multinomial.Multinomial._entropy_scalar(total_count, x, y))
-    self.assertion_fn(
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
         distrax_entropy_fn(probs, np.log(probs)), scipy_entropy)
 
   @chex.all_variants(with_pmap=False)
@@ -555,17 +548,15 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     super()._test_attribute(
         attribute_string=function_string,
         dist_kwargs=dist_params,
-        assertion_fn=self.assertion_fn)
+        assertion_fn=self.assertion_fn(atol=1e-6, rtol=1e-3))
 
   def test_jittable(self):
-    assertion_fn = functools.partial(np.testing.assert_allclose, atol=3e-4,
-                                     rtol=RTOL)
     super()._test_jittable(
         dist_kwargs={
             'probs': np.asarray([1.0, 0.0, 0.0]),
             'total_count': np.asarray([3, 10])
         },
-        assertion_fn=assertion_fn)
+        assertion_fn=self.assertion_fn(atol=3e-4, rtol=1e-3))
 
   @parameterized.named_parameters(
       ('single element', 2),
@@ -578,11 +569,12 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     total_count = jnp.full((3, 4), fill_value=2)
     dist1 = self.distrax_cls(total_count=total_count, logits=logits)
     dist2 = self.distrax_cls(total_count=total_count, probs=probs)
-    self.assertion_fn(dist2[slice_].total_count, total_count[slice_])
-    self.assertion_fn(
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        dist2[slice_].total_count, total_count[slice_])
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
         jax.nn.softmax(dist1[slice_].logits, axis=-1),
         jax.nn.softmax(logits[slice_], axis=-1))
-    self.assertion_fn(dist2[slice_].probs, probs[slice_])
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(dist2[slice_].probs, probs[slice_])
 
   def test_slice_ellipsis(self):
     logits = jnp.array(np.random.randn(4, 4, 5))
@@ -591,12 +583,14 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     total_count = jnp.full((4, 4), fill_value=total_count_value)
     dist1 = self.distrax_cls(total_count=total_count_value, logits=logits)
     dist2 = self.distrax_cls(total_count=total_count_value, probs=probs)
-    self.assertion_fn(dist1[..., -1].total_count, total_count[..., -1])
-    self.assertion_fn(dist2[..., -1].total_count, total_count[..., -1])
-    self.assertion_fn(
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        dist1[..., -1].total_count, total_count[..., -1])
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
+        dist2[..., -1].total_count, total_count[..., -1])
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(
         jax.nn.softmax(dist1[..., -1].logits, axis=-1),
         jax.nn.softmax(logits[:, -1], axis=-1))
-    self.assertion_fn(dist2[..., -1].probs, probs[:, -1])
+    self.assertion_fn(atol=1e-6, rtol=1e-3)(dist2[..., -1].probs, probs[:, -1])
 
 
 if __name__ == '__main__':

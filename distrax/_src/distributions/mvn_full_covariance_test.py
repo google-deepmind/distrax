@@ -37,9 +37,6 @@ class MultivariateNormalFullCovarianceTest(
     # pylint: disable=too-many-function-args
     super().setUp(MultivariateNormalFullCovariance)
 
-  def assertion_fn(self, rtol):
-    return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
-
   @parameterized.named_parameters(
       ('all inputs are None', {}),
       ('wrong dimension of loc', {
