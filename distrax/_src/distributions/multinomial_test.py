@@ -59,15 +59,25 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertion_fn(dist.probs,
                       np.tile(math.normalize(probs=self.probs), (2, 1)))
 
-  def test_invalid_parameters(self):
-    self._test_raises_error(dist_kwargs={
-        'total_count': 3, 'logits': self.logits, 'probs': self.probs})
-    self._test_raises_error(
-        dist_kwargs={'total_count': 3, 'logits': None, 'probs': None})
-    self._test_raises_error(
-        dist_kwargs={'total_count': 3, 'logits': 3.}, error_type=AssertionError)
-    self._test_raises_error(
-        dist_kwargs={'total_count': 3, 'probs': 1.}, error_type=AssertionError)
+  @parameterized.named_parameters(
+      ('probs and logits', {
+          'total_count': 3, 'logits': [0.1, -0.2], 'probs': [0.6, 0.4]}),
+      ('both probs and logits are None', {
+          'total_count': 3, 'logits': None, 'probs': None}),
+      ('logits are 0d', {'total_count': 3, 'logits': 3.}),
+      ('probs are 0d', {'total_count': 3, 'probs': 1.}),
+      ('logits have wrong dim', {'total_count': 3, 'logits': np.ones((4, 1))}),
+      ('probs have wrong dim', {'total_count': 3, 'probs': np.ones((4, 1))}),
+      ('bool dtype', {
+          'total_count': 3, 'logits': [0.1, 0.], 'dtype': jnp.bool_}),
+      ('complex64 dtype', {
+          'total_count': 3, 'logits': [0.1, 0.], 'dtype': jnp.complex64}),
+      ('complex128 dtype', {
+          'total_count': 3, 'logits': [0.1, 0.], 'dtype': jnp.complex128}),
+  )
+  def test_raises_on_invalid_inputs(self, dist_params):
+    with self.assertRaises(ValueError):
+      self.distrax_cls(**dist_params)
 
   @parameterized.named_parameters(
       ('1d logits', {'logits': [0.0, 1.0, -0.5]}),
@@ -408,16 +418,6 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
     samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(samples.dtype, dist.dtype)
     chex.assert_type(samples, dtype)
-
-  @parameterized.named_parameters(
-      ('bool', jnp.bool_),
-      ('complex64', jnp.complex64),
-      ('complex128', jnp.complex128))
-  def test_invalid_dtype(self, dtype):
-    dist_params = {
-        'logits': self.logits, 'dtype': dtype, 'total_count': self.total_count}
-    with self.assertRaises(ValueError):
-      self.distrax_cls(**dist_params)
 
   @chex.all_variants
   def test_sample_extreme_probs(self):

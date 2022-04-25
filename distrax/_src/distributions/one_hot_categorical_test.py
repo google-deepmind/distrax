@@ -54,6 +54,17 @@ class OneHotCategoricalTest(
     self.assertion_fn(dist.logits, math.normalize(logits=self.logits))
     self.assertion_fn(dist.probs, math.normalize(probs=self.p))
 
+  @parameterized.named_parameters(
+      ('probs and logits', {'logits': [0.1, -0.2], 'probs': [0.6, 0.4]}),
+      ('both probs and logits are None', {'logits': None, 'probs': None}),
+      ('bool dtype', {'logits': [0.1, -0.2], 'dtype': jnp.bool_}),
+      ('complex64 dtype', {'logits': [0.1, -0.2], 'dtype': jnp.complex64}),
+      ('complex128 dtype', {'logits': [0.1, -0.2], 'dtype': jnp.complex128}),
+  )
+  def test_raises_on_invalid_inputs(self, dist_params):
+    with self.assertRaises(ValueError):
+      self.distrax_cls(**dist_params)
+
   @chex.all_variants
   def test_negative_probs(self):
     """Check sample returns -1 if probs are negative after normalization."""

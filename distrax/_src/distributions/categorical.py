@@ -49,7 +49,10 @@ class Categorical(distribution.Distribution):
       dtype: The type of event samples.
     """
     super().__init__()
-    chex.assert_exactly_one_is_none(probs, logits)
+    if (logits is None) == (probs is None):
+      raise ValueError(
+          f'One and exactly one of `logits` and `probs` should be `None`, '
+          f'but `logits` is {logits} and `probs` is {probs}.')
     if not (jnp.issubdtype(dtype, jnp.integer) or
             jnp.issubdtype(dtype, jnp.floating)):
       raise ValueError(

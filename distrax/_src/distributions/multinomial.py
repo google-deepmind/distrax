@@ -21,6 +21,7 @@ from typing import Tuple, Optional, Union
 
 import chex
 from distrax._src.distributions import distribution
+from distrax._src.utils import conversion
 from distrax._src.utils import math
 import jax
 from jax import lax
@@ -56,9 +57,20 @@ class Multinomial(distribution.Distribution):
       dtype:  The type of event samples.
     """
     super().__init__()
-    chex.assert_exactly_one_is_none(probs, logits)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, probs, axis=-1, val=1)
-    chex.if_args_not_none(chex.assert_axis_dimension_gt, logits, axis=-1, val=1)
+    logits = None if logits is None else conversion.as_float_array(logits)
+    probs = None if probs is None else conversion.as_float_array(probs)
+    if (logits is None) == (probs is None):
+      raise ValueError(
+          f'One and exactly one of `logits` and `probs` should be `None`, '
+          f'but `logits` is {logits} and `probs` is {probs}.')
+    if logits is not None and (not logits.shape or logits.shape[-1] < 2):
+      raise ValueError(
+          f'The last dimension of `logits` must be greater than 1, but '
+          f'`logits.shape = {logits.shape}`.')
+    if probs is not None and (not probs.shape or probs.shape[-1] < 2):
+      raise ValueError(
+          f'The last dimension of `probs` must be greater than 1, but '
+          f'`probs.shape = {probs.shape}`.')
     if not (jnp.issubdtype(dtype, jnp.integer) or
             jnp.issubdtype(dtype, jnp.floating)):
       raise ValueError(

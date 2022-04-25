@@ -48,10 +48,15 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertion_fn(dist.logits, self.logits)
     self.assertion_fn(dist.probs, self.p)
 
-  def test_invalid_parameters(self):
-    self._test_raises_error(
-        dist_kwargs={'logits': self.logits, 'probs': self.p})
-    self._test_raises_error(dist_kwargs={'logits': None, 'probs': None})
+  @parameterized.named_parameters(
+      ('probs and logits', {'logits': [0.1, -0.2], 'probs': [0.5, 0.4]}),
+      ('both probs and logits are None', {'logits': None, 'probs': None}),
+      ('complex64 dtype', {'logits': [0.1, -0.2], 'dtype': jnp.complex64}),
+      ('complex128 dtype', {'logits': [0.1, -0.2], 'dtype': jnp.complex128}),
+  )
+  def test_raises_on_invalid_inputs(self, dist_params):
+    with self.assertRaises(ValueError):
+      self.distrax_cls(**dist_params)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -172,14 +177,6 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(samples.dtype, dist.dtype)
     chex.assert_type(samples, dtype)
-
-  @parameterized.named_parameters(
-      ('complex64', jnp.complex64),
-      ('complex128', jnp.complex128))
-  def test_invalid_dtype(self, dtype):
-    dist_params = {'logits': self.logits, 'dtype': dtype}
-    with self.assertRaises(ValueError):
-      self.distrax_cls(**dist_params)
 
   @chex.all_variants
   @parameterized.named_parameters(
