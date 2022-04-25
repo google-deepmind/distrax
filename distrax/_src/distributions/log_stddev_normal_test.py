@@ -39,12 +39,14 @@ class LogStddevNormalTest(parameterized.TestCase):
   )
   def test_log_scale_property(self, mean, log_stddev, expected):
     dist = lsn.LogStddevNormal(mean, log_stddev)
-    assert dist.log_scale.shape == expected.shape
+    self.assertEqual(dist.log_scale.shape, expected.shape)
     np.testing.assert_allclose(dist.log_scale, expected, atol=1e-4)
 
   @parameterized.parameters(
-      (0.0, 1.0), (4.0, 10.0))
-  def testSamplingScalar(self, mean, stddev):
+      (0.0, 1.0),
+      (4.0, 10.0),
+  )
+  def test_sampling_scalar(self, mean, stddev):
     log_stddev = np.log(stddev)
     dist = lsn.LogStddevNormal(mean, log_stddev)
 
@@ -58,10 +60,10 @@ class LogStddevNormalTest(parameterized.TestCase):
   @parameterized.parameters(
       ([3, 4], [1.5, 2.5]),
       ([0, 1, 0, 1, 10], [0.1, 0.5, 1.0, 5.0, 10.0]))
-  def testSamplingVector(self, mean, stddev):
+  def test_sampling_vector(self, mean, stddev):
     mean = np.array(mean)
     log_stddev = np.log(stddev)
-    assert mean.shape == log_stddev.shape
+    self.assertEqual(mean.shape, log_stddev.shape)
     dist = lsn.LogStddevNormal(mean, log_stddev)
 
     num_samples = 1000000
@@ -71,7 +73,7 @@ class LogStddevNormalTest(parameterized.TestCase):
     np.testing.assert_allclose(jnp.mean(samples, axis=0), mean, atol=4e-2)
     np.testing.assert_allclose(jnp.std(samples, axis=0), stddev, atol=4e-2)
 
-  def testSamplingBatched(self):
+  def test_sampling_batched(self):
     means = np.array([[3.0, 4.0], [-5, 48.0], [58, 64.0]])
     stddevs = np.array([[1, 2], [2, 4], [4, 8]])
     log_stddevs = np.log(stddevs)
@@ -85,7 +87,7 @@ class LogStddevNormalTest(parameterized.TestCase):
     np.testing.assert_allclose(jnp.mean(samples, axis=0), means, atol=4e-2)
     np.testing.assert_allclose(jnp.std(samples, axis=0), stddevs, atol=4e-2)
 
-  def testSamplingBatchedCustomDim(self):
+  def test_sampling_batched_custom_dim(self):
     means = np.array([[3.0, 4.0], [-5, 48.0], [58, 64.0]])
     stddevs = np.array([[1, 2], [2, 4], [4, 8]])
     log_stddevs = np.log(stddevs)
@@ -109,7 +111,7 @@ class LogStddevNormalTest(parameterized.TestCase):
     self.assertEqual(samples.dtype, dist.dtype)
     chex.assert_type(samples, dtype)
 
-  def testKLVersusNormal(self):
+  def test_kl_versus_normal(self):
     loc, scale = jnp.array([2.0]), jnp.array([2.0])
     log_scale = jnp.log(scale)
     lsn_prior = lsn.LogStddevNormal(jnp.array([0.0]), jnp.array([0.0]))
@@ -125,7 +127,7 @@ class LogStddevNormalTest(parameterized.TestCase):
     np.testing.assert_allclose(kl1, kl3)
 
   # pylint:disable=protected-access
-  def testCustomKLRegistered(self):
+  def test_custom_kl_registered(self):
     # Check that our custom KL is registered inside the TFP dispatch table.
     dist_pair = (lsn.LogStddevNormal, lsn.LogStddevNormal)
     self.assertEqual(kl_module._DIVERGENCES[dist_pair],
@@ -135,7 +137,7 @@ class LogStddevNormalTest(parameterized.TestCase):
       kl_module._DIVERGENCES,
       {(lsn.LogStddevNormal,
         lsn.LogStddevNormal): lambda *args, **kwargs: 42})
-  def testCallingCustomKL(self):
+  def test_calling_custom_kl(self):
     # Check that the dispatch of tfp.kl_divergence actually goes to the
     # table we checked for above.
     dist_a = lsn.LogStddevNormal(jnp.array([0.0]), jnp.array([0.0]))

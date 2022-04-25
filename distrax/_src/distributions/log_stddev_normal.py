@@ -32,10 +32,14 @@ Numeric = chex.Numeric
 
 
 class LogStddevNormal(normal.Normal):
-  """Diagonal Normal that accepts a `loc` and `log_scale` parameter.
+  """Normal distribution with `log_scale` parameter.
 
-  It is safe to use this class with negative values in `log_scale`, which will
-  be exp'd and passed as `scale` into the standard Normal distribution.
+  The `LogStddevNormal` has three parameters: `loc`, `log_scale`, and
+  (optionally) `max_scale`. The distribution is a univariate normal
+  distribution with mean equal to `loc` and scale parameter (i.e., stddev) equal
+  to `exp(log_scale)` if `max_scale` is None. If `max_scale` is not None, a soft
+  thresholding is applied to obtain the scale parameter of the normal, so that
+  its log is given by `log(max_scale) - softplus(log(max_scale) - log_scale)`.
   """
 
   def __init__(self,
@@ -46,12 +50,12 @@ class LogStddevNormal(normal.Normal):
 
     Args:
       loc: Mean of the distribution.
-      log_scale: Log of the distribution's scale. This is often the
-        pre-activated output of a neural network.
+      log_scale: Log of the distribution's scale (before the soft thresholding
+        applied when `max_scale` is not None).
       max_scale: Maximum value of the scale that this distribution will saturate
         at. This parameter can be useful for numerical stability. It is not a
-        hard maximum; rather, we compute scale as per the following formula:
-        log(max_scale) - softplus(log(max_scale) - log_scale).
+        hard maximum; rather, we compute `log(scale)` as per the formula:
+        `log(max_scale) - softplus(log(max_scale) - log_scale)`.
     """
     self._max_scale = max_scale
     if max_scale is not None:
@@ -64,8 +68,8 @@ class LogStddevNormal(normal.Normal):
     super().__init__(loc, scale)
 
   @property
-  def log_scale(self):
-    """Distribution parameter for log standard deviation."""
+  def log_scale(self) -> Array:
+    """The log standard deviation (after thresholding, if applicable)."""
     return jnp.broadcast_to(self._log_scale, self.batch_shape)
 
   def __getitem__(self, index) -> 'LogStddevNormal':
@@ -77,22 +81,24 @@ class LogStddevNormal(normal.Normal):
         max_scale=self._max_scale)
 
 
-def _kl_logstddevnormal_logstddevnormal(p, q, *unused_args, **unused_kwargs):
-  """Calculate the batched KL divergence KL(p || q) with p and q Normal.
+def _kl_logstddevnormal_logstddevnormal(
+    dist1: LogStddevNormal, dist2: LogStddevNormal,
+    *unused_args, **unused_kwargs) -> Array:
+  """Calculates the batched KL divergence between two LogStddevNormal's.
 
   Args:
-    p: A LogStddevNormal distribution.
-    q: A LogStddevNormal distribution.
+    dist1: A LogStddevNormal distribution.
+    dist2: A LogStddevNormal distribution.
 
   Returns:
-    Batchwise KL(p || q).
+    Batchwise KL(dist1 || dist2).
   """
-  # KL[N(u_a, s_a^2) || N(u_b, s_b^2)] between two Gaussians.
-  # (s_a^2 + (u_a - u_b)^2)/(2*s_b^2) + log(s_b) - log(s_a) - 1/2
-  p_variance = jnp.square(p.scale)
-  q_variance = jnp.square(q.scale)
-  return ((p_variance + jnp.square(p.loc - q.loc)) / (2.0 * q_variance) +
-          q.log_scale - p.log_scale - 0.5)
+  # KL[N(u_a, s_a^2) || N(u_b, s_b^2)] between two Gaussians:
+  # (s_a^2 + (u_a - u_b)^2)/(2*s_b^2) + log(s_b) - log(s_a) - 1/2.
+  variance1 = jnp.square(dist1.scale)
+  variance2 = jnp.square(dist2.scale)
+  return ((variance1 + jnp.square(dist1.loc - dist2.loc)) / (2.0 * variance2) +
+          dist2.log_scale - dist1.log_scale - 0.5)
 
 
 # Register the KL function.
