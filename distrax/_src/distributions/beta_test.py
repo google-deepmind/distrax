@@ -70,13 +70,34 @@ class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
+      ('float16', jnp.float16),
       ('float32', jnp.float32),
-      ('float16', jnp.float16))
+  )
   def test_sample_dtype(self, dtype):
     dist = self.distrax_cls(alpha=jnp.ones((), dtype), beta=jnp.ones((), dtype))
     samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)
+
+  @chex.all_variants
+  @parameterized.named_parameters(
+      ('sample', 'sample'),
+      ('sample_and_log_prob', 'sample_and_log_prob'),
+  )
+  def test_sample_values(self, method):
+    rng = np.random.default_rng(42)
+    alpha = jnp.array(np.abs(rng.normal(size=(4, 3, 2))))
+    beta = jnp.array(np.abs(rng.normal(size=(4, 3, 2))))
+    n_samples = 100000
+    dist = self.distrax_cls(alpha, beta)
+    sample_fn = self.variant(
+        lambda key: getattr(dist, method)(seed=key, sample_shape=n_samples))
+    samples = sample_fn(self.key)
+    samples = samples[0] if method == 'sample_and_log_prob' else samples
+    self.assertEqual(samples.shape, (n_samples,) + (4, 3, 2))
+    self.assertTrue(np.all(np.logical_and(samples >= 0., samples <= 1.)))
+    self.assertion_fn(rtol=0.1)(np.mean(samples, axis=0), dist.mean())
+    self.assertion_fn(rtol=0.1)(np.std(samples, axis=0), dist.stddev())
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -197,15 +218,17 @@ class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
       ('ellipsis', (Ellipsis, -1)),
   )
   def test_slice(self, slice_):
-    alpha = jnp.array(np.abs(np.random.randn(4, 3, 2)))
-    beta = jnp.array(np.abs(np.random.randn(4, 3, 2)))
+    rng = np.random.default_rng(42)
+    alpha = jnp.array(np.abs(rng.normal(size=(4, 3, 2))))
+    beta = jnp.array(np.abs(rng.normal(size=(4, 3, 2))))
     dist = self.distrax_cls(alpha, beta)
     self.assertion_fn(rtol=1e-3)(dist[slice_].alpha, alpha[slice_])
     self.assertion_fn(rtol=1e-3)(dist[slice_].beta, beta[slice_])
 
   def test_slice_different_parameterization(self):
-    alpha = jnp.array(np.abs(np.random.randn(4, 3, 2)))
-    beta = jnp.array(np.abs(np.random.randn(3, 2)))
+    rng = np.random.default_rng(42)
+    alpha = np.abs(rng.normal(size=(4, 3, 2)))
+    beta = np.abs(rng.normal(size=(3, 2)))
     dist = self.distrax_cls(alpha, beta)
     self.assertion_fn(rtol=1e-3)(dist[0].alpha, alpha[0])
     self.assertion_fn(rtol=1e-3)(dist[0].beta, beta)  # Not slicing beta.
