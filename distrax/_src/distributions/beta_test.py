@@ -70,12 +70,15 @@ class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants
   @parameterized.named_parameters(
-      ('float16', jnp.float16),
-      ('float32', jnp.float32),
+      ('sample, float16', 'sample', jnp.float16),
+      ('sample, float32', 'sample', jnp.float32),
+      ('sample_and_log_prob, float16', 'sample_and_log_prob', jnp.float16),
+      ('sample_and_log_prob, float32', 'sample_and_log_prob', jnp.float32),
   )
-  def test_sample_dtype(self, dtype):
+  def test_sample_dtype(self, method, dtype):
     dist = self.distrax_cls(alpha=jnp.ones((), dtype), beta=jnp.ones((), dtype))
-    samples = self.variant(dist.sample)(seed=self.key)
+    samples = self.variant(getattr(dist, method))(seed=self.key)
+    samples = samples[0] if method == 'sample_and_log_prob' else samples
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)
 
@@ -138,7 +141,8 @@ class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     value = np.asarray(value, dtype=np.float32)
-    for method in ['prob', 'log_prob', 'cdf', 'log_cdf']:
+    for method in ['prob', 'log_prob', 'cdf', 'log_cdf', 'survival_function',
+                   'log_survival_function']:
       with self.subTest(method=method):
         super()._test_attribute(
             attribute_string=method,
