@@ -158,10 +158,6 @@ class Bernoulli(distribution.Distribution):
     """See `Distribution.probs`."""
     return (self.probs > 0.5).astype(self._dtype)
 
-  def median(self) -> Array:
-    """See `Distribution.median`."""
-    return self.mean()
-
   def __getitem__(self, index) -> 'Bernoulli':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)

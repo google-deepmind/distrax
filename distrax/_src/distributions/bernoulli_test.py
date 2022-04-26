@@ -229,19 +229,6 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
-      ('from probs', True),
-      ('from logits', False),
-  )
-  def test_median(self, from_probs):
-    rng = np.random.default_rng(42)
-    probs = rng.uniform(size=(4, 5))
-    logits = sp_special.logit(probs)
-    dist_kwargs = {'probs': probs} if from_probs else {'logits': logits}
-    dist = self.distrax_cls(**dist_kwargs)
-    self.assertion_fn(rtol=1e-3)(self.variant(dist.median)(), probs)
-
-  @chex.all_variants(with_pmap=False)
-  @parameterized.named_parameters(
       ('kl distrax_to_distrax', 'kl_divergence', 'distrax_to_distrax'),
       ('kl distrax_to_tfp', 'kl_divergence', 'distrax_to_tfp'),
       ('kl tfp_to_distrax', 'kl_divergence', 'tfp_to_distrax'),
