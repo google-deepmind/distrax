@@ -23,7 +23,6 @@ import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
-
 tfd = tfp.distributions
 
 Array = chex.Array
@@ -142,12 +141,16 @@ class Categorical(distribution.Distribution):
     """See `Distribution.cdf`."""
     # For value < 0 the output should be zero because support = {0, ..., K-1}.
     should_be_zero = value < 0
+    # For value >= K-1 the output should be one. Explicitly accounting for this
+    # case addresses potential numerical issues that may arise when evaluating
+    # derived methods (mainly, `log_survival_function`) for `value >= K-1`.
+    should_be_one = value >= self.num_categories - 1
     # Will use value as an index below, so clip it to {0, ..., K-1}.
     value = jnp.clip(value, 0, self.num_categories - 1)
     value_one_hot = jax.nn.one_hot(value, self.num_categories)
     cdf = jnp.sum(math.multiply_no_nan(
         jnp.cumsum(self.probs, axis=-1), value_one_hot), axis=-1)
-    return jnp.where(should_be_zero, jnp.array(0.), cdf)
+    return jnp.where(should_be_zero, 0., jnp.where(should_be_one, 1., cdf))
 
   def log_cdf(self, value: Array) -> Array:
     """See `Distribution.log_cdf`."""
@@ -164,6 +167,7 @@ class Categorical(distribution.Distribution):
       return Categorical(logits=self.logits[index], dtype=self._dtype)
     return Categorical(probs=self.probs[index], dtype=self._dtype)
 
+
 CategoricalLike = Union[Categorical, tfd.Categorical]
 
 
@@ -172,7 +176,7 @@ def _kl_divergence_categorical_categorical(
     dist2: CategoricalLike,
     *unused_args, **unused_kwargs,
     ) -> Array:
-  """Obtain the KL divergence `KL(dist1 || dist2)` between two Categoricals.
+  """Obtains the KL divergence `KL(dist1 || dist2)` between two Categoricals.
 
   The KL computation takes into account that `0 * log(0) = 0`; therefore,
   `dist1` may have zeros in its probability vector.
@@ -182,10 +186,10 @@ def _kl_divergence_categorical_categorical(
     dist2: A Categorical distribution.
 
   Returns:
-    Batchwise `KL(dist1 || dist2)`
+    Batchwise `KL(dist1 || dist2)`.
 
   Raises:
-    ValueError if the two distributions have different number of categories
+    ValueError if the two distributions have different number of categories.
   """
   logits1 = dist1.logits_parameter()
   logits2 = dist2.logits_parameter()
