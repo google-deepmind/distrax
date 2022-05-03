@@ -116,7 +116,7 @@ class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertEqual(samples.shape, (n_samples,) + probs.shape)
     self.assertTrue(np.all(np.logical_or(samples == 0, samples == 1)))
     self.assertion_fn(rtol=0.1)(np.mean(samples, axis=0), probs)
-    self.assertion_fn(rtol=0.1)(np.std(samples, axis=0), dist.stddev())
+    self.assertion_fn(atol=2e-3)(np.std(samples, axis=0), dist.stddev())
 
   @chex.all_variants
   @parameterized.named_parameters(
