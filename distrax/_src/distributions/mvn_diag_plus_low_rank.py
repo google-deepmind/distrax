@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalDiagPlusLowRank distribution."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 from distrax._src.bijectors.diag_linear import DiagLinear
@@ -172,6 +172,11 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
           v_matrix=self._scale_v_matrix,
           diag=self._scale_diag)
     super().__init__(loc=loc, scale=scale)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + (
+        '_scale_diag', '_scale_u_matrix', '_scale_v_matrix')
 
   @property
   def scale_diag(self) -> Array:

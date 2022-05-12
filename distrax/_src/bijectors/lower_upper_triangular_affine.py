@@ -14,6 +14,8 @@
 # ==============================================================================
 """LU-decomposed affine bijector."""
 
+from typing import Tuple
+
 from distrax._src.bijectors import bijector as base
 from distrax._src.bijectors import block
 from distrax._src.bijectors import chain
@@ -75,6 +77,10 @@ class LowerUpperTriangularAffine(chain.Chain):
     self._shift = block.Block(shift.Shift(bias), 1)
     self._bias = bias
     super().__init__([self._shift, self._lower, self._upper])
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_upper', '_lower', '_shift', '_bias')
 
   @property
   def lower(self) -> Array:

@@ -89,6 +89,10 @@ class _IdentityPlusLowRankLinear(base.Bijector):
         _get_small_matrix, signature="(d,k),(d,k)->(k,k)")(u_matrix, v_matrix)
     self._logdet = _get_logdet(self._small_matrix)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ("_u_matrix", "_v_matrix", "_small_matrix", "_logdet")
+
   def forward(self, x: Array) -> Array:
     """Computes y = f(x)."""
     self._check_forward_input_shape(x)
@@ -206,6 +210,11 @@ class DiagPlusLowRankLinear(linear.Linear):
     self.inverse = self._bijector.inverse
     self.inverse_log_det_jacobian = self._bijector.inverse_log_det_jacobian
     self.inverse_and_log_det = self._bijector.inverse_and_log_det
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + (
+        "_bijector", "_diag", "_u_matrix", "_v_matrix")
 
   @property
   def diag(self) -> Array:

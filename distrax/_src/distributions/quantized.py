@@ -81,6 +81,10 @@ class Quantized(base_distribution.Distribution):
                          'batch dimensions.')
     super().__init__()
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_dist', '_low', '_high')
+
   @property
   def distribution(self) -> DistributionT:
     """Base distribution `p(x)`."""

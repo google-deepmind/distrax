@@ -100,6 +100,10 @@ class HMM(jittable.Jittable):
           f'to the number of latent states in the model, but it has '
           f'`num_categories` of {self._trans_dist.num_categories}.')
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_init_dist', '_trans_dist', '_obs_dist')
+
   @property
   def init_dist(self) -> categorical.CategoricalLike:
     return self._init_dist

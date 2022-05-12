@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalTri distribution."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 from distrax._src.bijectors.diag_linear import DiagLinear
@@ -114,6 +114,10 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
     self._is_lower = is_lower
 
     super().__init__(loc=loc, scale=scale)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_scale_tri',)
 
   @property
   def scale_tri(self) -> Array:

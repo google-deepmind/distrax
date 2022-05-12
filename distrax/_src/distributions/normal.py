@@ -51,6 +51,10 @@ class Normal(distribution.Distribution):
     self._batch_shape = jax.lax.broadcast_shapes(
         self._loc.shape, self._scale.shape)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_loc', '_scale')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

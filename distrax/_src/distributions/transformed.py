@@ -97,6 +97,10 @@ class Transformed(dist_base.Distribution):
     self._event_shape = None
     self._dtype = None
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_distribution', '_bijector')
+
   @property
   def distribution(self):
     """The base distribution."""

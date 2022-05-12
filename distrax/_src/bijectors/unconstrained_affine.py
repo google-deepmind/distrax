@@ -78,6 +78,10 @@ class UnconstrainedAffine(base.Bijector):
     self._bias = bias
     self._logdet = jnp.linalg.slogdet(matrix)[1]
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ("_matrix", "_bias", "_logdet")
+
   @property
   def matrix(self) -> Array:
     """The matrix `A` of the transformation."""

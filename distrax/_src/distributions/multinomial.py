@@ -90,6 +90,10 @@ class Multinomial(distribution.Distribution):
     self._batch_shape = lax.broadcast_shapes(
         probs_batch_shape, self._total_count.shape)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_total_count', '_probs', '_logits')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

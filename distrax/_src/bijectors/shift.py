@@ -47,6 +47,10 @@ class Shift(base.Bijector):
     self._shift = shift
     self._batch_shape = jnp.shape(self._shift)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_shift',)
+
   @property
   def shift(self) -> Numeric:
     """The bijector's shift."""

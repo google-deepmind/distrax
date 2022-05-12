@@ -69,6 +69,10 @@ class Dirichlet(distribution.Distribution):
     self._log_normalization_constant = math.log_beta_multivariate(
         self._concentration)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_concentration', '_log_normalization_constant')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

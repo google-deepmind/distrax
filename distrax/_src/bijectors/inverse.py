@@ -48,6 +48,10 @@ class Inverse(base.Bijector):
         is_constant_jacobian=self._bijector.is_constant_jacobian,
         is_constant_log_det=self._bijector.is_constant_log_det)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_bijector',)
+
   @property
   def bijector(self) -> BijectorT:
     """The base bijector that was the input to `Inverse`."""

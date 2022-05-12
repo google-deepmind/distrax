@@ -14,6 +14,8 @@
 # ==============================================================================
 """Epsilon-Greedy distributions with respect to a set of preferences."""
 
+from typing import Tuple
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -59,6 +61,10 @@ class EpsilonGreedy(categorical.Categorical):
     greedy_probs = _argmax_with_random_tie_breaking(self._preferences)
     probs = _mix_probs_with_uniform(greedy_probs, epsilon)
     super().__init__(probs=probs, dtype=dtype)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_preferences',)
 
   @property
   def epsilon(self) -> float:

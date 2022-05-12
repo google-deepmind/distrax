@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalFromBijector distribution."""
 
-from typing import Callable, Union
+from typing import Callable, Union, Tuple
 
 import chex
 
@@ -90,6 +90,10 @@ class MultivariateNormalFromBijector(transformed.Transformed):
     self._event_shape = loc.shape[-1:]
     self._batch_shape = batch_shape
     self._dtype = dtype
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_scale', '_loc')
 
   @property
   def scale(self) -> linear.Linear:

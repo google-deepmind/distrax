@@ -65,6 +65,10 @@ class Independent(distrax_distribution.Distribution):
     self._event_shape = (dist_batch_shape[event_ndims:]
                          + distribution.event_shape)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_distribution',)
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

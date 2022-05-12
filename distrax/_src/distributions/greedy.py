@@ -14,6 +14,8 @@
 # ==============================================================================
 """Greedy distributions with respect to a set of preferences."""
 
+from typing import Tuple
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -47,6 +49,10 @@ class Greedy(categorical.Categorical):
     self._preferences = jnp.asarray(preferences)
     probs = _argmax_with_random_tie_breaking(self._preferences)
     super().__init__(probs=probs, dtype=dtype)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_preferences',)
 
   @property
   def preferences(self) -> Array:

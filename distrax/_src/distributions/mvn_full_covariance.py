@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalFullCovariance distribution."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 from distrax._src.distributions import distribution
@@ -108,6 +108,10 @@ class MultivariateNormalFullCovariance(MultivariateNormalTri):
       scale_tril = jnp.linalg.cholesky(covariance_matrix)
 
     super().__init__(loc=loc, scale_tri=scale_tril)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_covariance_matrix',)
 
   @property
   def covariance_matrix(self) -> Array:

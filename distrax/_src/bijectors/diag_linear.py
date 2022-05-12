@@ -63,6 +63,10 @@ class DiagLinear(linear.Linear):
     self.inverse_log_det_jacobian = self._bijector.inverse_log_det_jacobian
     self.inverse_and_log_det = self._bijector.inverse_and_log_det
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ("_bijector", "_diag")
+
   @property
   def diag(self) -> Array:
     """Vector of length D, the diagonal of matrix `A`."""

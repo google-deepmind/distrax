@@ -59,6 +59,10 @@ def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
     def __getattr__(self, name: str):
       return getattr(tfp_distribution, name)
 
+    def _pytree_fields(self) -> Tuple[str, ...]:
+      """See `Jittable._pytree_fields`."""
+      return tfp_distribution._composite_tensor_nonshape_params  # pylint: disable=protected-access
+
     def sample(self, *a, **k):  # pylint: disable=useless-super-delegation
       """See `Distribution.sample`."""
       return super().sample(*a, **k)

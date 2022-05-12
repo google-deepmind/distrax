@@ -71,6 +71,10 @@ class Bernoulli(distribution.Distribution):
     self._logits = None if logits is None else conversion.as_float_array(logits)
     self._dtype = dtype
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_probs', '_logits')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """See `Distribution.event_shape`."""

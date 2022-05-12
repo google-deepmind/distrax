@@ -80,6 +80,10 @@ class TriangularLinear(linear.Linear):
     triangular_logdet = jnp.vectorize(_triangular_logdet, signature="(m,m)->()")
     self._logdet = triangular_logdet(self._matrix)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ("_matrix", "_logdet")
+
   @property
   def matrix(self) -> Array:
     """The triangular matrix `A` of the transformation."""

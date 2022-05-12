@@ -75,6 +75,10 @@ class Chain(base.Bijector):
         is_constant_jacobian=is_constant_jacobian,
         is_constant_log_det=is_constant_log_det)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ("_bijectors",)
+
   @property
   def bijectors(self) -> List[BijectorT]:
     """The list of bijectors in the chain."""

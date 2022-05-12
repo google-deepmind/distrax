@@ -62,6 +62,10 @@ class Deterministic(distribution.Distribution):
                        f'`loc`, but their shapes are {self._atol.shape} and '
                        f'{self._loc.shape}, respectively.')
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_loc',)
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of the events."""

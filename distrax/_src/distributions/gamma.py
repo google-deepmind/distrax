@@ -48,6 +48,10 @@ class Gamma(distribution.Distribution):
     self._batch_shape = jax.lax.broadcast_shapes(
         self._concentration.shape, self._rate.shape)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_concentration', '_rate')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

@@ -14,7 +14,7 @@
 # ==============================================================================
 """MultivariateNormalDiag distribution."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 from distrax._src.bijectors.diag_linear import DiagLinear
@@ -91,6 +91,10 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
     scale = DiagLinear(scale_diag)
     super().__init__(loc=loc, scale=scale)
     self._scale_diag = scale_diag
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_scale_diag',)
 
   @property
   def scale_diag(self) -> Array:

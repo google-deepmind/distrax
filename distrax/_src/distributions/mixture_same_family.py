@@ -69,6 +69,12 @@ class MixtureSameFamily(distribution.Distribution):
              f'({components_distribution.batch_shape}`)')
       raise ValueError(msg)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_mixture_distribution',
+            '_components_distribution',
+            '_mixture_log_probs')
+
   @property
   def components_distribution(self):
     """The components distribution."""

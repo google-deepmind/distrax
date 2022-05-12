@@ -79,6 +79,10 @@ class ScalarAffine(base.Bijector):
     self._batch_shape = jax.lax.broadcast_shapes(
         jnp.shape(self._shift), jnp.shape(self._scale))
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_shift', '_scale', '_inv_scale', '_log_scale')
+
   @property
   def shift(self) -> Numeric:
     """The bijector's shift."""

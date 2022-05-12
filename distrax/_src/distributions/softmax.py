@@ -14,6 +14,8 @@
 # ==============================================================================
 """Softmax distribution."""
 
+from typing import Tuple
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -47,6 +49,10 @@ class Softmax(categorical.Categorical):
     self._unscaled_logits = logits
     scaled_logits = logits / temperature
     super().__init__(logits=scaled_logits, dtype=dtype)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_temperature', '_unscaled_logits',)
 
   @property
   def temperature(self) -> float:

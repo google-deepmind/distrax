@@ -62,6 +62,10 @@ class Categorical(distribution.Distribution):
     self._logits = None if logits is None else math.normalize(logits=logits)
     self._dtype = dtype
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_probs', '_logits')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""

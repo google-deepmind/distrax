@@ -15,7 +15,7 @@
 """LogStddevNormal distribution."""
 
 import math
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 from distrax._src.distributions import distribution
@@ -66,6 +66,10 @@ class LogStddevNormal(normal.Normal):
       self._log_scale = conversion.as_float_array(log_scale)
     scale = jnp.exp(self._log_scale)
     super().__init__(loc, scale)
+
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return super()._pytree_fields() + ('_log_scale',)
 
   @property
   def log_scale(self) -> Array:

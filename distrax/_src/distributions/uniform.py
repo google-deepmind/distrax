@@ -49,6 +49,10 @@ class Uniform(distribution.Distribution):
     self._batch_shape = jax.lax.broadcast_shapes(
         self._low.shape, self._high.shape)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_low', '_high')
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of the events."""

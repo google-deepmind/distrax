@@ -48,6 +48,10 @@ class BijectorFromTFP(base.Bijector):
         event_ndims_out=tfp_bijector.inverse_min_event_ndims,
         is_constant_jacobian=tfp_bijector.is_constant_jacobian)
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_tfp_bijector',)
+
   def __getattr__(self, name: str):
     return getattr(self._tfp_bijector, name)
 

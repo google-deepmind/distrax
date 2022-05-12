@@ -378,6 +378,10 @@ class RationalQuadraticSpline(base.Bijector):
       raise ValueError(f'Unknown option for boundary slopes:'
                        f' `{boundary_slopes}`.')
 
+  def _pytree_fields(self) -> Tuple[str, ...]:
+    """See `Jittable._pytree_fields`."""
+    return ('_x_pos', '_y_pos', '_knot_slopes')
+
   @property
   def num_bins(self) -> int:
     """The number of segments on the interval."""
