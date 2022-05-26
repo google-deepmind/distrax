@@ -182,7 +182,7 @@ class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
             'loc': np.array(np.random.randn(3, 2), dtype=np.float32),
             'scale': 0.1 + np.array(np.random.rand(4, 1, 2), dtype=np.float32),
         },
-        assertion_fn=self.assertion_fn(rtol=4e-2))
+        assertion_fn=self.assertion_fn(rtol=5e-2))
 
   def test_jittable(self):
     super()._test_jittable(
