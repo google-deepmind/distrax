@@ -247,7 +247,6 @@ def _interpret_inverse(jaxpr, consts, *args):
   def write(var, val):
     env[var] = val
 
-  write(jax.core.unitvar, jax.core.unit)
   jax.api_util.safe_map(write, jaxpr.outvars, args)
   jax.api_util.safe_map(write, jaxpr.constvars, consts)
 
