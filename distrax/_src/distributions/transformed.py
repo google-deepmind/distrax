@@ -234,7 +234,7 @@ def _kl_divergence_transformed_transformed(
     *unused_args,
     input_hint: Optional[Array] = None,
     **unused_kwargs,
-    ) -> Array:
+) -> Array:
   """Obtains the KL divergence between two Transformed distributions.
 
   This computes the KL divergence between two Transformed distributions with the
@@ -254,9 +254,9 @@ def _kl_divergence_transformed_transformed(
   Args:
     dist1: A Transformed distribution.
     dist2: A Transformed distribution.
-    input_hint: an example sample from the base distribution, used to trace
-      the `forward` method. If not specified, it is computed using a zero array
-      of the shape and dtype of a sample from the base distribution.
+    input_hint: an example sample from the base distribution, used to trace the
+      `forward` method. If not specified, it is computed using a zero array of
+      the shape and dtype of a sample from the base distribution.
 
   Returns:
     Batchwise `KL(dist1 || dist2)`.
@@ -267,9 +267,9 @@ def _kl_divergence_transformed_transformed(
   """
   if dist1.distribution.event_shape != dist2.distribution.event_shape:
     raise ValueError(
-        f'The two base distributions do not have the same event shape: '
-        f'{dist1.distribution.event_shape} and '
-        f'{dist2.distribution.event_shape}.')
+        f"The two base distributions do not have the same event shape: "
+        f"{dist1.distribution.event_shape} and "
+        f"{dist2.distribution.event_shape}.")
 
   bij1 = conversion.as_bijector(dist1.bijector)  # conversion needed for TFP
   bij2 = conversion.as_bijector(dist2.bijector)
@@ -283,10 +283,10 @@ def _kl_divergence_transformed_transformed(
     jaxpr_bij2 = jax.make_jaxpr(bij2.forward)(input_hint).jaxpr
     if str(jaxpr_bij1) != str(jaxpr_bij2):
       raise NotImplementedError(
-          f'The KL divergence cannot be obtained because it is not possible to '
-          f'guarantee that the bijectors {dist1.bijector.name} and '
-          f'{dist2.bijector.name} of the Transformed distributions are '
-          f'equal. If possible, use the same instance of a Distrax bijector.')
+          f"The KL divergence cannot be obtained because it is not possible to "
+          f"guarantee that the bijectors {dist1.bijector.name} and "
+          f"{dist2.bijector.name} of the Transformed distributions are "
+          f"equal. If possible, use the same instance of a Distrax bijector.")
 
   return dist1.distribution.kl_divergence(dist2.distribution)
 

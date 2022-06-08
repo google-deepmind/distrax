@@ -73,11 +73,11 @@ class Sigmoid(base.Bijector):
     return type(other) is Sigmoid  # pylint: disable=unidiomatic-typecheck
 
 
-def _more_stable_sigmoid(x):
+def _more_stable_sigmoid(x: Array) -> Array:
   """Where extremely negatively saturated, approximate sigmoid with exp(x)."""
   return jnp.where(x < -9, jnp.exp(x), jax.nn.sigmoid(x))
 
 
-def _more_stable_softplus(x):
+def _more_stable_softplus(x: Array) -> Array:
   """Where extremely saturated, approximate softplus with log1p(exp(x))."""
   return jnp.where(x < -9, jnp.log1p(jnp.exp(x)), jax.nn.softplus(x))
