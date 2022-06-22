@@ -133,7 +133,8 @@ class Multinomial(distribution.Distribution):
   def log_of_probs(self) -> Array:
     """The log probabilities for each event."""
     if self._logits is not None:
-      return jnp.broadcast_to(jax.nn.log_softmax(self._logits, axis=-1),
+      # jax.nn.log_softmax was already applied in init to logits.
+      return jnp.broadcast_to(self._logits,
                               self.batch_shape + self.event_shape)
     return jnp.broadcast_to(jnp.log(self._probs),
                             self.batch_shape + self.event_shape)
