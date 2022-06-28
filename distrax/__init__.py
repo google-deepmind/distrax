@@ -66,6 +66,7 @@ from distrax._src.distributions.softmax import Softmax
 from distrax._src.distributions.straight_through import straight_through_wrapper
 from distrax._src.distributions.transformed import Transformed
 from distrax._src.distributions.uniform import Uniform
+from distrax._src.distributions.von_mises import VonMises
 
 # Utilities.
 from distrax._src.utils.conversion import as_bijector
@@ -143,6 +144,7 @@ __all__ = (
     "TriangularLinear",
     "UnconstrainedAffine",
     "Uniform",
+    "VonMises",
 )
 
 
