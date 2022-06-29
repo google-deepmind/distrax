@@ -16,6 +16,8 @@
 
 import abc
 import jax
+import jax.numpy as jnp
+import numpy as np
 
 
 class Jittable(metaclass=abc.ABCMeta):
@@ -32,11 +34,45 @@ class Jittable(metaclass=abc.ABCMeta):
     return instance
 
   def tree_flatten(self):
-    return ((), ((self._args, self._kwargs), self.__dict__))
+    jax_args, py_args = _split_jax_and_python_list(self._args)
+    jax_kwargs, py_kwargs = _split_jax_and_python_dict(self._kwargs)
+    jax_state, py_state = _split_jax_and_python_dict(self.__dict__)
+    return ((jax_args, jax_kwargs, jax_state), (py_args, py_kwargs, py_state))
 
   @classmethod
-  def tree_unflatten(cls, aux_data, _):
-    (args, kwargs), state_dict = aux_data
+  def tree_unflatten(cls, aux_data, children):
+    py_args, py_kwargs, py_state = aux_data
+    jax_args, jax_kwargs, jax_state = children
+    args = _join_jax_and_python_list(jax_args, *py_args)
+    kwargs = _join_jax_and_python_dict(jax_kwargs, *py_kwargs)
+    state = _join_jax_and_python_dict(jax_state, *py_state)
     obj = cls(*args, **kwargs)
-    obj.__dict__ = state_dict
+    obj.__dict__ = state
     return obj
+
+
+def _is_jax_data(x):
+  return all(
+      isinstance(a, (jnp.ndarray, np.ndarray)) for a in jax.tree_leaves(x))
+
+
+def _split_jax_and_python_list(obj):
+  is_jax = list(map(_is_jax_data, obj))
+  jax_data = [v if j else None for v, j in zip(obj, is_jax)]
+  py_data = [v if not j else None for v, j in zip(obj, is_jax)]
+  return jax_data, (py_data, is_jax)
+
+
+def _split_jax_and_python_dict(obj):
+  is_jax = {k: _is_jax_data(v) for k, v in obj.items()}
+  jax_data = {k: v if is_jax[k] else None for k, v in obj.items()}
+  py_data = {k: v if not is_jax[k] else None for k, v in obj.items()}
+  return jax_data, (py_data, is_jax)
+
+
+def _join_jax_and_python_list(jax_data, py_data, is_jax):
+  return [j if is_jax else p for j, p, is_jax in zip(jax_data, py_data, is_jax)]
+
+
+def _join_jax_and_python_dict(jax_data, py_data, is_jax):
+  return {k: jax_data[k] if v else py_data[k] for k, v in is_jax.items()}

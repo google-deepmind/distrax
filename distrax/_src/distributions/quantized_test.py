@@ -423,7 +423,7 @@ class QuantizedSurvivalFunctionConsistencyTest(parameterized.TestCase):
         lambda x: dist.cdf(x) + dist.survival_function(x))(self.values)
     np.testing.assert_allclose(results, np.ones_like(self.values), rtol=1e-2)
 
-  @chex.all_variants
+  @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('no cutoffs', (None, None)),
       ('noop cutoffs', (-10., 20.)),

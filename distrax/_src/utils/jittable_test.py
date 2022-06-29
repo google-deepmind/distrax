@@ -50,13 +50,55 @@ class JittableTest(parameterized.TestCase):
       obj.data['params'] *= 2  # Modification before passing to jitted fn.
       return inner_fn(obj)
 
-    params = jnp.ones((5,))
+    with self.subTest('numpy'):
+      params = np.ones((5,))
+      # Both modifications will be traced if data tree is correctly traversed.
+      grad_expected = params * 2 * 3
+      grad = jax.grad(loss_fn)(params)
+      np.testing.assert_array_equal(grad, grad_expected)
 
-    # Both modifications will be traced if data tree is correctly traversed.
-    grad_expected = params * 2 * 3
-    grad = jax.grad(loss_fn)(params)
+    with self.subTest('jax.numpy'):
+      params = jnp.ones((5,))
+      # Both modifications will be traced if data tree is correctly traversed.
+      grad_expected = params * 2 * 3
+      grad = jax.grad(loss_fn)(params)
+      np.testing.assert_array_equal(grad, grad_expected)
 
-    np.testing.assert_array_equal(grad, grad_expected)
+  def test_different_jittables_to_compiled_function(self):
+    @jax.jit
+    def add_one_to_params(obj):
+      obj.data['params'] = obj.data['params'] + 1
+      return obj
+
+    with self.subTest('numpy'):
+      add_one_to_params(DummyJittable(np.zeros((5,))))
+      add_one_to_params(DummyJittable(np.ones((5,))))
+
+    with self.subTest('jax.numpy'):
+      add_one_to_params(DummyJittable(jnp.zeros((5,))))
+      add_one_to_params(DummyJittable(jnp.ones((5,))))
+
+  def test_modifying_object_data_does_not_leak_tracers(self):
+    @jax.jit
+    def add_one_to_params(obj):
+      obj.data['params'] = obj.data['params'] + 1
+      return obj
+
+    dummy = DummyJittable(jnp.ones((5,)))
+    dummy_out = add_one_to_params(dummy)
+    dummy_out.data['params'] -= 1
+
+  def test_metadata_modification_statements_are_removed_by_compilation(self):
+    @jax.jit
+    def add_char_to_name(obj):
+      obj.name += '_x'
+      return obj
+
+    dummy = DummyJittable(jnp.ones((5,)))
+    dummy_out = add_char_to_name(dummy)
+    dummy_out = add_char_to_name(dummy)  # `name` change has been compiled out.
+    dummy_out.name += 'y'
+    self.assertEqual(dummy_out.name, 'dummy_xy')
 
 
 if __name__ == '__main__':
