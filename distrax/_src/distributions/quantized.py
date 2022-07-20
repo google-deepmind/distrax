@@ -14,7 +14,7 @@
 # ==============================================================================
 """Quantized distribution."""
 
-from typing import Optional, Tuple
+from typing import cast, Optional, Tuple
 
 import chex
 from distrax._src.distributions import distribution as base_distribution
@@ -32,7 +32,8 @@ DistributionLike = base_distribution.DistributionLike
 DistributionT = base_distribution.DistributionT
 
 
-class Quantized(base_distribution.Distribution):
+class Quantized(
+    base_distribution.Distribution[Array, Tuple[int, ...], jnp.dtype],):
   """Distribution representing the quantization `Y = ceil(X)`.
 
   Given an input distribution `p(x)` over a univariate random variable `X`,
@@ -60,7 +61,8 @@ class Quantized(base_distribution.Distribution):
         `distribution` and must not result in additional batch dimensions after
         broadcasting.
     """
-    self._dist = conversion.as_distribution(distribution)
+    self._dist: base_distribution.Distribution[Array, Tuple[
+        int, ...], jnp.dtype] = conversion.as_distribution(distribution)
     if self._dist.event_shape:
       raise ValueError(f'The base distribution must be univariate, but its '
                        f'`event_shape` is {self._dist.event_shape}.')
@@ -82,7 +84,9 @@ class Quantized(base_distribution.Distribution):
     super().__init__()
 
   @property
-  def distribution(self) -> DistributionT:
+  def distribution(
+      self
+  ) -> base_distribution.Distribution[Array, Tuple[int, ...], jnp.dtype]:
     """Base distribution `p(x)`."""
     return self._dist
 
@@ -103,7 +107,9 @@ class Quantized(base_distribution.Distribution):
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""
-    return self.distribution.event_shape
+    event_shape = self.distribution.event_shape
+    # TODO(b/149413467): Remove explicit casting when resolved.
+    return cast(Tuple[int, ...], event_shape)
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:

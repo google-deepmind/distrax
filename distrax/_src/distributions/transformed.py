@@ -84,7 +84,16 @@ class Transformed(dist_base.Distribution):
     distribution = conversion.as_distribution(distribution)
     bijector = conversion.as_bijector(bijector)
 
-    if len(distribution.event_shape) != bijector.event_ndims_in:
+    event_shape = distribution.event_shape
+    # Check if event shape is a tuple of integers (i.e. not nested).
+    if not (isinstance(event_shape, tuple) and
+            all(isinstance(i, int) for i in event_shape)):
+      raise ValueError(
+          f"'Transformed' currently only supports distributions with Array "
+          f"events (i.e. not nested). Received '{distribution.name}' with "
+          f"event shape '{distribution.event_shape}'.")
+
+    if len(event_shape) != bijector.event_ndims_in:
       raise ValueError(
           f"Base distribution '{distribution.name}' has event shape "
           f"{distribution.event_shape}, but bijector '{bijector.name}' expects "

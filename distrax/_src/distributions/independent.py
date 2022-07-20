@@ -47,6 +47,16 @@ class Independent(distrax_distribution.Distribution):
     super().__init__()
     distribution = conversion.as_distribution(distribution)
     self._distribution = distribution
+
+    # Check if event shape is a tuple of integers (i.e. not nested).
+    event_shape = distribution.event_shape
+    if not (isinstance(event_shape, tuple) and
+            all(isinstance(i, int) for i in event_shape)):
+      raise ValueError(
+          f"'Independent' currently only supports distributions with Array "
+          f"events (i.e. not nested). Received '{distribution.name}' with "
+          f"event shape '{distribution.event_shape}'.")
+
     dist_batch_shape = distribution.batch_shape
     if reinterpreted_batch_ndims is not None:
       dist_batch_ndims = len(dist_batch_shape)

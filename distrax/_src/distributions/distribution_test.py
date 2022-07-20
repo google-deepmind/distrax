@@ -58,6 +58,26 @@ class DummyMultivariateDist(distribution.Distribution):
     return (self._dimension,)
 
 
+class DummyNestedDist(distribution.Distribution):
+  """Dummy distribution with nested events for testing."""
+
+  def __init__(self, batch_shape=()) -> None:
+    self._batch_shape = batch_shape
+
+  def _sample_n(self, key, n):
+    return dict(
+        foo=jax.random.uniform(key, shape=(n,) + self._batch_shape),
+        bar=jax.random.uniform(key, shape=(n,) + self._batch_shape + (3,)))
+
+  def log_prob(self, value):
+    """Log probability density/mass function."""
+
+  @property
+  def event_shape(self):
+    """Shape of the events."""
+    return dict(foo=(), bar=(3,))
+
+
 class DistributionTest(parameterized.TestCase):
 
   def setUp(self):
@@ -97,6 +117,39 @@ class DistributionTest(parameterized.TestCase):
         lambda key: mult_dist.sample(seed=key, sample_shape=shape))
     samples = sample_fn(0)
     np.testing.assert_equal(samples.shape, expected_shape)
+
+  @chex.all_variants(with_jit=False, with_device=False, with_pmap=False)
+  @parameterized.named_parameters(
+      ('0d input', 1),
+      ('0d np.int16 input', np.int16(1)),
+      ('0d np.int32 input', np.int32(1)),
+      ('0d np.int64 input', np.int64(1)),
+      ('1d tuple input', (2,)),
+      ('1d list input', [2]),
+      ('2d input', (2, 3)),
+  )
+  def test_sample_nested_shape(self, shape):
+    dist = DummyNestedDist()
+    sample_fn = self.variant(
+        lambda key: dist.sample(seed=key, sample_shape=shape))
+    samples = sample_fn(0)
+    # Ensure shape is a tuple.
+    try:
+      iter(shape)
+    except TypeError:
+      shape = (shape,)
+    shape = tuple(shape)
+    np.testing.assert_equal(samples['foo'].shape, shape)
+    np.testing.assert_equal(samples['bar'].shape, shape + (3,))
+
+  @parameterized.named_parameters(
+      ('empty batch', ()),
+      ('1d batch', (3,)),
+      ('2d batch', (3, 4)),
+  )
+  def test_nested_batch_shape(self, batch_shape):
+    dist = DummyNestedDist(batch_shape=batch_shape)
+    np.testing.assert_equal(dist.batch_shape, batch_shape)
 
   @chex.all_variants(with_jit=False, with_device=False, with_pmap=False)
   def test_sample_keys(self):
