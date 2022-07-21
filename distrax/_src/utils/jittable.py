@@ -22,21 +22,48 @@ class Jittable(metaclass=abc.ABCMeta):
   """ABC that can be passed as an arg to a jitted fn, with readable state."""
 
   def __new__(cls, *args, **kwargs):
+    # Discard the parameters to this function because the constructor is not
+    # called during serialization: its `__dict__` gets repopulated directly.
+    del args, kwargs
     try:
       registered_cls = jax.tree_util.register_pytree_node_class(cls)
     except ValueError:
-      registered_cls = cls  # already registered
-    instance = super(Jittable, cls).__new__(registered_cls)
-    instance._args = args
-    instance._kwargs = kwargs
-    return instance
+      registered_cls = cls  # Already registered.
+    return object.__new__(registered_cls)
 
   def tree_flatten(self):
-    return ((), ((self._args, self._kwargs), self.__dict__))
+    leaves, treedef = jax.tree_flatten(self.__dict__)
+    switch = list(map(_is_jax_data, leaves))
+    children = [leaf if s else None for leaf, s in zip(leaves, switch)]
+    metadata = [None if s else leaf for leaf, s in zip(leaves, switch)]
+    return children, (metadata, switch, treedef)
 
   @classmethod
-  def tree_unflatten(cls, aux_data, _):
-    (args, kwargs), state_dict = aux_data
-    obj = cls(*args, **kwargs)
-    obj.__dict__ = state_dict
+  def tree_unflatten(cls, aux_data, children):
+    metadata, switch, treedef = aux_data
+    leaves = [j if s else p for j, p, s in zip(children, metadata, switch)]
+    obj = object.__new__(cls)
+    obj.__dict__ = jax.tree_unflatten(treedef, leaves)
     return obj
+
+
+def _is_jax_data(x):
+  """Check whether `x` is an instance of a JAX-compatible type."""
+  # If it's a tracer, then it's already been converted by JAX.
+  if isinstance(x, jax.core.Tracer):
+    return True
+
+  # `jax.vmap` replaces vmappable leaves with `object()` during serialization.
+  if type(x) is object:  # pylint: disable=unidiomatic-typecheck
+    return True
+
+  # Primitive types (e.g. shape tuples) are treated as metadata for Distrax.
+  if isinstance(x, (bool, int, float)) or x is None:
+    return False
+
+  # Otherwise, try to make it into a tracer. If it succeeds, then it's JAX data.
+  try:
+    jax.xla.abstractify(x)
+    return True
+  except TypeError:
+    return False

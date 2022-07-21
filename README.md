@@ -272,6 +272,22 @@ print(jitted_kl(dist_0, dist_1))
 print(dist_0.kl_divergence(dist_1))
 ```
 
+##### A note about `vmap` and `pmap`
+
+The serialization logic that enables Distrax objects to be passed as arguments
+to jitted functions also enables functions to map over them as data using
+`jax.vmap` and `jax.pmap`.
+
+However, ***support for this behavior is experimental and incomplete. Use
+caution when applying `jax.vmap` or `jax.pmap` to functions that take Distrax
+objects as arguments, or return Distrax objects.***
+
+Simple objects such as `distrax.Categorical` may behave correctly under these
+transformations, but more complex objects such as
+`distrax.MultivariateNormalDiag` may generate exceptions when used as inputs or
+outputs of a `vmap`-ed or `pmap`-ed function.
+
+
 ### Subclassing Distributions and Bijectors
 
 User-defined distributions can be created by subclassing `distrax.Distribution`.
