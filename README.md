@@ -1,6 +1,7 @@
 # Distrax
 
 ![CI status](https://github.com/deepmind/distrax/workflows/tests/badge.svg)
+![pypi](https://img.shields.io/pypi/v/distrax)
 
 Distrax is a lightweight library of probability distributions and bijectors. It
 acts as a JAX-native reimplementation of a subset of
@@ -9,13 +10,17 @@ some new features and emphasis on extensibility.
 
 ## Installation
 
-Distrax can be installed with pip directly from GitHub:
+You can install the latest released version of Distrax from PyPI via:
 
-`pip install git+git://github.com/deepmind/distrax.git`.
+```sh
+pip install distrax
+```
 
-or from PyPI:
+or you can install the latest development version from GitHub:
 
-`pip install distrax`
+```sh
+pip install git+https://github.com/deepmind/distrax.git
+```
 
 To run the tests or
 [examples](https://github.com/deepmind/distrax/tree/master/examples) you will
