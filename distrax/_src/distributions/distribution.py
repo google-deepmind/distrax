@@ -118,7 +118,8 @@ class Distribution(
           lambda s, e: s.shape[:s.ndim - len(e)], sample_spec, self.event_shape)
 
     # Get flat batch shapes.
-    batch_shapes = jax.tree_structure(sample_spec).flatten_up_to(batch_shapes)
+    batch_shapes = jax.tree_util.tree_structure(sample_spec).flatten_up_to(
+        batch_shapes)
     if not batch_shapes:
       return ()
 
