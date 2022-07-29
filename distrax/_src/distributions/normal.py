@@ -48,8 +48,6 @@ class Normal(distribution.Distribution):
     super().__init__()
     self._loc = conversion.as_float_array(loc)
     self._scale = conversion.as_float_array(scale)
-    self._batch_shape = jax.lax.broadcast_shapes(
-        self._loc.shape, self._scale.shape)
 
   @property
   def event_shape(self) -> Tuple[int, ...]:
@@ -59,7 +57,7 @@ class Normal(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return jax.lax.broadcast_shapes(self._loc.shape, self._scale.shape)
 
   @property
   def loc(self) -> Array:

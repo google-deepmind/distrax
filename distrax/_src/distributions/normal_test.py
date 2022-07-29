@@ -185,6 +185,47 @@ class NormalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     self.assertion_fn(rtol=1e-2)(dist[0].mean(), loc)  # Not slicing loc.
     self.assertion_fn(rtol=1e-2)(dist[0].stddev(), scale[0])
 
+  def test_vmap_inputs(self):
+    def log_prob_sum(dist, x):
+      return dist.log_prob(x).sum()
+
+    dist = normal.Normal(
+        jnp.arange(3 * 4 * 5).reshape((3, 4, 5)), jnp.ones((3, 4, 5)))
+    x = jnp.zeros((3, 4, 5))
+
+    with self.subTest('no vmap'):
+      actual = log_prob_sum(dist, x)
+      expected = dist.log_prob(x).sum()
+      self.assertion_fn()(actual, expected)
+
+    with self.subTest('axis=0'):
+      actual = jax.vmap(log_prob_sum, in_axes=0)(dist, x)
+      expected = dist.log_prob(x).sum(axis=(1, 2))
+      self.assertion_fn()(actual, expected)
+
+    with self.subTest('axis=1'):
+      actual = jax.vmap(log_prob_sum, in_axes=1)(dist, x)
+      expected = dist.log_prob(x).sum(axis=(0, 2))
+      self.assertion_fn()(actual, expected)
+
+  def test_vmap_outputs(self):
+    def summed_dist(loc, scale):
+      return normal.Normal(loc.sum(keepdims=True), scale.sum(keepdims=True))
+
+    loc = jnp.arange((3 * 4 * 5)).reshape((3, 4, 5))
+    scale = jnp.ones((3, 4, 5))
+
+    actual = jax.vmap(summed_dist)(loc, scale)
+    expected = normal.Normal(
+        loc.sum(axis=(1, 2), keepdims=True),
+        scale.sum(axis=(1, 2), keepdims=True))
+
+    np.testing.assert_equal(actual.batch_shape, expected.batch_shape)
+    np.testing.assert_equal(actual.event_shape, expected.event_shape)
+
+    x = jnp.array([[[1]], [[2]], [[3]]])
+    self.assertion_fn(rtol=1e-6)(actual.log_prob(x), expected.log_prob(x))
+
 
 if __name__ == '__main__':
   absltest.main()

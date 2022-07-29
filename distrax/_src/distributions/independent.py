@@ -71,14 +71,13 @@ class Independent(distrax_distribution.Distribution):
       self._reinterpreted_batch_ndims = reinterpreted_batch_ndims
     else:
       self._reinterpreted_batch_ndims = max(len(dist_batch_shape) - 1, 0)
-    event_ndims = len(dist_batch_shape) - self._reinterpreted_batch_ndims
-    self._event_shape = (dist_batch_shape[event_ndims:]
-                         + distribution.event_shape)
 
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""
-    return self._event_shape
+    dist_batch_shape = self._distribution.batch_shape
+    event_ndims = len(dist_batch_shape) - self._reinterpreted_batch_ndims
+    return dist_batch_shape[event_ndims:] + self._distribution.event_shape
 
   @property
   def distribution(self):

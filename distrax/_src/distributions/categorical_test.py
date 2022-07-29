@@ -409,6 +409,49 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
         dist[..., -1].logits, math.normalize(logits=logits[:, -1, :]))
     self.assertion_fn(rtol=1e-3)(dist[..., -1].probs, probs[:, -1, :])
 
+  def test_vmap_inputs(self):
+    def log_prob_sum(dist, x):
+      return dist.log_prob(x).sum()
+
+    dist = categorical.Categorical(jnp.arange(3 * 4 * 5).reshape((3, 4, 5)))
+    x = jnp.zeros((3, 4), jnp.int_)
+
+    with self.subTest('no vmap'):
+      actual = log_prob_sum(dist, x)
+      expected = dist.log_prob(x).sum()
+      self.assertion_fn()(actual, expected)
+
+    with self.subTest('axis=0'):
+      actual = jax.vmap(log_prob_sum, in_axes=0)(dist, x)
+      expected = dist.log_prob(x).sum(axis=1)
+      self.assertion_fn()(actual, expected)
+
+    with self.subTest('axis=1'):
+      actual = jax.vmap(log_prob_sum, in_axes=1)(dist, x)
+      expected = dist.log_prob(x).sum(axis=0)
+      self.assertion_fn()(actual, expected)
+
+  def test_vmap_outputs(self):
+    def summed_dist(logits):
+      logits1 = logits.sum(keepdims=True)
+      logits2 = -logits1
+      logits = jnp.concatenate([logits1, logits2], axis=-1)
+      return categorical.Categorical(logits)
+
+    logits = jnp.arange((3 * 4 * 5)).reshape((3, 4, 5))
+    actual = jax.vmap(summed_dist)(logits)
+
+    logits1 = logits.sum(axis=(1, 2), keepdims=True)
+    logits2 = -logits1
+    logits = jnp.concatenate([logits1, logits2], axis=-1)
+    expected = categorical.Categorical(logits)
+
+    np.testing.assert_equal(actual.batch_shape, expected.batch_shape)
+    np.testing.assert_equal(actual.event_shape, expected.event_shape)
+
+    x = jnp.array([[[0]], [[1]], [[0]]], jnp.int_)
+    self.assertion_fn(rtol=1e-6)(actual.log_prob(x), expected.log_prob(x))
+
 
 if __name__ == '__main__':
   absltest.main()
