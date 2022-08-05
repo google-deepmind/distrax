@@ -241,9 +241,9 @@ class DistributionTest(parameterized.TestCase):
     # NOTE: Using jnp.arrays behaves differently compared to np.arrays as it
     # wraps instead of raising. Raising for same index is tested for np.arrays
     # below.
-    index = jnp.array([-1, 2])
+    index = jnp.array([-1, 0])
     expected = (jnp.array([1, 1, 1, 1], dtype=jnp.int32),
-                jnp.array([2, 2, 2, 2], dtype=jnp.int32),
+                jnp.array([0, 0, 0, 0], dtype=jnp.int32),
                 jnp.array([0, 1, 2, 3], dtype=jnp.int32))
     np.testing.assert_allclose(
         distribution.to_batch_shape_index(batch_shape=(2, 3, 4), index=index),
