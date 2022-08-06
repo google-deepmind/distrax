@@ -181,6 +181,13 @@ def _kl_divergence_categorical_categorical(
   The KL computation takes into account that `0 * log(0) = 0`; therefore,
   `dist1` may have zeros in its probability vector.
 
+  This is useful if we want to e.g. compute the cross entropy between logits and
+  labels as:
+
+            H(labels, logits) = KL(labels | logits) - H(labels)
+
+  where we parametrize labels and logits as categorical distributions.
+
   Args:
     dist1: A Categorical distribution.
     dist2: A Categorical distribution.
@@ -209,8 +216,12 @@ def _kl_divergence_categorical_categorical(
   else:
     probs1 = dist1.probs
 
-  log_probs1 = jax.nn.log_softmax(logits1, axis=-1)
-  log_probs2 = jax.nn.log_softmax(logits2, axis=-1)
+  # When there are NaNs in the logits, e.g. when we take log(prob=0), we ignore
+  # those components and set them to 0.
+  log_probs1 = jnp.where(
+      jnp.isfinite(logits1), jax.nn.log_softmax(logits1, axis=-1), 0.)
+  log_probs2 = jnp.where(
+      jnp.isfinite(logits2), jax.nn.log_softmax(logits2, axis=-1), 0.)
 
   # The KL is a sum over the support of `dist1`, that is, over the components of
   # `dist1` that have non-zero probability. So we exclude terms with
