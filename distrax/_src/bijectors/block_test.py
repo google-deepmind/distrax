@@ -94,9 +94,9 @@ class BlockTest(parameterized.TestCase):
     np.testing.assert_array_equal(
         self.variant(bijct.inverse)(x),
         self.variant(block.inverse)(x))
-    np.testing.assert_array_equal(
+    np.testing.assert_allclose(
         self.variant(bijct.forward_and_log_det)(x)[0],
-        self.variant(block.forward_and_log_det)(x)[0])
+        self.variant(block.forward_and_log_det)(x)[0], atol=2e-7)
     np.testing.assert_array_equal(
         self.variant(bijct.inverse_and_log_det)(x)[0],
         self.variant(block.inverse_and_log_det)(x)[0])
