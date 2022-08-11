@@ -96,7 +96,8 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     values = jax.random.normal(next(prng), (5, 4))
     tfp_dist = tfd.MultivariateNormalDiag(loc=loc, scale_diag=diag)
     np.testing.assert_allclose(
-        self.variant(dist.log_prob)(values), tfp_dist.log_prob(values))
+        self.variant(dist.log_prob)(values), tfp_dist.log_prob(values),
+        rtol=2e-7)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
