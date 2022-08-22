@@ -61,6 +61,24 @@ def power_no_nan(x: Array, y: Array) -> Array:
   return jnp.where(y == 0, jnp.ones((), dtype=dtype), jnp.power(x, y))
 
 
+def mul_exp(x: Array, logp: Array) -> Array:
+  """Returns `x * exp(logp)` with zero output if `exp(logp)==0`.
+
+  Args:
+    x: An array.
+    logp: An array.
+
+  Returns:
+    `x * exp(logp)` with zero output and zero gradient if `exp(logp)==0`,
+    even if `x` is NaN or infinite.
+  """
+  p = jnp.exp(logp)
+  # If p==0, the gradient with respect to logp is zero,
+  # so we can replace the possibly non-finite `x` with zero.
+  x = jnp.where(p == 0, 0.0, x)
+  return x * p
+
+
 def normalize(
     *, probs: Optional[Array] = None, logits: Optional[Array] = None) -> Array:
   """Normalize logits (via log_softmax) or probs (ensuring they sum to one)."""

@@ -452,6 +452,50 @@ class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
     x = jnp.array([[[0]], [[1]], [[0]]], jnp.int_)
     self.assertion_fn(rtol=1e-6)(actual.log_prob(x), expected.log_prob(x))
 
+  @parameterized.named_parameters(
+      ('-inf logits', np.array([-jnp.inf, 2, -3, -jnp.inf, 5.0])),
+      ('uniform large negative logits', np.array([-1e9] * 11)),
+      ('uniform large positive logits', np.array([1e9] * 11)),
+      ('uniform', np.array([0.0] * 11)),
+      ('typical', np.array([1, 7, -3, 2, 4.0])),
+  )
+  def test_entropy_grad(self, logits):
+    clipped_logits = jnp.maximum(-10000, logits)
+
+    def entropy_fn(logits):
+      return categorical.Categorical(logits).entropy()
+    entropy, grads = jax.value_and_grad(entropy_fn)(logits)
+    expected_entropy, expected_grads = jax.value_and_grad(entropy_fn)(
+        clipped_logits)
+    self.assertion_fn(rtol=1e-6)(expected_entropy, entropy)
+    self.assertion_fn(rtol=1e-6)(expected_grads, grads)
+    self.assertTrue(np.isfinite(entropy).all())
+    self.assertTrue(np.isfinite(grads).all())
+
+  @parameterized.named_parameters(
+      ('-inf logits1', np.array([-jnp.inf, 2, -3, -jnp.inf, 5.0]),
+       np.array([1, 7, -3, 2, 4.0])),
+      ('-inf logits both', np.array([-jnp.inf, 2, -1000, -jnp.inf, 5.0]),
+       np.array([-jnp.inf, 7, -jnp.inf, 2, 4.0])),
+      ('typical', np.array([5, -2, 0, 1, 4.0]),
+       np.array([1, 7, -3, 2, 4.0])),
+  )
+  def test_kl_grad(self, logits1, logits2):
+    clipped_logits1 = jnp.maximum(-10000, logits1)
+    clipped_logits2 = jnp.maximum(-10000, logits2)
+
+    def kl_fn(logits1, logits2):
+      return categorical.Categorical(logits1).kl_divergence(
+          categorical.Categorical(logits2))
+    kl, grads = jax.value_and_grad(
+        kl_fn, argnums=(0, 1))(logits1, logits2)
+    expected_kl, expected_grads = jax.value_and_grad(
+        kl_fn, argnums=(0, 1))(clipped_logits1, clipped_logits2)
+    self.assertion_fn(rtol=1e-6)(expected_kl, kl)
+    self.assertion_fn(rtol=1e-6)(expected_grads, grads)
+    self.assertTrue(np.isfinite(kl).all())
+    self.assertTrue(np.isfinite(grads).all())
+
 
 if __name__ == '__main__':
   absltest.main()

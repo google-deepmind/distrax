@@ -114,23 +114,10 @@ class Categorical(distribution.Distribution):
   def entropy(self) -> Array:
     """See `Distribution.entropy`."""
     if self._logits is None:
-      return -jnp.sum(
-          math.multiply_no_nan(jnp.log(self._probs), self._probs), axis=-1)
-    # The following result can be derived as follows. Write log(p[i]) as:
-    # s[i]-m-lse(s[i]-m) where m=max(s), then you have:
-    #   sum_i exp(s[i]-m-lse(s-m)) (s[i] - m - lse(s-m))
-    #   = -m - lse(s-m) + sum_i s[i] exp(s[i]-m-lse(s-m))
-    #   = -m - lse(s-m) + (1/exp(lse(s-m))) sum_i s[i] exp(s[i]-m)
-    #   = -m - lse(s-m) + (1/sumexp(s-m)) sum_i s[i] exp(s[i]-m)
-    # Write x[i]=s[i]-m then you have:
-    #   = -m - lse(x) + (1/sum_exp(x)) sum_i s[i] exp(x[i])
-    # Negating all of this result is the Shannon (discrete) entropy.
-    m = jnp.max(self._logits, axis=-1, keepdims=True)
-    x = self._logits - m
-    sum_exp_x = jnp.sum(jnp.exp(x), axis=-1)
-    lse_logits = jnp.squeeze(m, axis=-1) + jnp.log(sum_exp_x)
-    return lse_logits - jnp.sum(
-        math.multiply_no_nan(self._logits, jnp.exp(x)), axis=-1) / sum_exp_x
+      log_probs = jnp.log(self._probs)
+    else:
+      log_probs = jax.nn.log_softmax(self._logits)
+    return -jnp.sum(math.mul_exp(log_probs, log_probs), axis=-1)
 
   def mode(self) -> Array:
     """See `Distribution.mode`."""
@@ -203,20 +190,10 @@ def _kl_divergence_categorical_categorical(
         f'{num_categories1} categories, while the second distribution has '
         f'{num_categories2} categories.')
 
-  # pylint: disable=protected-access
-  if dist1._probs is None:
-    probs1 = jax.nn.softmax(logits1, axis=-1)
-  else:
-    probs1 = dist1.probs
-
   log_probs1 = jax.nn.log_softmax(logits1, axis=-1)
   log_probs2 = jax.nn.log_softmax(logits2, axis=-1)
-
-  # The KL is a sum over the support of `dist1`, that is, over the components of
-  # `dist1` that have non-zero probability. So we exclude terms with
-  # `probs1 == 0` by setting them to zero in the sum below.
   return jnp.sum(
-      jnp.where(probs1 == 0, 0., probs1 * (log_probs1 - log_probs2)), axis=-1)
+      math.mul_exp(log_probs1 - log_probs2, log_probs1), axis=-1)
 
 
 # Register the KL functions with TFP.
