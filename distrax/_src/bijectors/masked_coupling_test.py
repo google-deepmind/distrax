@@ -200,7 +200,7 @@ class MaskedCouplingTest(parameterized.TestCase):
         event_ndims=len(event_shape),
         inner_event_ndims=inner_event_ndims,
         conditioner=lambda x: x,
-        bijector=lambda _: block.Block(lambda x: x, 0.))
+        bijector=lambda _: block.Block(lambda x: x, 0))
     with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
       bijector.forward_and_log_det(jnp.zeros(event_shape))
     with self.assertRaisesRegex(ValueError, r'match.*inner_event_ndims'):
