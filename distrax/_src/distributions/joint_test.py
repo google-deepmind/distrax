@@ -97,7 +97,7 @@ class JointTest(parameterized.TestCase):
     with self.subTest('sample'):
       actual = self.variant(joint.sample)(seed=key)
       expected = dist.sample(seed=subkey)
-      np.testing.assert_array_equal(actual, expected)
+      np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
       actual = self.variant(joint.log_prob)(x)
@@ -127,7 +127,7 @@ class JointTest(parameterized.TestCase):
       assert isinstance(actuals, tuple)
       for actual, dist, subkey in zip(actuals, distributions, subkeys):
         expected = dist.sample(seed=subkey)
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
       actual = self.variant(joint.log_prob)(inputs)
@@ -148,7 +148,7 @@ class JointTest(parameterized.TestCase):
       expected_sample = tuple(samples)
       expected_log_prob = sum(log_probs)
       for actual, expected in zip(actual_sample, expected_sample):
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_allclose(actual, expected, rtol=1e-6)
       np.testing.assert_array_equal(actual_log_prob, expected_log_prob)
 
   @chex.all_variants
@@ -167,7 +167,7 @@ class JointTest(parameterized.TestCase):
       assert isinstance(actuals, list)
       for actual, dist, subkey in zip(actuals, distributions, subkeys):
         expected = dist.sample(seed=subkey)
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
       actual = self.variant(joint.log_prob)(inputs)
@@ -187,7 +187,7 @@ class JointTest(parameterized.TestCase):
         log_probs.append(log_prob)
       expected_log_prob = sum(log_probs)
       for actual, expected in zip(actual_sample, expected_sample):
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_allclose(actual, expected, rtol=1e-6)
       np.testing.assert_array_equal(actual_log_prob, expected_log_prob)
 
   @chex.all_variants
@@ -212,14 +212,14 @@ class JointTest(parameterized.TestCase):
       assert actuals[1].shape == (2, 5)
       for actual, dist, subkey in zip(actuals, distributions, subkeys):
         expected = dist.sample(seed=subkey)
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
       actual = self.variant(joint.log_prob)(inputs)
       assert actual.shape == (2,)
       log_probs = [dist.log_prob(x) for dist, x in zip(distributions, inputs)]
       expected = sum(log_probs)
-      np.testing.assert_array_equal(actual, expected)
+      np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
