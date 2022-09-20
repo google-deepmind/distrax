@@ -29,7 +29,7 @@ class Softmax(categorical.Categorical):
   Given a set of logits, the probability mass is distributed such that each
   index `i` has probability `exp(logits[i]/τ)/Σ(exp(logits/τ)` where τ is a
   scalar `temperature` parameter such that for τ→0, the distribution
-  becomes fully greedy, and for τ→0 the distribution becomes fully uniform.
+  becomes fully greedy, and for τ→∞ the distribution becomes fully uniform.
   """
 
   def __init__(self,
