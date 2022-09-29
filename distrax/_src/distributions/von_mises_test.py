@@ -26,12 +26,12 @@ import jax.numpy as jnp
 import numpy as np
 from scipy import stats as sp_stats
 import scipy.special
-from tensorflow_probability.substrates import jax as tfp
+from tensorflow_probability.substrates import jax as tfp  # pylint: disable=g-importing-member
 
 
 class VonMisesTest(equivalence.EquivalenceTest, parameterized.TestCase):
 
-  def setUp(self):
+  def setUp(self):  # pylint:disable=arguments-differ
     super().setUp(von_mises.VonMises)  # pylint: disable=too-many-function-args
     self.loc = np.reshape(np.linspace(-5., 5., 20), [-1, 1])
     self.concentration = np.reshape(np.logspace(-3., 3., 20), [1, -1])

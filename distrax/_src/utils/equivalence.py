@@ -23,7 +23,7 @@ import chex
 from distrax._src.distributions import distribution
 import jax
 import numpy as np
-from tensorflow_probability.substrates import jax as tfp
+from tensorflow_probability.substrates import jax as tfp  # pylint: disable=g-importing-member
 
 tfd = tfp.distributions
 
