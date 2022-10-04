@@ -45,12 +45,11 @@ def _covariance_matrix_from_low_rank(
   return np.matmul(scale, scale_t)
 
 
-class MultivariateNormalDiagPlusLowRankTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(MultivariateNormalDiagPlusLowRank)
+    super().setUp()
+    self._init_distr_cls(MultivariateNormalDiagPlusLowRank)
 
   @parameterized.named_parameters(
       ('all inputs are None', {}),

@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class LaplaceTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class LaplaceTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(laplace.Laplace)
+    super().setUp()
+    self._init_distr_cls(laplace.Laplace)
 
   @parameterized.named_parameters(
       ('1d std laplace', (0, 1)),

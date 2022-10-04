@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class GumbelTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class GumbelTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(gumbel.Gumbel)
+    super().setUp()
+    self._init_distr_cls(gumbel.Gumbel)
 
   @parameterized.named_parameters(
       ('1d std gumbel', (0, 1)),

@@ -57,6 +57,7 @@ class Sigmoid(base.Bijector):
 
   def forward_log_det_jacobian(self, x: Array) -> Array:
     """Computes log|det J(f)(x)|."""
+    # pylint:disable=invalid-unary-operand-type
     return -_more_stable_softplus(-x) - _more_stable_softplus(x)
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:

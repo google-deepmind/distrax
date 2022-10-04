@@ -32,12 +32,11 @@ def _get_scale_tril_from_scale_triu(scale_triu: np.ndarray) -> np.ndarray:
   return np.linalg.cholesky(cov)
 
 
-class MultivariateNormalTriTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class MultivariateNormalTriTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(MultivariateNormalTri)
+    super().setUp()
+    self._init_distr_cls(MultivariateNormalTri)
 
   @parameterized.named_parameters(
       ('all inputs are None', {}),

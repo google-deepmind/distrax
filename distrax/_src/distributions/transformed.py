@@ -124,6 +124,7 @@ class Transformed(dist_base.Distribution):
 
     self._dtype = shape_dtype.dtype
 
+    # pylint:disable=invalid-unary-operand-type
     if self.bijector.event_ndims_out == 0:
       self._event_shape = ()
       self._batch_shape = shape_dtype.shape

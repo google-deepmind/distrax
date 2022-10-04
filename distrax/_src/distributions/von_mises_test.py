@@ -29,10 +29,11 @@ import scipy.special
 from tensorflow_probability.substrates import jax as tfp
 
 
-class VonMisesTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class VonMisesTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    super().setUp(von_mises.VonMises)  # pylint: disable=too-many-function-args
+    super().setUp()
+    self._init_distr_cls(von_mises.VonMises)
     self.loc = np.reshape(np.linspace(-5., 5., 20), [-1, 1])
     self.concentration = np.reshape(np.logspace(-3., 3., 20), [1, -1])
     self.rng = np.random.default_rng(317070)

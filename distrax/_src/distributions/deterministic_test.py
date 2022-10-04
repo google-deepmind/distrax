@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class DeterministicTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class DeterministicTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(deterministic.Deterministic)
+    super().setUp()
+    self._init_distr_cls(deterministic.Deterministic)
 
   def test_loc(self):
     dist_params = {'loc': [0.1, 0.5, 1.5]}

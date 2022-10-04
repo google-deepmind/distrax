@@ -31,12 +31,11 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 
-class OneHotCategoricalTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class OneHotCategoricalTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(one_hot_categorical.OneHotCategorical)
+    super().setUp()
+    self._init_distr_cls(one_hot_categorical.OneHotCategorical)
     self.p = np.asarray([0.1, 0.4, 0.2, 0.3])
     self.logits = np.log(self.p) - 1.0  # intended unnormalization
 

@@ -26,11 +26,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class CategoricalTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class CategoricalTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(categorical.Categorical)
+    super().setUp()
+    self._init_distr_cls(categorical.Categorical)
 
   @parameterized.named_parameters(
       ('1d probs', (4,), True),

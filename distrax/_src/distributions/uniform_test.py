@@ -25,11 +25,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class UniformTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class UniformTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(uniform.Uniform)
+    super().setUp()
+    self._init_distr_cls(uniform.Uniform)
 
   @parameterized.named_parameters(
       ('1d', (0., 1.)),

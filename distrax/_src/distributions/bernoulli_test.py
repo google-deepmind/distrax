@@ -25,11 +25,11 @@ import numpy as np
 from scipy import special as sp_special
 
 
-class BernoulliTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class BernoulliTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(bernoulli.Bernoulli)
+    super().setUp()
+    self._init_distr_cls(bernoulli.Bernoulli)
     self.p = np.asarray([0.2, 0.4, 0.6, 0.8])
     self.logits = sp_special.logit(self.p)
 

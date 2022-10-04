@@ -158,8 +158,8 @@ class Distribution(
     num_samples = functools.reduce(operator.mul, sample_shape, 1)  # product
 
     samples = self._sample_n(rng, num_samples)
-    reshape = lambda t: t.reshape(sample_shape + t.shape[1:])
-    return jax.tree_util.tree_map(reshape, samples)
+    return jax.tree_util.tree_map(
+        lambda t: t.reshape(sample_shape + t.shape[1:]), samples)
 
   def sample_and_log_prob(
       self,
@@ -172,10 +172,8 @@ class Distribution(
     num_samples = functools.reduce(operator.mul, sample_shape, 1)  # product
 
     samples, log_prob = self._sample_n_and_log_prob(rng, num_samples)
-
-    reshape = lambda t: t.reshape(sample_shape + t.shape[1:])
-    samples = jax.tree_util.tree_map(reshape, samples)
-    log_prob = reshape(log_prob)
+    samples, log_prob = jax.tree_util.tree_map(
+        lambda t: t.reshape(sample_shape + t.shape[1:]), (samples, log_prob))
     return samples, log_prob
 
   def kl_divergence(self, other_dist, **kwargs) -> Array:

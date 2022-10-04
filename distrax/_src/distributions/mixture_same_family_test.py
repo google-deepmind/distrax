@@ -31,8 +31,8 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 
-class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
-                                                    parameterized.TestCase):
+class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest
+                                                   ):
   """Class to test distrax mixture against tfp mixture.
 
   There are 4 methods to create categorical and components distributions (one
@@ -63,8 +63,8 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest,
   _make_components = _make_tfp_components
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(MixtureSameFamily)
+    super().setUp()
+    self._init_distr_cls(MixtureSameFamily)
 
     self.batch_shape = (5, 4)
     self.num_components = 3

@@ -25,7 +25,7 @@ python --version
 
 # Install dependencies.
 pip install --upgrade pip setuptools wheel
-pip install flake8 pytest-xdist pytype pylint pylint-exit
+pip install flake8 pytest-xdist pytest-forked pytype pylint pylint-exit
 pip install -r requirements/requirements.txt
 pip install -r requirements/requirements-tests.txt
 
@@ -35,11 +35,17 @@ flake8 `find distrax -name '*.py' | xargs` --count --select=E9,F63,F7,F82,E225,E
 # Lint with pylint.
 # Fail on errors, warning, conventions and refactoring messages.
 PYLINT_ARGS="-efail -wfail -cfail -rfail"
+# Download Google OSS config.
+wget -nd -v -t 3 -O .pylintrc https://google.github.io/styleguide/pylintrc
+# Append specific config lines.
+echo "disable=abstract-method,unnecessary-lambda-assignment,no-value-for-parameter,use-dict-literal" >> .pylintrc
 # Lint modules and tests separately.
 # Disable `abstract-method` warnings.
-pylint --rcfile=.pylintrc `find distrax -name '*.py' | grep -v 'test.py' | xargs` -d W0223 || pylint-exit $PYLINT_ARGS $?
-# Disable `protected-access`, `abstract-method`, `arguments-differ` warnings for tests.
-pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0223,W0212,W0221 || pylint-exit $PYLINT_ARGS $?
+pylint --rcfile=.pylintrc `find distrax -name '*.py' | grep -v 'test.py' | xargs` || pylint-exit $PYLINT_ARGS $?
+# Disable `protected-access` and `arguments-differ` warnings for tests.
+pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0212,W0221 || pylint-exit $PYLINT_ARGS $?
+# Cleanup.
+rm .pylintrc
 
 # Build the package.
 python setup.py sdist
@@ -61,10 +67,10 @@ mkdir _testing && cd _testing
 
 # Disable JAX optimizations to speed up tests.
 export JAX_DISABLE_MOST_OPTIMIZATIONS=True
-pytest -n "$(grep -c ^processor /proc/cpuinfo)" `find ../distrax/_src/ -name "*_test.py" | sort` -k 'not _float64_test'
+pytest -n"$(grep -c ^processor /proc/cpuinfo)" --forked `find ../distrax/_src/ -name "*_test.py" | sort` -k 'not _float64_test'
 
 # Isolate tests that set double precision.
-pytest -n "$(grep -c ^processor /proc/cpuinfo)" `find ../distrax/_src/ -name "*_test.py" | sort` -k '_float64_test'
+pytest -n"$(grep -c ^processor /proc/cpuinfo)" --forked `find ../distrax/_src/ -name "*_test.py" | sort` -k '_float64_test'
 unset JAX_DISABLE_MOST_OPTIMIZATIONS
 
 cd ..

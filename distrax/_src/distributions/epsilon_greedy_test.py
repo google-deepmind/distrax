@@ -26,11 +26,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class EpsilonGreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class EpsilonGreedyTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(epsilon_greedy.EpsilonGreedy)
+    super().setUp()
+    self._init_distr_cls(epsilon_greedy.EpsilonGreedy)
     self.epsilon = 0.2
     self.preferences = jnp.array([0., 4., -1., 4.])
 

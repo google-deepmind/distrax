@@ -26,12 +26,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class MultivariateNormalDiagTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class MultivariateNormalDiagTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(mvn_diag.MultivariateNormalDiag)
+    super().setUp()
+    self._init_distr_cls(mvn_diag.MultivariateNormalDiag)
 
   @parameterized.named_parameters(
       ('1d std normal', {'scale_diag': np.ones((1,))}),

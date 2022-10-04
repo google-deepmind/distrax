@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class GreedyTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class GreedyTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(greedy.Greedy)
+    super().setUp()
+    self._init_distr_cls(greedy.Greedy)
     self.preferences = jnp.array([0., 4., -1., 4.])
 
   def test_parameters_from_preferences(self):

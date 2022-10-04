@@ -28,11 +28,11 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 
-class DirichletTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class DirichletTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(dirichlet.Dirichlet)
+    super().setUp()
+    self._init_distr_cls(dirichlet.Dirichlet)
 
   @parameterized.named_parameters(
       ('1d params', (3,), ()),

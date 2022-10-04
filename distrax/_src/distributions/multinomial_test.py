@@ -27,11 +27,11 @@ import numpy as np
 from scipy import stats
 
 
-class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class MultinomialTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(multinomial.Multinomial)
+    super().setUp()
+    self._init_distr_cls(multinomial.Multinomial)
     self.total_count = np.asarray(
         [4, 3], dtype=np.float32)  # float dtype required for TFP
     self.probs = 0.5 * np.asarray([0.1, 0.4, 0.2, 0.3])  # unnormalized
@@ -486,7 +486,7 @@ class MultinomialTest(equivalence.EquivalenceTest, parameterized.TestCase):
         'total_count': np.asarray([3, 10]),
     })
     dist = self.distrax_cls(**dist_params)
-    entropy = list()
+    entropy = []
     for probs, counts in zip(dist.probs, dist.total_count):
       entropy.append(stats.multinomial(n=counts, p=probs).entropy())
     self.assertion_fn(atol=1e-6, rtol=1e-3)(

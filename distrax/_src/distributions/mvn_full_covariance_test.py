@@ -30,12 +30,11 @@ def _sample_covariance_matrix(rng, shape):
   return np.matmul(matrix, matrix_t)
 
 
-class MultivariateNormalFullCovarianceTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class MultivariateNormalFullCovarianceTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(MultivariateNormalFullCovariance)
+    super().setUp()
+    self._init_distr_cls(MultivariateNormalFullCovariance)
 
   @parameterized.named_parameters(
       ('all inputs are None', {}),

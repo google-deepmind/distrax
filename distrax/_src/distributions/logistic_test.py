@@ -24,12 +24,12 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class Logistic(equivalence.EquivalenceTest, parameterized.TestCase):
+class Logistic(equivalence.EquivalenceTest):
   """Logistic tests."""
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(logistic.Logistic)
+    super().setUp()
+    self._init_distr_cls(logistic.Logistic)
 
   @parameterized.named_parameters(
       ('1d std logistic', (0, 1)),

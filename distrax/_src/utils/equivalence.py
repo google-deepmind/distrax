@@ -17,7 +17,7 @@
 import functools
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-from absl.testing import absltest
+from absl.testing import parameterized
 
 import chex
 from distrax._src.distributions import distribution
@@ -71,11 +71,14 @@ def get_tfp_equiv(distrax_cls):
     return None
 
 
-class EquivalenceTest(absltest.TestCase):
+class EquivalenceTest(parameterized.TestCase):
   """Provides comparison assertions for TFP and Distrax distributions."""
 
-  def setUp(self, distrax_cls):  # pylint:disable=arguments-differ
+  def setUp(self):
     super().setUp()
+    self.tfp_cls = None
+
+  def _init_distr_cls(self, distrax_cls: type(distribution.Distribution)):
     self.key = jax.random.PRNGKey(1234)
     self.distrax_cls = distrax_cls
     if hasattr(distrax_cls, 'equiv_tfp_cls'):
@@ -190,7 +193,10 @@ class EquivalenceTest(absltest.TestCase):
     if tfp_dist_kwargs is None:
       tfp_dist_kwargs = dist_kwargs
     dist = self.distrax_cls(*dist_args, **dist_kwargs)
-    sample_fn = lambda key: dist.sample(seed=key, sample_shape=sample_shape)
+
+    def sample_fn(key, sample_shape=sample_shape):
+      return dist.sample(seed=key, sample_shape=sample_shape)
+
     if hasattr(self, 'variant'):
       sample_fn = self.variant(sample_fn)
     samples = sample_fn(self.key)
@@ -214,9 +220,11 @@ class EquivalenceTest(absltest.TestCase):
     if tfp_dist_kwargs is None:
       tfp_dist_kwargs = dist_kwargs
     dist = self.distrax_cls(*dist_args, **dist_kwargs)
-    sample_and_log_prob_fn = (
-        lambda k: dist.sample_and_log_prob(seed=k, sample_shape=sample_shape))
     log_prob_fn = dist.log_prob
+
+    def sample_and_log_prob_fn(key):
+      return dist.sample_and_log_prob(seed=key, sample_shape=sample_shape)
+
     if hasattr(self, 'variant'):
       sample_and_log_prob_fn = self.variant(sample_and_log_prob_fn)
       log_prob_fn = self.variant(dist.log_prob)

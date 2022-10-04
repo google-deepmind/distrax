@@ -123,8 +123,7 @@ class IndependentTest(parameterized.TestCase):
                                  expected.log_prob(x))
 
 
-class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
-                                parameterized.TestCase):
+class TFPMultivariateNormalTest(equivalence.EquivalenceTest):
   """Class to test Distrax Independent distribution against its TFP counterpart.
 
   This class tests the case when using a TFP multivariate Normal distribution
@@ -141,8 +140,8 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest,
   _make_base_distribution = _make_tfp_base_distribution
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(independent.Independent)
+    super().setUp()
+    self._init_distr_cls(independent.Independent)
 
     self.normal_loc = jax.random.normal(
         key=jax.random.PRNGKey(42), shape=(5, 4, 3, 2))

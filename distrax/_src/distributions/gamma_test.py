@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class GammaTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class GammaTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(gamma.Gamma)
+    super().setUp()
+    self._init_distr_cls(gamma.Gamma)
 
   @parameterized.named_parameters(
       ('0d params', (), (), ()),

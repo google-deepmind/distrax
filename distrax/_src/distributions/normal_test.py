@@ -25,11 +25,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class NormalTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class NormalTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(normal.Normal)
+    super().setUp()
+    self._init_distr_cls(normal.Normal)
 
   @parameterized.named_parameters(
       ('1d std normal', (0, 1)),

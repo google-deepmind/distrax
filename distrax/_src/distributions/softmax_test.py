@@ -26,12 +26,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class SoftmaxUnitTemperatureTest(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class SoftmaxUnitTemperatureTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(softmax.Softmax)
+    super().setUp()
+    self._init_distr_cls(softmax.Softmax)
     self.temperature = 1.
     self.probs = jnp.array([0.2, 0.4, 0.1, 0.3])
     self.logits = jnp.log(self.probs)
@@ -46,11 +45,11 @@ class SoftmaxUnitTemperatureTest(
     self.assertion_fn(rtol=2e-3)(dist.probs, self.probs)
 
 
-class SoftmaxTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class SoftmaxTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(softmax.Softmax)
+    super().setUp()
+    self._init_distr_cls(softmax.Softmax)
     self.temperature = 10.
     self.logits = jnp.array([2., 4., 1., 3.])
     self.probs = jax.nn.softmax(self.logits / self.temperature)

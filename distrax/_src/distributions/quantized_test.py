@@ -29,7 +29,7 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 
-class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
+class QuantizedTFPUniform(equivalence.EquivalenceTest):
   """Class to test distrax quantized distribution against TFP.
 
   The quantized distribution takes a distribution as input. These can be either
@@ -43,8 +43,8 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest, parameterized.TestCase):
   _make_distrax_base_distribution = _make_tfp_base_distribution
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(quantized.Quantized)
+    super().setUp()
+    self._init_distr_cls(quantized.Quantized)
     self.tfd_base_distribution = self._make_tfp_base_distribution()
     self.distrax_base_distribution = self._make_distrax_base_distribution()
 
@@ -205,8 +205,7 @@ class QuantizedDistraxUniform(QuantizedTFPUniform):
     super()._test_jittable((self.distrax_base_distribution, 0., 1.))
 
 
-class QuantizedTFPUniform2D(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class QuantizedTFPUniform2D(equivalence.EquivalenceTest):
   """Class to test distrax quantized distribution against TFP.
 
   The quantized distribution takes a distribution as input. These can be either
@@ -221,8 +220,8 @@ class QuantizedTFPUniform2D(
   _make_distrax_base_distribution = _make_tfp_base_distribution
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(quantized.Quantized)
+    super().setUp()
+    self._init_distr_cls(quantized.Quantized)
     self.tfd_base_distribution = self._make_tfp_base_distribution()
     self.distrax_base_distribution = self._make_distrax_base_distribution()
 
@@ -331,13 +330,12 @@ class QuantizedDistraxUniform2D(QuantizedTFPUniform2D):
     super()._test_jittable((self.distrax_base_distribution, 0., 1.))
 
 
-class QuantizedInvalidParams(
-    equivalence.EquivalenceTest, parameterized.TestCase):
+class QuantizedInvalidParams(equivalence.EquivalenceTest):
   """Class to test invalid combinations of the input parameters."""
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(quantized.Quantized)
+    super().setUp()
+    self._init_distr_cls(quantized.Quantized)
 
   def test_non_univariate(self):
     self._test_raises_error(dist_kwargs={

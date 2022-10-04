@@ -24,11 +24,11 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class BetaTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class BetaTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(base_beta.Beta)
+    super().setUp()
+    self._init_distr_cls(base_beta.Beta)
 
   @parameterized.named_parameters(
       ('0d params', (), (), ()),

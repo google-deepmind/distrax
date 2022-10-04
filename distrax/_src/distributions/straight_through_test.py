@@ -27,12 +27,13 @@ import jax.numpy as jnp
 import numpy as np
 
 
-class StraightThroughTest(equivalence.EquivalenceTest, parameterized.TestCase):
+class StraightThroughTest(equivalence.EquivalenceTest):
 
   def setUp(self):
-    # pylint: disable=too-many-function-args
-    super().setUp(straight_through.straight_through_wrapper(
-        one_hot_categorical.OneHotCategorical))
+    super().setUp()
+    self._init_distr_cls(
+        straight_through.straight_through_wrapper(
+            one_hot_categorical.OneHotCategorical))
 
   @chex.all_variants
   @parameterized.named_parameters(
