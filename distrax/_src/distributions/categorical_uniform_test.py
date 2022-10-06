@@ -36,6 +36,7 @@ _NAMED_PARAMETERS = (
         target_low=np.zeros(()),
         target_high=np.ones(()),
         target_logits=np.zeros((7,)),
+        target_entropy=np.float64(0.0),
         target_mean=np.float32(0.5),
         target_variance=np.float32(1/12),
     ),
@@ -51,6 +52,7 @@ _NAMED_PARAMETERS = (
         target_low=np.zeros((2,)),
         target_high=np.ones((2,)),
         target_logits=np.zeros((2, 7)),
+        target_entropy=np.full((2,), 0.0, dtype=np.float64),
         target_mean=np.full((2,), 0.5),
         target_variance=np.full((2,), 1/12),
     ),
@@ -66,8 +68,9 @@ _NAMED_PARAMETERS = (
         target_low=np.zeros((2, 3)),
         target_high=np.ones((2, 3)),
         target_logits=np.zeros((2, 3, 7)),
-        target_mean=np.full((2, 3,), 0.5),
-        target_variance=np.full((2, 3,), 1/12),
+        target_entropy=np.full((2, 3), 0.0, dtype=np.float64),
+        target_mean=np.full((2, 3), 0.5),
+        target_variance=np.full((2, 3), 1/12),
     ),
     dict(
         testcase_name='broadcasted_low',
@@ -81,6 +84,7 @@ _NAMED_PARAMETERS = (
         target_low=np.zeros((2, 3)),
         target_high=np.ones((2, 3)),
         target_logits=np.zeros((2, 3, 7)),
+        target_entropy=np.full((2, 3), 0.0, dtype=np.float64),
         target_mean=np.full((2, 3), 0.5),
         target_variance=np.full((2, 3), 1/12),
     ),
@@ -96,6 +100,7 @@ _NAMED_PARAMETERS = (
         target_low=np.zeros((2, 3)),
         target_high=np.ones((2, 3)),
         target_logits=np.zeros((2, 3, 7)),
+        target_entropy=np.full((2, 3), 0.0, dtype=np.float64),
         target_mean=np.full((2, 3), 0.5),
         target_variance=np.full((2, 3), 1/12),
     ),
@@ -138,6 +143,18 @@ class CategoricalUniformTest(parameterized.TestCase):
     self.assertTrue(np.all(grad_low))  # Assert gradient is non-zero.
     self.assertTrue(np.all(grad_high))  # Assert gradient is non-zero.
     self.assertTrue(np.all(grad_logits))  # Assert gradient is non-zero.
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(*_NAMED_PARAMETERS)
+  def test_entropy(self, *, low, high, logits, target_entropy, **_):
+    distribution = categorical_uniform.CategoricalUniform(
+        low=low, high=high, logits=logits)
+    chex.assert_trees_all_close(
+        self.variant(distribution.entropy)(),
+        target_entropy,
+        atol=1e-4,
+        rtol=1e-4,
+    )
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(*_NAMED_PARAMETERS)

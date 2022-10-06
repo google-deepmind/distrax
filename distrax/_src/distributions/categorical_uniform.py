@@ -64,6 +64,15 @@ class CategoricalUniform(distribution.Distribution):
     """See `Distribution.log_prob`."""
     return self._get_mixture().log_prob(value)
 
+  def entropy(self) -> Array:
+    """See `Distribution.entropy`."""
+    # The following holds because the components have non-overlapping domains.
+    mixture = self._get_mixture()
+    return mixture.mixture_distribution.entropy() + jnp.sum(
+        mixture.mixture_distribution.probs
+        * mixture.components_distribution.entropy(),
+        axis=-1)
+
   def mean(self) -> Array:
     """Calculates the mean."""
     return self._get_mixture().mean()
