@@ -21,6 +21,7 @@ from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
 from distrax._src.distributions import mixture_same_family
 from distrax._src.distributions import uniform
+from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
 
@@ -31,34 +32,59 @@ PRNGKey = chex.PRNGKey
 
 
 class CategoricalUniform(distribution.Distribution):
-  """Mixture Categorical-Uniform distribution with reparameterization trick."""
+  """Mixture Categorical-Uniform distribution.
+
+  Given an interval `[a, b]` and a probability vector `p = [p_1, ..., p_K]`, a
+  random variable `x` follows a Categorical-Uniform distribution if its PDF
+  is `p(x) = p_k / C` if `(k-1)C <= x - a < kC` for any `k = 1, ..., K`,
+  where `C = (b-a) / K`, and `p(x) = 0` otherwise.
+
+  Equivalently, the Categorical-Uniform can be understood as a mixture of
+  Uniform distributions, with mixture probabilities `p_k` and Uniform component
+  distributions with support in `[a + (k-1)C, a + kC]`.
+  """
 
   def __init__(
       self,
       *,
-      high: Numeric,
       low: Numeric,
+      high: Numeric,
       logits: Array,
   ) -> None:
-    """Initializer."""
+    """Initializes a CategoricalUniform distribution.
+
+    Args:
+      low: The lowest value of the support, denoted `a` in the class
+        docstring. It can also be a batch of values.
+      high: The highest value of the support, denoted `b` in the class
+        docstring. It can also be a batch of values.
+      logits: The unnormalized log-probabilities of the mixture. It must be an
+        array of length `K`. Additional leading dimensions, if any, index
+        batches.
+    """
     super().__init__()
-    self._low = low
-    self._high = high
-    self._logits = logits
+    self._low = conversion.as_float_array(low)
+    self._high = conversion.as_float_array(high)
+    self._logits = conversion.as_float_array(logits)
+    if self._logits.ndim < 1:
+      raise ValueError(
+          'The parameter `logits` must have at least one dimension.')
 
   @property
   def event_shape(self) -> Tuple[int, ...]:
     """Shape of event of distribution samples."""
-    return self._get_mixture().event_shape
+    return ()
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._logits.shape[:-1]
+    return jax.lax.broadcast_shapes(
+        self._low.shape, self._high.shape, self._logits.shape[:-1])
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
-    return jax.vmap(self._sample)(jax.random.split(key, n))
+    quantile = jax.random.uniform(key, (n,) + self.batch_shape)
+    return self._inverse_cdf(quantile)
 
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
@@ -68,10 +94,8 @@ class CategoricalUniform(distribution.Distribution):
     """See `Distribution.entropy`."""
     # The following holds because the components have non-overlapping domains.
     mixture = self._get_mixture()
-    return mixture.mixture_distribution.entropy() + jnp.sum(
-        mixture.mixture_distribution.probs
-        * mixture.components_distribution.entropy(),
-        axis=-1)
+    return mixture.mixture_distribution.entropy() + jnp.log(
+        (self._high - self._low) / self.num_bins)
 
   def mean(self) -> Array:
     """Calculates the mean."""
@@ -81,15 +105,11 @@ class CategoricalUniform(distribution.Distribution):
     """Calculates the variance."""
     return self._get_mixture().variance()
 
-  def __getitem__(self, key) -> 'CategoricalUniform':
+  def __getitem__(self, index) -> 'CategoricalUniform':
     """See `Distribution.__getitem__`."""
+    index = distribution.to_batch_shape_index(self.batch_shape, index)
     return CategoricalUniform(
-        high=self.high[key], low=self.low[key], logits=self.logits[key])
-
-  def _sample(self, key: PRNGKey) -> Array:
-    """Draws one sample."""
-    quantile = jax.random.uniform(key, self.batch_shape)
-    return self._inverse_cdf(quantile)
+        low=self.low[index], high=self.high[index], logits=self.logits[index])
 
   def _get_category_limits(self) -> Array:
     """Gets limits for each category."""
@@ -132,8 +152,8 @@ class CategoricalUniform(distribution.Distribution):
 
   @property
   def logits(self) -> Array:
-    return self._logits
+    return jnp.broadcast_to(self._logits, self.batch_shape + (self.num_bins,))
 
   @property
   def num_bins(self) -> int:
-    return self.logits.shape[-1]
+    return self._logits.shape[-1]

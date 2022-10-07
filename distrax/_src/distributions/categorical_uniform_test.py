@@ -104,10 +104,30 @@ _NAMED_PARAMETERS = (
         target_mean=np.full((2, 3), 0.5),
         target_variance=np.full((2, 3), 1/12),
     ),
+    dict(
+        testcase_name='broadcasted_logits',
+        low=np.zeros((2, 3)),
+        high=np.ones((2, 3)),
+        logits=np.zeros((7,)),
+        num_bins=7,
+        target_event_shape=(),
+        target_sample_shape=(2, 3),
+        target_batch_shape=(2, 3),
+        target_low=np.zeros((2, 3)),
+        target_high=np.ones((2, 3)),
+        target_logits=np.zeros((2, 3, 7)),
+        target_entropy=np.full((2, 3), 0.0, dtype=np.float64),
+        target_mean=np.full((2, 3), 0.5),
+        target_variance=np.full((2, 3), 1/12),
+    ),
 )
 
 
 class CategoricalUniformTest(parameterized.TestCase):
+
+  def test_raises_on_wrong_logits(self):
+    with self.assertRaises(ValueError):
+      categorical_uniform.CategoricalUniform(low=0., high=1., logits=0.)
 
   @parameterized.named_parameters(*_NAMED_PARAMETERS)
   def test_batch_shape(self, *, low, high, logits, target_batch_shape, **_):
@@ -226,9 +246,10 @@ class CategoricalUniformTest(parameterized.TestCase):
             atol=1e-4,
             rtol=1e-4,
         )
+        dist_logits = distribution.logits
         chex.assert_trees_all_close(
             distribution[key].logits,
-            distribution.logits[key],
+            dist_logits[key] if name != 'ellipsis' else dist_logits[..., -1, :],
             atol=1e-4,
             rtol=1e-4,
         )
@@ -305,6 +326,19 @@ class CategoricalUniformTest(parameterized.TestCase):
         atol=1e-4,
         rtol=1e-4,
     )
+
+  def test_jitable(self):
+
+    @jax.jit
+    def jitted_function(event, dist):
+      return dist.log_prob(event)
+
+    dist = categorical_uniform.CategoricalUniform(
+        low=0., high=1., logits=np.ones((7,)))
+    event = dist.sample(seed=jax.random.PRNGKey(4242))
+    log_prob = dist.log_prob(event)
+    jitted_log_prob = jitted_function(event, dist)
+    chex.assert_trees_all_close(jitted_log_prob, log_prob, atol=1e-4, rtol=1e-4)
 
 
 if __name__ == '__main__':
