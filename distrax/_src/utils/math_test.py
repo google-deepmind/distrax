@@ -20,7 +20,7 @@ from distrax._src.utils import math
 import jax
 import jax.numpy as jnp
 import numpy as np
-import scipy
+import scipy.special
 
 
 class MathTest(absltest.TestCase):
