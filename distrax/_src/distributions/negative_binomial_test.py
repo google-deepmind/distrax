@@ -17,12 +17,8 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
-import chex
 from distrax._src.distributions import negative_binomial
 from distrax._src.utils import equivalence
-from distrax._src.utils import math
-import jax
-import jax.numpy as jnp
 import numpy as np
 from scipy import special as sp_special
 
@@ -32,8 +28,8 @@ class NegativeBinomialTest(equivalence.EquivalenceTest):
   def setUp(self):
     super().setUp()
     self._init_distr_cls(negative_binomial.NegativeBinomial)
-    self.p = np.asarray([0.2, 0.4, 0.6, 0.8])
-    self.logits = sp_special.logit(self.p)
+    self.probs = np.asarray([0.2, 0.4, 0.6, 0.8])
+    self.logits = sp_special.logit(self.probs)
 
   def test_raises_on_invalid_inputs(self, dist_params):
     with self.assertRaises(ValueError):
@@ -51,12 +47,13 @@ class NegativeBinomialTest(equivalence.EquivalenceTest):
     rng = np.random.default_rng(42)
     total_count = rng.integers(0, 10e3, size=total_count_shape)
     probs = rng.uniform(size=probs_shape)
-    dist = self.distrax_cls(total_count, probs=probs) 
+    dist = self.distrax_cls(total_count, probs=probs)
     self.assertEqual(dist.event_shape, ())
     self.assertEqual(dist.batch_shape, batch_shape)
     self.assertion_fn(rtol=2e-2)(
         dist.total_count, np.broadcast_to(total_count, batch_shape))
-    self.assertion_fn(rtol=2e-2)(dist.probs, np.broadcast_to(probs, batch_shape))
+    self.assertion_fn(rtol=2e-2)(
+        dist.probs, np.broadcast_to(probs, batch_shape))
 
   @parameterized.named_parameters(
       ('0d params', (), (), ()),
@@ -65,17 +62,19 @@ class NegativeBinomialTest(equivalence.EquivalenceTest):
       ('2d params, broadcasted total_count', (2,), (3, 2), (3, 2)),
       ('2d params, broadcasted logits', (3, 2), (2,), (3, 2)),
   )
-  def test_properties_logits(self, total_count_shape, logits_shape, batch_shape):
+  def test_properties_logits(self, total_count_shape, logits_shape,
+    batch_shape):
     rng = np.random.default_rng(42)
     total_count = rng.integers(0, 10e3, size=total_count_shape)
     logits = rng.uniform(size=logits_shape)
-    dist = self.distrax_cls(total_count, logits=logits) 
+    dist = self.distrax_cls(total_count, logits=logits)
     self.assertEqual(dist.event_shape, ())
     self.assertEqual(dist.batch_shape, batch_shape)
     self.assertion_fn(rtol=2e-2)(
         dist.total_count, np.broadcast_to(total_count, batch_shape))
-    self.assertion_fn(rtol=2e-2)(dist.logits, np.broadcast_to(logits, batch_shape))
-  
+    self.assertion_fn(rtol=2e-2)(
+      dist.logits, np.broadcast_to(logits, batch_shape))
+
   @parameterized.named_parameters(
       ('0d params', (), (), ()),
       ('1d params', (2,), (2,), (2,)),
@@ -83,17 +82,19 @@ class NegativeBinomialTest(equivalence.EquivalenceTest):
       ('2d params, broadcasted mean', (2,), (3, 2), (3, 2)),
       ('2d params, broadcasted dispersion', (3, 2), (2,), (3, 2)),
   )
-  def test_properties_mean_dispersion(self, mean_shape, dispersion_shape, batch_shape):
+  def test_properties_mean_dispersion(self, mean_shape, dispersion_shape,
+    batch_shape):
     rng = np.random.default_rng(42)
     mean = 1000. * rng.uniform(size=mean_shape)
     dispersion = rng.uniform(size=dispersion_shape)
     dist = self.distrax_cls.from_mean_dispersion(
-      mean=mean, dispersion=dispersion) 
+      mean=mean, dispersion=dispersion)
     self.assertEqual(dist.event_shape, ())
     self.assertEqual(dist.batch_shape, batch_shape)
     self.assertion_fn(rtol=2e-2)(
         dist.mean(), np.broadcast_to(mean, batch_shape))
-    self.assertion_fn(rtol=2e-2)(dist.dispersion, np.broadcast_to(dispersion, batch_shape))
+    self.assertion_fn(rtol=2e-2)(
+      dist.dispersion, np.broadcast_to(dispersion, batch_shape))
 
 if __name__ == '__main__':
   absltest.main()
