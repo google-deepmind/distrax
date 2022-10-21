@@ -19,11 +19,11 @@ from typing import Tuple
 import chex
 from distrax._src.distributions import distribution
 from distrax._src.utils import conversion
+from distrax import Gamma
 from jax.lax import lgamma, broadcast_shapes
 from jax.random import poisson, split
 from jax.nn import log_sigmoid
 import jax.numpy as jnp
-from distrax import Gamma
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions
@@ -38,17 +38,20 @@ class NegativeBinomial(distribution.Distribution):
 
   equiv_tfp_cls = tfd.NegativeBinomial
 
-  def __init__(self, total_count: Numeric, logits: Numeric = None, probs: Numeric = None):
+  def __init__(self, total_count: Numeric, logits: Numeric = None,
+    probs: Numeric = None):
     """Negative Binomial distribution
 
     Args:
-      total_count: Positive floating-point array with same dtype as `probs` or `logits`. \
-        This represents the number of negative Bernoulli trials to stop at \
-        (the `total_count` of failures). Its components should be equal to integer values.
-      logits: Logits for the probability of success for independent Negative Binomial \
+      total_count: Positive floating-point array with same dtype as `probs` or \
+        `logits`. This represents the number of negative Bernoulli trials to \
+          stop at (the `total_count` of failures). Its components should be \
+            equal to integer values.
+      logits: Logits for the probability of success for independent Negative \
+        Binomial distributions. Only one of `logits` or `probs` should be \
+          specified.
+      probs: Probabilities of success for independent Negative Binomial \
         distributions. Only one of `logits` or `probs` should be specified.
-      probs: Probabilities of success for independent Negative Binomial distributions. \
-        Only one of `logits` or `probs` should be specified.
     """
     if (probs is None) == (logits is None):
       raise ValueError(
@@ -93,7 +96,7 @@ class NegativeBinomial(distribution.Distribution):
   def logits(self) -> Array:
     """Logits computed from non-`None` input arg (`probs` or `logits`)."""
     if jnp.isnan(self._logits):
-      return jnp.log(self.probs) - jnp.log1p(-self.probs) 
+      return jnp.log(self.probs) - jnp.log1p(-self.probs)
     return jnp.broadcast_to(self._logits, self.batch_shape)
 
   @property
@@ -123,16 +126,18 @@ class NegativeBinomial(distribution.Distribution):
     """
     out_shape = (n,) + self.batch_shape
     gamma_key, poisson_key = split(key)
-    poisson_rate = Gamma(concentration=self.total_count, rate=jnp.exp(-self.logits))\
-        .sample(seed=gamma_key, sample_shape=n)
-    gamma_poisson_samples = poisson(lam=poisson_rate, shape=out_shape, key=poisson_key)
+    gamma_dist = Gamma(concentration=self.total_count,
+      rate=jnp.exp(-self.logits))
+    poisson_rate = gamma_dist.sample(seed=gamma_key, sample_shape=n)
+    gamma_poisson_samples = poisson(lam=poisson_rate, shape=out_shape,
+      key=poisson_key)
     return gamma_poisson_samples
 
 
   def log_prob(self, value: Array) -> Array:
     """See `Distribution.log_prob`."""
     log_unnormalized_prob = (
-      (self.total_count * log_sigmoid(-self.logits)) 
+      (self.total_count * log_sigmoid(-self.logits))
       + (log_sigmoid(self.logits) * value)
     )
     log_normalization = (
