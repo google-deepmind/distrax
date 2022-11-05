@@ -33,7 +33,7 @@ SCALE = 0.1
 SIZE = 3
 
 
-class ClippedDistributionTest(parameterized.TestCase):
+class ClippedTest(parameterized.TestCase):
 
   @parameterized.parameters([
       [clipped.ClippedLogistic, logistic.Logistic],

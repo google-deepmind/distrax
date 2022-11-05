@@ -41,7 +41,7 @@ from distrax._src.distributions.bernoulli import Bernoulli
 from distrax._src.distributions.beta import Beta
 from distrax._src.distributions.categorical import Categorical
 from distrax._src.distributions.categorical_uniform import CategoricalUniform
-from distrax._src.distributions.clipped import ClippedDistribution
+from distrax._src.distributions.clipped import Clipped
 from distrax._src.distributions.clipped import ClippedLogistic
 from distrax._src.distributions.clipped import ClippedNormal
 from distrax._src.distributions.deterministic import Deterministic
@@ -99,7 +99,7 @@ __all__ = (
     "Categorical",
     "CategoricalUniform",
     "Chain",
-    "ClippedDistribution",
+    "Clipped",
     "ClippedLogistic",
     "ClippedNormal",
     "Deterministic",

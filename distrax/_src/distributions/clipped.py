@@ -30,7 +30,7 @@ Numeric = chex.Numeric
 DistributionLike = base_distribution.DistributionLike
 
 
-class ClippedDistribution(base_distribution.Distribution):
+class Clipped(base_distribution.Distribution):
   """A clipped distribution."""
 
   def __init__(
@@ -113,16 +113,16 @@ class ClippedDistribution(base_distribution.Distribution):
   def batch_shape(self) -> Tuple[int, ...]:
     return self._distribution.batch_shape
 
-  def __getitem__(self, index) -> 'ClippedDistribution':
+  def __getitem__(self, index) -> 'Clipped':
     """See `Distribution.__getitem__`."""
     index = base_distribution.to_batch_shape_index(self.batch_shape, index)
-    return ClippedDistribution(
+    return Clipped(
         distribution=self.distribution[index],
         minimum=self.minimum[index],
         maximum=self.maximum[index])
 
 
-class ClippedNormal(ClippedDistribution):
+class ClippedNormal(Clipped):
   """A clipped normal distribution."""
 
   def __init__(
@@ -131,7 +131,7 @@ class ClippedNormal(ClippedDistribution):
     super().__init__(distribution, minimum=minimum, maximum=maximum)
 
 
-class ClippedLogistic(ClippedDistribution):
+class ClippedLogistic(Clipped):
   """A clipped logistic distribution."""
 
   def __init__(
