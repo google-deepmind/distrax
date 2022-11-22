@@ -14,7 +14,7 @@
 # ==============================================================================
 """Utility math functions."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import chex
 import jax
@@ -23,6 +23,7 @@ import jax.numpy as jnp
 Array = chex.Array
 
 
+@jax.custom_jvp
 def multiply_no_nan(x: Array, y: Array) -> Array:
   """Equivalent of TF `multiply_no_nan`.
 
@@ -43,6 +44,19 @@ def multiply_no_nan(x: Array, y: Array) -> Array:
   return jnp.where(y == 0, jnp.zeros((), dtype=dtype), x * y)
 
 
+@multiply_no_nan.defjvp
+def multiply_no_nan_jvp(
+    primals: Tuple[Array, Array],
+    tangents: Tuple[Array, Array]) -> Tuple[Array, Array]:
+  """Custom gradient computation for `multiply_no_nan`."""
+  x, y = primals
+  x_dot, y_dot = tangents
+  primal_out = multiply_no_nan(x, y)
+  tangent_out = y * x_dot + x * y_dot
+  return primal_out, tangent_out
+
+
+@jax.custom_jvp
 def power_no_nan(x: Array, y: Array) -> Array:
   """Computes `x ** y` and ensure that the result is 1.0 when `y` is zero.
 
@@ -59,6 +73,19 @@ def power_no_nan(x: Array, y: Array) -> Array:
   """
   dtype = jnp.result_type(x, y)
   return jnp.where(y == 0, jnp.ones((), dtype=dtype), jnp.power(x, y))
+
+
+@power_no_nan.defjvp
+def power_no_nan_jvp(
+    primals: Tuple[Array, Array],
+    tangents: Tuple[Array, Array]) -> Tuple[Array, Array]:
+  """Custom gradient computation for `power_no_nan`."""
+  x, y = primals
+  x_dot, y_dot = tangents
+  primal_out = power_no_nan(x, y)
+  tangent_out = (y * power_no_nan(x, y - 1) * x_dot
+                 + primal_out * jnp.log(x) * y_dot)
+  return primal_out, tangent_out
 
 
 def mul_exp(x: Array, logp: Array) -> Array:

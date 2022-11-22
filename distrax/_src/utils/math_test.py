@@ -31,11 +31,27 @@ class MathTest(absltest.TestCase):
     self.assertTrue(jnp.isnan(math.multiply_no_nan(zero, nan)))
     self.assertFalse(jnp.isnan(math.multiply_no_nan(nan, zero)))
 
+  def test_multiply_no_nan_grads(self):
+    x = -jnp.inf
+    y = 0.
+    self.assertEqual(math.multiply_no_nan(x, y), 0.)
+    grad_fn = jax.grad(
+        lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
+    np.testing.assert_allclose(grad_fn((x, y)), (y, x), rtol=1e-3)
+
   def test_power_no_nan(self):
     zero = jnp.zeros(())
     nan = zero / zero
     self.assertTrue(jnp.isnan(math.power_no_nan(zero, nan)))
     self.assertFalse(jnp.isnan(math.power_no_nan(nan, zero)))
+
+  def test_power_no_nan_grads(self):
+    x = np.exp(1.)
+    y = 0.
+    self.assertEqual(math.power_no_nan(x, y), 1.)
+    grad_fn = jax.grad(
+        lambda inputs: math.power_no_nan(inputs[0], inputs[1]))
+    np.testing.assert_allclose(grad_fn((x, y)), (0., 1.), rtol=1e-3)
 
   def test_normalize_probs(self):
     pre_normalised_probs = jnp.array([0.4, 0.4, 0., 0.2])
