@@ -57,6 +57,7 @@ from distrax._src.distributions.joint import Joint
 from distrax._src.distributions.laplace import Laplace
 from distrax._src.distributions.log_stddev_normal import LogStddevNormal
 from distrax._src.distributions.logistic import Logistic
+from distrax._src.distributions.mixture_of_two import MixtureOfTwo
 from distrax._src.distributions.mixture_same_family import MixtureSameFamily
 from distrax._src.distributions.multinomial import Multinomial
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
@@ -129,6 +130,7 @@ __all__ = (
     "mc_estimate_kl",
     "mc_estimate_kl_with_reparameterized",
     "mc_estimate_mode",
+    "MixtureOfTwo",
     "MixtureSameFamily",
     "Multinomial",
     "multiply_no_nan",
