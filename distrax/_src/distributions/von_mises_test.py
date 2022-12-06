@@ -34,8 +34,8 @@ class VonMisesTest(equivalence.EquivalenceTest):
   def setUp(self):
     super().setUp()
     self._init_distr_cls(von_mises.VonMises)
-    self.loc = np.reshape(np.linspace(-5., 5., 20), [-1, 1])
-    self.concentration = np.reshape(np.logspace(-3., 3., 20), [1, -1])
+    self.loc = np.reshape(np.linspace(-5., 5., 7), [-1, 1])
+    self.concentration = np.reshape(np.logspace(-3., 3., 7), [1, -1])
     self.rng = np.random.default_rng(317070)
 
   @parameterized.named_parameters(
@@ -275,9 +275,9 @@ class VonMisesTest(equivalence.EquivalenceTest):
 
   def test_von_mises_cdf(self):
     # We follow the scipy definition for cdf when loc=0 and x is in [-pi, pi].
-    locs_v = np.zeros(shape=(20, 1, 1))
-    concentrations_v = np.reshape(np.logspace(-3., 3., 20), [1, -1, 1])
-    x = np.reshape(np.linspace(-np.pi, np.pi, 20), [1, 1, -1])
+    locs_v = np.zeros(shape=(7, 1, 1))
+    concentrations_v = np.reshape(np.logspace(-3., 3., 7), [1, -1, 1])
+    x = np.reshape(np.linspace(-np.pi, np.pi, 7), [1, 1, -1])
     vm = self.distrax_cls(locs_v, concentrations_v)
     cdf = vm.cdf(x)
     expected_cdf = sp_stats.vonmises.cdf(  # pytype: disable=module-attr
@@ -286,48 +286,48 @@ class VonMisesTest(equivalence.EquivalenceTest):
     np.testing.assert_allclose(expected_cdf, cdf, atol=1e-4, rtol=1e-4)
 
   def test_von_mises_survival_function(self):
-    locs_v = np.reshape(np.linspace(-5, 5, 20), [-1, 1, 1])
-    concentrations_v = np.reshape(np.logspace(-3., 3., 20), [1, -1, 1])
-    x = np.reshape(np.linspace(-5, 5, 20), [1, 1, -1])
+    locs_v = np.reshape(np.linspace(-5, 5, 7), [-1, 1, 1])
+    concentrations_v = np.reshape(np.logspace(-3., 3., 7), [1, -1, 1])
+    x = np.reshape(np.linspace(-5, 5, 7), [1, 1, -1])
     vm = self.distrax_cls(locs_v, concentrations_v)
     cdf = vm.cdf(x)
     surv = vm.survival_function(x)
     np.testing.assert_allclose(surv, 1 - cdf, atol=1e-4, rtol=1e-4)
 
   def test_von_mises_cdf_out_of_bounds(self):
-    locs_v = np.reshape(np.linspace(-np.pi, np.pi, 20), [-1, 1, 1])
-    concentrations_v = np.reshape(np.logspace(-3., 3., 20), [1, -1, 1])
+    locs_v = np.reshape(np.linspace(-np.pi, np.pi, 7), [-1, 1, 1])
+    concentrations_v = np.reshape(np.logspace(-3., 3., 7), [1, -1, 1])
     vm = self.distrax_cls(locs_v, concentrations_v)
-    x = np.linspace(-5 * np.pi, -np.pi, 20)
+    x = np.linspace(-5 * np.pi, -np.pi, 7)
     cdf = vm.cdf(x)
     expected_cdf = 0.
     np.testing.assert_allclose(expected_cdf, cdf, rtol=1.5e-7, atol=1e-7)
 
-    x = np.linspace(np.pi, 5 * np.pi, 20)
+    x = np.linspace(np.pi, 5 * np.pi, 7)
     cdf = vm.cdf(x)
     expected_cdf = 1.
     np.testing.assert_allclose(expected_cdf, cdf, rtol=1.5e-7, atol=1e-7)
 
   def test_von_mises_log_cdf(self):
-    locs_v = np.reshape(np.linspace(-5, 5, 20), [-1, 1, 1])
-    concentrations_v = np.reshape(np.logspace(-3., 3., 20), [1, -1, 1])
-    x = np.reshape(np.linspace(-5, 5, 20), [1, 1, -1])
+    locs_v = np.reshape(np.linspace(-5, 5, 7), [-1, 1, 1])
+    concentrations_v = np.reshape(np.logspace(-3., 3., 7), [1, -1, 1])
+    x = np.reshape(np.linspace(-5, 5, 7), [1, 1, -1])
     vm = self.distrax_cls(locs_v, concentrations_v)
     cdf = vm.cdf(x)
     logcdf = vm.log_cdf(x)
     np.testing.assert_allclose(np.log(cdf), logcdf, atol=1e-4, rtol=1e-4)
 
   def test_von_mises_log_survival(self):
-    locs_v = np.reshape(np.linspace(-5, 5, 20), [-1, 1, 1])
-    concentrations_v = np.reshape(np.logspace(-3., 3., 20), [1, -1, 1])
-    x = np.reshape(np.linspace(-5, 5, 20), [1, 1, -1])
+    locs_v = np.reshape(np.linspace(-5, 5, 7), [-1, 1, 1])
+    concentrations_v = np.reshape(np.logspace(-3., 3., 7), [1, -1, 1])
+    x = np.reshape(np.linspace(-5, 5, 7), [1, 1, -1])
     vm = self.distrax_cls(locs_v, concentrations_v)
     surv = vm.survival_function(x)
     logsurv = vm.log_survival_function(x)
     np.testing.assert_allclose(np.log(surv), logsurv, atol=1e-4, rtol=1e-4)
 
   def test_von_mises_cdf_uniform(self):
-    x = np.linspace(-np.pi, np.pi, 20)
+    x = np.linspace(-np.pi, np.pi, 7)
     vm = self.distrax_cls(0., 0.)
     cdf = vm.cdf(x)
     expected_cdf = (x + np.pi) / (2. * np.pi)
@@ -411,7 +411,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
     concentrations_v = np.array([1., 2., 10.])
     vm = self.distrax_cls(locs_v, concentrations_v)
 
-    n = 10000
+    n = 1000
     samples = vm.sample(sample_shape=(n,), seed=1)
 
     expected_mean = vm.mean()
@@ -432,7 +432,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
   def test_von_mises_sample_variance_uniform(self):
     vm = self.distrax_cls(1., 0.)
 
-    n = 10000
+    n = 1000
     samples = vm.sample(sample_shape=(n,), seed=1)
 
     # For circular uniform distribution, the mean is not well-defined,
@@ -457,14 +457,14 @@ class VonMisesTest(equivalence.EquivalenceTest):
     self.assertEqual(samples.shape, (5,))
 
   def test_von_mises_sample_ks_test(self):
-    concentrations_v = np.logspace(-3, 3, 50)
+    concentrations_v = np.logspace(-3, 3, 7)
     # We are fixing the location to zero. The reason is that for loc != 0,
     # scipy's von Mises distribution CDF becomes shifted, so it's no longer
     # in [0, 1], but is in something like [-0.3, 0.7]. This breaks kstest.
     vm = self.distrax_cls(0., concentrations_v)
-    n = 10000
+    n = 1000
     sample_values = vm.sample(sample_shape=(n,), seed=1)
-    self.assertEqual(sample_values.shape, (n, 50))
+    self.assertEqual(sample_values.shape, (n, 7))
 
     fails = 0
     trials = 0
@@ -480,12 +480,12 @@ class VonMisesTest(equivalence.EquivalenceTest):
     self.assertLess(fails, trials * 0.1)
 
   def test_von_mises_sample_uniform_ks_test(self):
-    locs_v = np.linspace(-10., 10., 50)
+    locs_v = np.linspace(-10., 10., 7)
     vm = self.distrax_cls(locs_v, 0.)
 
-    n = 10000
+    n = 1000
     sample_values = vm.sample(sample_shape=(n,), seed=1)
-    self.assertEqual(sample_values.shape, (n, 50))
+    self.assertEqual(sample_values.shape, (n, 7))
 
     fails = 0
     trials = 0
