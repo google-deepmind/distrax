@@ -161,7 +161,7 @@ class NormalTest(equivalence.EquivalenceTest):
             'loc': np.random.randn(3, 2),
             'scale': 0.1 + np.random.rand(4, 1, 2),
         },
-        assertion_fn=self.assertion_fn(rtol=2e-2))
+        assertion_fn=self.assertion_fn(rtol=3e-2))
 
   def test_jittable(self):
     super()._test_jittable((np.zeros((3,)), np.ones((3,))))
