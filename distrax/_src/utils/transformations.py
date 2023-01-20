@@ -307,4 +307,7 @@ def _extract_call_jaxpr(primitive, params):
     return None, params
   else:
     params = dict(params)
-    return params.pop("call_jaxpr"), params
+    if "jaxpr" in params:
+      return params.pop("jaxpr"), params
+    else:
+      return params.pop("call_jaxpr"), params
