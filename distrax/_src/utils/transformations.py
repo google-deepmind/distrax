@@ -251,15 +251,26 @@ def _interpret_inverse(jaxpr, consts, *args):
   jax.api_util.safe_map(write, jaxpr.constvars, consts)
 
   for eqn in reversed(jaxpr.eqns):
+    params = eqn.params.copy()
     # identify the cardinality of the op and the index of the variable in eqn
     var_idx = _identify_variable_in_eqn(eqn)
 
     # if primitive is an xla_call, get subexpressions and evaluate recursively
-    call_jaxpr, params = _extract_call_jaxpr(eqn.primitive, eqn.params)
+    call_jaxpr, params = _extract_call_jaxpr(eqn.primitive, params)
     if call_jaxpr:
       subfuns = [jax.linear_util.wrap_init(
           functools.partial(_interpret_inverse, call_jaxpr, ()))]
       prim_inv = eqn.primitive
+
+    elif eqn.primitive is jax.experimental.pjit.pjit_p:
+      pjit_jaxpr = params.pop("jaxpr")
+      partial_inverse = functools.partial(_interpret_inverse, pjit_jaxpr.jaxpr,
+                                          pjit_jaxpr.consts)
+      inverse_jaxpr = jax.make_jaxpr(partial_inverse)(*args)
+      params["jaxpr"] = inverse_jaxpr
+
+      prim_inv = eqn.primitive
+      subfuns = []
 
     else:  # otherwise, get its inverse if it exists
       if eqn.primitive not in _inverse_registry:
