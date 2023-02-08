@@ -23,7 +23,7 @@ import jax.numpy as jnp
 class MockLinear(linear.Linear):
 
   def forward_and_log_det(self, x):
-    raise Exception
+    raise Exception  # pylint:disable=broad-exception-raised
 
 
 class LinearTest(parameterized.TestCase):

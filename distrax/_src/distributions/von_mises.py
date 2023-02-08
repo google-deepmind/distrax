@@ -229,7 +229,7 @@ def _von_mises_sample(
       jnp.float64.dtype: 1.2e-4,
   }
   s_concentration_cutoff = s_concentration_cutoff_dict[dtype]
-  use_exact = (concentration > s_concentration_cutoff)
+  use_exact = concentration > s_concentration_cutoff
   # Avoid NaN's, even when not used later.
   conc = jnp.where(use_exact, concentration, 1.)
   r = 1. + jnp.sqrt(1 + 4 * jnp.square(conc))
@@ -368,7 +368,7 @@ def _von_mises_cdf_jvp(
   cdf_normal, dcdf_dconcentration_normal = _von_mises_cdf_normal(
       x, concentration, dtype
   )
-  use_series = (concentration < concentration_cutoff)
+  use_series = concentration < concentration_cutoff
   cdf = jnp.where(use_series, cdf_series, cdf_normal)
   cdf = cdf + num_periods
   dcdf_dconcentration = jnp.where(

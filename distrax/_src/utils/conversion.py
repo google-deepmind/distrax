@@ -28,6 +28,7 @@ from distrax._src.distributions import distribution_from_tfp
 from distrax._src.distributions import tfp_compatible_distribution
 import jax
 import jax.numpy as jnp
+import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
 tfb = tfp.bijectors
@@ -135,8 +136,9 @@ def as_float_array(x: Numeric) -> Array:
   Returns:
     An array with floating-point dtype.
   """
-  if not isinstance(x, Array):
+  if not isinstance(x, (jax.Array, np.ndarray)):
     x = jnp.asarray(x)
+
   if jnp.issubdtype(x.dtype, jnp.floating):
     return x
   elif jnp.issubdtype(x.dtype, jnp.integer):
