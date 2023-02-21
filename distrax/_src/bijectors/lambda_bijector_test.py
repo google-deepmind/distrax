@@ -248,7 +248,7 @@ class LambdaTest(parameterized.TestCase):
     fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)
     np.testing.assert_allclose(fldj_, fldj, rtol=RTOL)
 
-    y = bijector.forward(x)
+    y = bijector.forward(x)  # pytype: disable=wrong-arg-types  # jax-ndarray
     ildj = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
     ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)
     np.testing.assert_allclose(ildj_, ildj, rtol=RTOL)
