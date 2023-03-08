@@ -39,7 +39,7 @@ IntLike = Union[int, np.int16, np.int32, np.int64]
 # Generic type.
 T = TypeVar('T')
 # Generic nested type.
-NestedT = Union[T, Iterable['NestedT'], Mapping[Any, 'NestedT']]
+NestedT = Union[T, Iterable['NestedT'], Mapping[Any, 'NestedT']]  # pylint: disable=invalid-name
 # Nested types.
 EventT = TypeVar('EventT', bound=NestedT[Array])
 ShapeT = TypeVar('ShapeT', bound=NestedT[Tuple[int, ...]])

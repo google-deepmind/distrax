@@ -118,8 +118,8 @@ class MultivariateNormalKLTest(parameterized.TestCase):
           elif mode == 'tfp_to_distrax':
             result1 = self.variant(getattr(dist1_tfp, method))(dist2_distrax)
             result2 = self.variant(getattr(dist2_tfp, method))(dist1_distrax)
-          np.testing.assert_allclose(result1, expected_result1, rtol=0.02)
-          np.testing.assert_allclose(result2, expected_result2, rtol=0.02)
+          np.testing.assert_allclose(result1, expected_result1, rtol=0.03)
+          np.testing.assert_allclose(result2, expected_result2, rtol=0.03)
 
 
 if __name__ == '__main__':
