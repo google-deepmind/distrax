@@ -319,7 +319,7 @@ def convert_seed_and_sample_shape(
     sample_shape = (sample_shape,)
   sample_shape = tuple(map(int, sample_shape))
 
-  if isinstance(seed, IntLike.__args__):
+  if isinstance(seed, (int, np.signedinteger)):
     rng = jax.random.PRNGKey(seed)
   else:  # key is of type PRNGKey
     rng = seed
