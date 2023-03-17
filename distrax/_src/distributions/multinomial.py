@@ -34,6 +34,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Multinomial(distribution.Distribution):
@@ -139,7 +140,7 @@ class Multinomial(distribution.Distribution):
     return jnp.broadcast_to(jnp.log(self._probs),
                             self.batch_shape + self.event_shape)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     total_permutations = lax.lgamma(self._total_count + 1.)
     counts_factorial = lax.lgamma(value + 1.)

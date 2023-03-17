@@ -30,6 +30,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Bernoulli(distribution.Distribution):
@@ -112,20 +113,20 @@ class Bernoulli(distribution.Distribution):
         key=key, shape=new_shape, dtype=probs.dtype, minval=0., maxval=1.)
     return jnp.less(uniform, probs).astype(self._dtype)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     log_probs0, log_probs1 = self._log_probs_parameter()
     return (math.multiply_no_nan(log_probs0, 1 - value) +
             math.multiply_no_nan(log_probs1, value))
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
     probs1 = self.probs
     probs0 = 1 - probs1
     return (math.multiply_no_nan(probs0, 1 - value) +
             math.multiply_no_nan(probs1, value))
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     # For value < 0 the output should be zero because support = {0, 1}.
     return jnp.where(value < 0,
@@ -134,7 +135,7 @@ class Bernoulli(distribution.Distribution):
                                jnp.array(1.0, dtype=self.probs.dtype),
                                1 - self.probs))
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 
@@ -172,8 +173,8 @@ def _probs_and_log_probs(
   """Calculates both `probs` and `log_probs`."""
   # pylint: disable=protected-access
   if dist._logits is None:
-    probs0 = 1 - dist._probs
-    probs1 = dist._probs
+    probs0 = 1. - dist._probs
+    probs1 = 1. - probs0
     log_probs0 = jnp.log1p(-1. * dist._probs)
     log_probs1 = jnp.log(dist._probs)
   else:

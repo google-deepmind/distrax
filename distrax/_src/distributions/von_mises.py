@@ -16,7 +16,7 @@
 
 import functools
 import math
-from typing import Sequence, Tuple, Union
+from typing import cast, Sequence, Tuple, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -33,6 +33,7 @@ Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
 IntLike = Union[int, np.int16, np.int32, np.int64]
+EventT = distribution.EventT
 
 
 class VonMises(distribution.Distribution):
@@ -126,14 +127,14 @@ class VonMises(distribution.Distribution):
     conc = self._concentration
     return 1. - jax.scipy.special.i1e(conc) / jax.scipy.special.i0e(conc)
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """The probability of value under the distribution."""
     conc = self._concentration
     unnormalized_prob = jnp.exp(conc * (jnp.cos(value - self._loc) - 1.))
     normalization = (2. * math.pi) * jax.scipy.special.i0e(conc)
     return unnormalized_prob / normalization
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """The logarithm of the probability of value under the distribution."""
     conc = self._concentration
     i_0 = jax.scipy.special.i0(conc)
@@ -160,7 +161,7 @@ class VonMises(distribution.Distribution):
     """The mode of the distribution."""
     return self.mean()
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """The CDF of `value` under the distribution.
 
     Note that the CDF takes values of 0. or 1. for values outside of
@@ -180,11 +181,11 @@ class VonMises(distribution.Distribution):
         a_max=1.,
     )
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 
-  def survival_function(self, value: Array) -> Array:
+  def survival_function(self, value: EventT) -> Array:
     """See `Distribution.survival_function`."""
     dtype = jnp.result_type(value, self._loc, self._concentration)
     loc = _convert_angle_to_standard(self._loc)
@@ -195,7 +196,7 @@ class VonMises(distribution.Distribution):
         a_max=1.,
     )
 
-  def log_survival_function(self, value: Array) -> Array:
+  def log_survival_function(self, value: EventT) -> Array:
     """See `Distribution.log_survival_function`."""
     return jnp.log(self.survival_function(value))
 
@@ -301,6 +302,7 @@ def _von_mises_sample_jvp(
   inv_prob = jnp.exp(-concentration * (jnp.cos(samples) - 1.)) * (
       (2. * math.pi) * jax.scipy.special.i0e(concentration)
   )
+  dcdf_dconcentration = cast(chex.Array, dcdf_dconcentration)
   dsamples = dconcentration * (-dcdf_dconcentration * inv_prob)
   return samples, dsamples
 

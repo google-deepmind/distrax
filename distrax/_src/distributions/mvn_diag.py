@@ -28,6 +28,7 @@ from tensorflow_probability.substrates import jax as tfp
 tfd = tfp.distributions
 
 Array = chex.Array
+EventT = distribution.EventT
 
 
 def _check_parameters(
@@ -101,11 +102,11 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
   def _standardize(self, value: Array) -> Array:
     return (value - self._loc) / self._scale_diag
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jnp.prod(jax.scipy.special.ndtr(self._standardize(value)), axis=-1)
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.sum(
         jax.scipy.special.log_ndtr(self._standardize(value)), axis=-1)

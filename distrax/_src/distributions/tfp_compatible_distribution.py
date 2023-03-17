@@ -31,6 +31,7 @@ IntLike = distribution.IntLike
 PRNGKey = chex.PRNGKey
 tangent_spaces = tfp.experimental.tangent_spaces
 TangentSpace = tangent_spaces.TangentSpace
+EventT = distribution.EventT
 
 
 def tfp_compatible_distribution(
@@ -117,10 +118,10 @@ def tfp_compatible_distribution(
       """
       return tfd.NOT_REPARAMETERIZED
 
-    def _sample_n(self, key: PRNGKey, n: int) -> Array:
+    def _sample_n(self, key: PRNGKey, n: int) -> EventT:
       return base_distribution.sample(seed=key, sample_shape=(n,))
 
-    def log_prob(self, value: Array) -> Array:
+    def log_prob(self, value: EventT) -> Array:
       """See `Distribution.log_prob`."""
       return base_distribution.log_prob(value)
 
@@ -132,7 +133,7 @@ def tfp_compatible_distribution(
     def sample(self,
                sample_shape: Union[IntLike, Sequence[IntLike]] = (),
                seed: Optional[Union[int, tfp.util.SeedStream]] = None,
-               **unused_kwargs) -> Array:
+               **unused_kwargs) -> EventT:
       """See `Distribution.sample`."""
       if not np.isscalar(sample_shape):
         sample_shape = tuple(sample_shape)

@@ -324,7 +324,9 @@ class QuantizedTFPUniform2D(equivalence.EquivalenceTest):
 class QuantizedDistraxUniform2D(QuantizedTFPUniform2D):
 
   def _make_distrax_base_distribution(self):
-    return uniform.Uniform(low=[0., 10.], high=[100., 90.])
+    return uniform.Uniform(
+        low=jnp.array([0.0, 10.0]), high=jnp.array([100.0, 90.0])
+    )
 
   def test_jittable(self):
     super()._test_jittable((self.distrax_base_distribution, 0., 1.))

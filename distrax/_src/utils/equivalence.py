@@ -86,10 +86,11 @@ class EquivalenceTest(parameterized.TestCase):
     else:
       self.tfp_cls = get_tfp_equiv(distrax_cls)
 
-  def assertion_fn(self, **kwargs) -> Callable[[Array, Array], None]:
-    def fn(x: Array, y: Array) -> None:
+  def assertion_fn(self, **kwargs) -> Callable[[Any, Any], None]:
+    def f(x, y):
       np.testing.assert_allclose(x, y, **kwargs)
-    return fn
+
+    return f
 
   def _test_attribute(
       self,

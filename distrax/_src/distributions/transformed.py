@@ -29,6 +29,7 @@ PRNGKey = dist_base.PRNGKey
 Array = dist_base.Array
 DistributionLike = dist_base.DistributionLike
 BijectorLike = bjct_base.BijectorLike
+EventT = dist_base.EventT
 
 
 class Transformed(dist_base.Distribution):
@@ -153,7 +154,7 @@ class Transformed(dist_base.Distribution):
       self._infer_shapes_and_dtype()
     return self._batch_shape
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     x, ildj_y = self.bijector.inverse_and_log_det(value)
     lp_x = self.distribution.log_prob(x)

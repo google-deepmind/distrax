@@ -30,6 +30,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Dirichlet(distribution.Distribution):
@@ -92,7 +93,7 @@ class Dirichlet(distribution.Distribution):
         key, alpha=self._concentration, shape=out_shape, dtype=dtype)
     return rnd
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return (jnp.sum((self._concentration - 1.) * jnp.log(value), axis=-1)
             - self._log_normalization_constant)

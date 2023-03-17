@@ -29,6 +29,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Uniform(distribution.Distribution):
@@ -88,11 +89,11 @@ class Uniform(distribution.Distribution):
     log_prob = jnp.repeat(log_prob[None], n, axis=0)
     return samples, log_prob
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return jnp.log(self.prob(value))
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
     return jnp.where(
         jnp.logical_or(value < self.low, value > self.high),
@@ -119,7 +120,7 @@ class Uniform(distribution.Distribution):
     """Calculates the median."""
     return self.mean()
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     ones = jnp.ones_like(self.range)
     zeros = jnp.zeros_like(ones)
@@ -127,7 +128,7 @@ class Uniform(distribution.Distribution):
         value < self.low, zeros, (value - self.low) / self.range)
     return jnp.where(value > self.high, ones, result_if_not_big)
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 

@@ -26,6 +26,7 @@ tfd = tfp.distributions
 Array = chex.Array
 PRNGKey = chex.PRNGKey
 DistributionT = distribution.DistributionT
+EventT = distribution.EventT
 
 
 def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
@@ -69,11 +70,11 @@ def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
           tfp_distribution.sample(seed=key, sample_shape=(n,)),
           dtype=tfp_distribution.dtype)
 
-    def log_prob(self, value: Array) -> Array:
+    def log_prob(self, value: EventT) -> Array:
       """See `Distribution.log_prob`."""
       return jnp.asarray(tfp_distribution.log_prob(value))
 
-    def prob(self, value: Array) -> Array:
+    def prob(self, value: EventT) -> Array:
       """See `Distribution.prob`."""
       return jnp.asarray(tfp_distribution.prob(value))
 
@@ -106,11 +107,11 @@ def distribution_from_tfp(tfp_distribution: tfd.Distribution) -> DistributionT:
       """See `Distribution.entropy`."""
       return jnp.asarray(tfp_distribution.entropy())
 
-    def log_cdf(self, value: Array) -> Array:
+    def log_cdf(self, value: EventT) -> Array:
       """See `Distribution.log_cdf`."""
       return jnp.asarray(tfp_distribution.log_cdf(value))
 
-    def cdf(self, value: Array) -> Array:
+    def cdf(self, value: EventT) -> Array:
       """See `Distribution.cdf`."""
       return jnp.asarray(tfp_distribution.cdf(value))
 

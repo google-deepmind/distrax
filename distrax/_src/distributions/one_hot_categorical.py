@@ -29,6 +29,7 @@ tfd = tfp.distributions
 
 Array = chex.Array
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class OneHotCategorical(categorical.Categorical):
@@ -68,11 +69,11 @@ class OneHotCategorical(categorical.Categorical):
         draws, num_classes=self.num_categories).astype(self._dtype)
     return jnp.where(is_valid, draws_one_hot, jnp.ones_like(draws_one_hot) * -1)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return jnp.sum(math.multiply_no_nan(self.logits, value), axis=-1)
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
     return jnp.sum(math.multiply_no_nan(self.probs, value), axis=-1)
 
@@ -82,7 +83,7 @@ class OneHotCategorical(categorical.Categorical):
     greedy_index = jnp.argmax(preferences, axis=-1)
     return jax.nn.one_hot(greedy_index, self.num_categories).astype(self._dtype)
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jnp.sum(math.multiply_no_nan(
         jnp.cumsum(self.probs, axis=-1), value), axis=-1)

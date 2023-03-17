@@ -29,6 +29,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Laplace(distribution.Distribution):
@@ -86,7 +87,7 @@ class Laplace(distribution.Distribution):
     log_prob = -jnp.abs(rnd) - math.log(2.) - jnp.log(self._scale)
     return samples, log_prob
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     norm_value = self._standardize(value)
     return -jnp.abs(norm_value) - math.log(2.) - jnp.log(self._scale)
@@ -95,7 +96,7 @@ class Laplace(distribution.Distribution):
     """Calculates the Shannon entropy (in nats)."""
     return math.log(2.) + 1. + jnp.log(self.scale)
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     norm_value = self._standardize(value)
     return 0.5 - 0.5 * jnp.sign(norm_value) * jnp.expm1(-jnp.abs(norm_value))
@@ -103,7 +104,7 @@ class Laplace(distribution.Distribution):
   def _standardize(self, value: Array) -> Array:
     return (value - self._loc) / self._scale
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     norm_value = self._standardize(value)
     lower_value = norm_value - math.log(2.)

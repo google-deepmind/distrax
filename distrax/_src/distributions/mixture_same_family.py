@@ -31,6 +31,7 @@ Array = chex.Array
 PRNGKey = chex.PRNGKey
 DistributionLike = distribution.DistributionLike
 CategoricalLike = categorical.CategoricalLike
+EventT = distribution.EventT
 
 
 class MixtureSameFamily(distribution.Distribution):
@@ -112,7 +113,7 @@ class MixtureSameFamily(distribution.Distribution):
     samples = jnp.sum(samples_all * mask, axis=-1 - len(self.event_shape))
     return samples
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     # Add component axis to make input broadcast with components distribution.
     expanded = jnp.expand_dims(value, axis=-1 - len(self.event_shape))

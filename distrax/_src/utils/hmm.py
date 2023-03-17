@@ -115,7 +115,7 @@ class HMM(jittable.Jittable):
   def sample(self,
              *,
              seed: chex.PRNGKey,
-             seq_len: chex.Array) -> Tuple[chex.Array, chex.Array]:
+             seq_len: int) -> Tuple[chex.Array, chex.Array]:
     """Sample from this HMM.
 
     Samples an observation of given length according to this

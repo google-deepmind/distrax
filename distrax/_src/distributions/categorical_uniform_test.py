@@ -127,7 +127,9 @@ class CategoricalUniformTest(parameterized.TestCase):
 
   def test_raises_on_wrong_logits(self):
     with self.assertRaises(ValueError):
-      categorical_uniform.CategoricalUniform(low=0., high=1., logits=0.)
+      categorical_uniform.CategoricalUniform(
+          low=0.0, high=1.0, logits=jnp.array(0.0)
+      )
 
   @parameterized.named_parameters(*_NAMED_PARAMETERS)
   def test_batch_shape(self, *, low, high, logits, target_batch_shape, **_):

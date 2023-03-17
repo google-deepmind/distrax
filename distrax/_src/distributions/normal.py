@@ -29,6 +29,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 _half_log2pi = 0.5 * math.log(2 * math.pi)
 
@@ -88,29 +89,29 @@ class Normal(distribution.Distribution):
     log_prob = -0.5 * jnp.square(rnd) - _half_log2pi - jnp.log(self._scale)
     return samples, log_prob
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     log_unnormalized = -0.5 * jnp.square(self._standardize(value))
     log_normalization = _half_log2pi + jnp.log(self._scale)
     return log_unnormalized - log_normalization
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jax.scipy.special.ndtr(self._standardize(value))
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jax.scipy.special.log_ndtr(self._standardize(value))
 
-  def survival_function(self, value: Array) -> Array:
+  def survival_function(self, value: EventT) -> Array:
     """See `Distribution.survival_function`."""
     return jax.scipy.special.ndtr(-self._standardize(value))
 
-  def log_survival_function(self, value: Array) -> Array:
+  def log_survival_function(self, value: EventT) -> Array:
     """See `Distribution.log_survival_function`."""
     return jax.scipy.special.log_ndtr(-self._standardize(value))
 
-  def _standardize(self, value: Array) -> Array:
+  def _standardize(self, value: EventT) -> Array:
     return (value - self._loc) / self._scale
 
   def entropy(self) -> Array:

@@ -18,6 +18,7 @@ import abc
 import typing
 from typing import Callable, Optional, Tuple, Union
 
+import chex
 from distrax._src.utils import jittable
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
@@ -25,7 +26,7 @@ from tensorflow_probability.substrates import jax as tfp
 
 tfb = tfp.bijectors
 
-Array = jnp.ndarray
+Array = chex.Array
 
 
 class Bijector(jittable.Jittable, metaclass=abc.ABCMeta):

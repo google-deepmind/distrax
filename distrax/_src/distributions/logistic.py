@@ -28,6 +28,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Logistic(distribution.Distribution):
@@ -84,7 +85,7 @@ class Logistic(distribution.Distribution):
     rnd = jnp.log(uniform) - jnp.log1p(-uniform)
     return self._scale * rnd + self._loc
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
     return -z - 2. * jax.nn.softplus(-z) - jnp.log(self._scale)
@@ -93,19 +94,19 @@ class Logistic(distribution.Distribution):
     """Calculates the Shannon entropy (in Nats)."""
     return 2. + jnp.broadcast_to(jnp.log(self._scale), self.batch_shape)
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jax.nn.sigmoid(self._standardize(value))
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return -jax.nn.softplus(-self._standardize(value))
 
-  def survival_function(self, value: Array) -> Array:
+  def survival_function(self, value: EventT) -> Array:
     """See `Distribution.survival_function`."""
     return jax.nn.sigmoid(-self._standardize(value))
 
-  def log_survival_function(self, value: Array) -> Array:
+  def log_survival_function(self, value: EventT) -> Array:
     """See `Distribution.log_survival_function`."""
     return -jax.nn.softplus(self._standardize(value))
 

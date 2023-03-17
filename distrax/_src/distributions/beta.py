@@ -29,6 +29,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Beta(distribution.Distribution):
@@ -90,7 +91,7 @@ class Beta(distribution.Distribution):
         key, a=self._alpha, b=self._beta, shape=out_shape, dtype=dtype)
     return rnd
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     result = ((self._alpha - 1.) * jnp.log(value)
               + (self._beta - 1.) * jnp.log(1. - value)
@@ -102,11 +103,11 @@ class Beta(distribution.Distribution):
         result
     )
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jax.scipy.special.betainc(self._alpha, self._beta, value)
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 

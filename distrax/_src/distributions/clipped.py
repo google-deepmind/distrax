@@ -28,6 +28,7 @@ Array = chex.Array
 PRNGKey = chex.PRNGKey
 Numeric = chex.Numeric
 DistributionLike = base_distribution.DistributionLike
+EventT = base_distribution.EventT
 
 
 class Clipped(base_distribution.Distribution):
@@ -75,7 +76,7 @@ class Clipped(base_distribution.Distribution):
     samples = self._sample_n(key, n)
     return samples, self.log_prob(samples)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     # The log_prob can be used to compute expectations by explicitly integrating
     # over the discrete and continuous elements.
@@ -94,11 +95,11 @@ class Clipped(base_distribution.Distribution):
         log_prob)
 
   @property
-  def minimum(self) -> Numeric:
+  def minimum(self) -> Array:
     return self._minimum
 
   @property
-  def maximum(self) -> Numeric:
+  def maximum(self) -> Array:
     return self._maximum
 
   @property

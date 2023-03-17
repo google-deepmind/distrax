@@ -78,7 +78,7 @@ def tfp_compatible_bijector(
     def __getattr__(self, name: str):
       return getattr(base_bijector, name)
 
-    def forward_and_log_det(self, x: Array) -> Array:
+    def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
       """See `Bijector.forward_and_log_det`."""
       return base_bijector.forward_and_log_det(x)
 

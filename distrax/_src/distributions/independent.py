@@ -28,6 +28,7 @@ tfd = tfp.distributions
 Array = chex.Array
 PRNGKey = chex.PRNGKey
 DistributionLike = distrax_distribution.DistributionLike
+EventT = distrax_distribution.EventT
 
 
 class Independent(distrax_distribution.Distribution):
@@ -105,7 +106,7 @@ class Independent(distrax_distribution.Distribution):
     log_prob = self._reduce(jnp.sum, log_prob)
     return samples, log_prob
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return self._reduce(jnp.sum, self._distribution.log_prob(value))
 
@@ -113,7 +114,7 @@ class Independent(distrax_distribution.Distribution):
     """See `Distribution.entropy`."""
     return self._reduce(jnp.sum, self._distribution.entropy())
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return self._reduce(jnp.sum, self._distribution.log_cdf(value))
 

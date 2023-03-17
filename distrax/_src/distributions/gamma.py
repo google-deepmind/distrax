@@ -28,6 +28,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Gamma(distribution.Distribution):
@@ -80,7 +81,7 @@ class Gamma(distribution.Distribution):
     rnd = self._sample_from_std_gamma(key, n)
     return rnd / self._rate
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return (
         self._concentration * jnp.log(self._rate)
@@ -99,11 +100,11 @@ class Gamma(distribution.Distribution):
         + (1.0 - self._concentration) * jax.lax.digamma(self._concentration)
     )
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jax.lax.igamma(self._concentration, self._rate * value)
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 

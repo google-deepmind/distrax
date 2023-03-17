@@ -27,6 +27,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Deterministic(distribution.Distribution):
@@ -106,11 +107,11 @@ class Deterministic(distribution.Distribution):
     log_prob = jnp.zeros_like(samples)
     return samples, log_prob
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return jnp.log(self.prob(value))
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
     return jnp.where(
         jnp.abs(value - self.loc) <= self.slack, 1., 0.)
@@ -135,11 +136,11 @@ class Deterministic(distribution.Distribution):
     """Calculates the standard deviation."""
     return self.variance()
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     return jnp.log(self.cdf(value))
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     return jnp.where(value >= self.loc - self.slack, 1., 0.)
 

@@ -29,6 +29,7 @@ Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
 DistributionLike = base_distribution.DistributionLike
+EventT = base_distribution.EventT
 
 
 class MixtureOfTwo(base_distribution.Distribution):
@@ -79,7 +80,7 @@ class MixtureOfTwo(base_distribution.Distribution):
     mask_from_a = jnp.expand_dims(mask_from_a, tuple(range(1, sample_a.ndim)))
     return jnp.where(mask_from_a, sample_a, sample_b)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     logp1 = jnp.log(self._prob_a) + self._component_a.log_prob(value)
     logp2 = jnp.log(1 - self._prob_a) + self._component_b.log_prob(value)

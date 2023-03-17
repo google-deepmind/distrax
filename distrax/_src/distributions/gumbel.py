@@ -29,6 +29,7 @@ tfd = tfp.distributions
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class Gumbel(distribution.Distribution):
@@ -73,7 +74,7 @@ class Gumbel(distribution.Distribution):
     """Standardizes the input `value` in location and scale."""
     return (value - self._loc) / self._scale
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
     return -(z + jnp.exp(-z)) - jnp.log(self._scale)
@@ -99,7 +100,7 @@ class Gumbel(distribution.Distribution):
     """Calculates the Shannon entropy (in nats)."""
     return jnp.log(self._scale) + 1. + jnp.euler_gamma
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     z = self._standardize(value)
     return -jnp.exp(-z)

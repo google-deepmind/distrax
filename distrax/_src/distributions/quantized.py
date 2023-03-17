@@ -30,6 +30,7 @@ Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
 DistributionLike = base_distribution.DistributionLike
 DistributionT = base_distribution.DistributionT
+EventT = base_distribution.EventT
 
 
 class Quantized(
@@ -151,7 +152,7 @@ class Quantized(
     log_probs = math.log_expbig_minus_expsmall(big, small)
     return samples, log_probs
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """Calculates the log probability of an event.
 
     This implementation differs slightly from the one in TFP, as it returns
@@ -197,7 +198,7 @@ class Quantized(
 
     return log_probs
 
-  def prob(self, value: Array) -> Array:
+  def prob(self, value: EventT) -> Array:
     """Calculates the probability of an event.
 
     This implementation differs slightly from the one in TFP, as it returns 0
@@ -227,7 +228,7 @@ class Quantized(
     probs = jnp.where(is_integer, probs, 0.)
     return probs
 
-  def log_cdf(self, value: Array) -> Array:
+  def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     # The log CDF of a quantized distribution is piecewise constant on half-open
     # intervals:
@@ -243,7 +244,7 @@ class Quantized(
       result = jnp.where(y < self.high, result, 0.)
     return result
 
-  def cdf(self, value: Array) -> Array:
+  def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     # The CDF of a quantized distribution is piecewise constant on half-open
     # intervals:
@@ -259,7 +260,7 @@ class Quantized(
       result = jnp.where(y < self.high, result, 1.)
     return result
 
-  def log_survival_function(self, value: Array) -> Array:
+  def log_survival_function(self, value: EventT) -> Array:
     """Calculates the log of the survival function of an event.
 
     This implementation differs slightly from TFP, in that it returns the
@@ -286,7 +287,7 @@ class Quantized(
       result = jnp.where(y < self._high, result, -jnp.inf)
     return result
 
-  def survival_function(self, value: Array) -> Array:
+  def survival_function(self, value: EventT) -> Array:
     """Calculates the survival function of an event.
 
     This implementation differs slightly from TFP, in that it returns the

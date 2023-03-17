@@ -29,6 +29,7 @@ import jax.numpy as jnp
 Array = chex.Array
 Numeric = chex.Numeric
 PRNGKey = chex.PRNGKey
+EventT = distribution.EventT
 
 
 class CategoricalUniform(distribution.Distribution):
@@ -86,7 +87,7 @@ class CategoricalUniform(distribution.Distribution):
     quantile = jax.random.uniform(key, (n,) + self.batch_shape)
     return self._inverse_cdf(quantile)
 
-  def log_prob(self, value: Array) -> Array:
+  def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     return self._get_mixture().log_prob(value)
 
