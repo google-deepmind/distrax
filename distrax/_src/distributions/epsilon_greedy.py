@@ -26,7 +26,7 @@ Array = chex.Array
 def _argmax_with_random_tie_breaking(preferences: Array) -> Array:
   """Compute probabilities greedily with respect to a set of preferences."""
   optimal_actions = preferences == preferences.max(axis=-1, keepdims=True)
-  return optimal_actions / optimal_actions.sum(axis=-1, keepdims=True)
+  return optimal_actions / optimal_actions.sum(axis=-1, keepdims=True)  # pytype: disable=attribute-error  # numpy-scalars
 
 
 def _mix_probs_with_uniform(probs: Array, epsilon: float) -> Array:

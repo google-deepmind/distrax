@@ -157,7 +157,7 @@ class Bernoulli(distribution.Distribution):
 
   def mode(self) -> Array:
     """See `Distribution.probs`."""
-    return (self.probs > 0.5).astype(self._dtype)
+    return (self.probs > 0.5).astype(self._dtype)  # pytype: disable=attribute-error  # numpy-scalars
 
   def __getitem__(self, index) -> 'Bernoulli':
     """See `Distribution.__getitem__`."""
