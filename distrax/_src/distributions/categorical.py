@@ -100,7 +100,8 @@ class Categorical(distribution.Distribution):
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
-    value_one_hot = jax.nn.one_hot(value, self.num_categories)
+    value_one_hot = jax.nn.one_hot(
+        value, self.num_categories, dtype=self.logits.dtype)
     mask_outside_domain = jnp.logical_or(
         value < 0, value > self.num_categories - 1)
     return jnp.where(
@@ -109,7 +110,8 @@ class Categorical(distribution.Distribution):
 
   def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
-    value_one_hot = jax.nn.one_hot(value, self.num_categories)
+    value_one_hot = jax.nn.one_hot(
+        value, self.num_categories, dtype=self.probs.dtype)
     return jnp.sum(math.multiply_no_nan(self.probs, value_one_hot), axis=-1)
 
   def entropy(self) -> Array:
@@ -135,7 +137,8 @@ class Categorical(distribution.Distribution):
     should_be_one = value >= self.num_categories - 1
     # Will use value as an index below, so clip it to {0, ..., K-1}.
     value = jnp.clip(value, 0, self.num_categories - 1)
-    value_one_hot = jax.nn.one_hot(value, self.num_categories)
+    value_one_hot = jax.nn.one_hot(
+        value, self.num_categories, dtype=self.probs.dtype)
     cdf = jnp.sum(math.multiply_no_nan(
         jnp.cumsum(self.probs, axis=-1), value_one_hot), axis=-1)
     return jnp.where(should_be_zero, 0., jnp.where(should_be_one, 1., cdf))
