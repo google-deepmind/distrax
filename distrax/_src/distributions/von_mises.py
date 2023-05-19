@@ -303,7 +303,7 @@ def _von_mises_sample_jvp(
       (2. * math.pi) * jax.scipy.special.i0e(concentration)
   )
   dcdf_dconcentration = cast(chex.Array, dcdf_dconcentration)
-  dsamples = dconcentration * (-dcdf_dconcentration * inv_prob)
+  dsamples = dconcentration * (-inv_prob * dcdf_dconcentration)
   return samples, dsamples
 
 
