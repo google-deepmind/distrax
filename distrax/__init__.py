@@ -87,7 +87,7 @@ from distrax._src.utils.monte_carlo import mc_estimate_kl_with_reparameterized
 from distrax._src.utils.monte_carlo import mc_estimate_mode
 from distrax._src.utils.transformations import register_inverse
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 __all__ = (
     "as_bijector",
