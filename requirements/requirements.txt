@@ -1,6 +1,6 @@
 absl-py>=0.9.0
-chex>=0.0.7
+chex>=0.1.8
 jax>=0.1.55
 jaxlib>=0.1.67
-numpy>=1.18.0,<1.23
+numpy>=1.23.0
 tensorflow-probability>=0.15.0
