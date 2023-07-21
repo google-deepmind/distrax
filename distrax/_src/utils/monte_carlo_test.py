@@ -105,8 +105,9 @@ def _check_kl_estimator(estimator_fn, distribution_fn, num_samples=10000,
   value, grad = jax.value_and_grad(estimate_kl)(params)
 
   np.testing.assert_allclose(expected_value, value, rtol=rtol, atol=atol)
-  chex.assert_tree_all_close(expected_grad, grad, rtol=grad_rtol,
-                             atol=grad_atol)
+  chex.assert_trees_all_close(
+      expected_grad, grad, rtol=grad_rtol, atol=grad_atol
+  )
 
 
 if __name__ == '__main__':
