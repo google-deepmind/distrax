@@ -92,6 +92,11 @@ class EquivalenceTest(parameterized.TestCase):
 
     return f
 
+  def _get_tfp_cls(self) -> type(tfd.Distribution):
+    if self.tfp_cls is None:
+      raise ValueError('TFP class undefined. Run _init_distr_cls() first.')
+    return self.tfp_cls
+
   def _test_attribute(
       self,
       attribute_string: str,
@@ -135,7 +140,7 @@ class EquivalenceTest(parameterized.TestCase):
       tfp_dist_kwargs = dist_kwargs
 
     dist = self.distrax_cls(*dist_args, **dist_kwargs)
-    tfp_dist = self.tfp_cls(*tfp_dist_args, **tfp_dist_kwargs)
+    tfp_dist = self._get_tfp_cls()(*tfp_dist_args, **tfp_dist_kwargs)
 
     if callable(getattr(dist, attribute_string)):
       distrax_fn = getattr(dist, attribute_string)
@@ -202,7 +207,7 @@ class EquivalenceTest(parameterized.TestCase):
       sample_fn = self.variant(sample_fn)
     samples = sample_fn(self.key)
 
-    tfp_dist = self.tfp_cls(*tfp_dist_args, **tfp_dist_kwargs)
+    tfp_dist = self._get_tfp_cls()(*tfp_dist_args, **tfp_dist_kwargs)
     tfp_samples = tfp_dist.sample(sample_shape=sample_shape,
                                   seed=self.key)
     chex.assert_equal_shape([samples, tfp_samples])
@@ -231,7 +236,7 @@ class EquivalenceTest(parameterized.TestCase):
       log_prob_fn = self.variant(dist.log_prob)
     samples, log_prob = sample_and_log_prob_fn(self.key)
 
-    tfp_dist = self.tfp_cls(*tfp_dist_args, **tfp_dist_kwargs)
+    tfp_dist = self._get_tfp_cls()(*tfp_dist_args, **tfp_dist_kwargs)
     tfp_samples = tfp_dist.sample(sample_shape=sample_shape,
                                   seed=self.key)
     tfp_log_prob = tfp_dist.log_prob(samples)
@@ -305,9 +310,9 @@ class EquivalenceTest(parameterized.TestCase):
       tfp_dist2_kwargs = dist2_kwargs
 
     dist1 = self.distrax_cls(*dist1_args, **dist1_kwargs)
-    tfp_dist1 = self.tfp_cls(*tfp_dist1_args, **tfp_dist1_kwargs)
+    tfp_dist1 = self._get_tfp_cls()(*tfp_dist1_args, **tfp_dist1_kwargs)
     dist2 = self.distrax_cls(*dist2_args, **dist2_kwargs)
-    tfp_dist2 = self.tfp_cls(*tfp_dist2_args, **tfp_dist2_kwargs)
+    tfp_dist2 = self._get_tfp_cls()(*tfp_dist2_args, **tfp_dist2_kwargs)
 
     tfp_comp_dist1_dist2 = getattr(tfp_dist1, attribute_string)(tfp_dist2)
     tfp_comp_dist2_dist1 = getattr(tfp_dist2, attribute_string)(tfp_dist1)

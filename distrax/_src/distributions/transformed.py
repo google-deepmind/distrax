@@ -125,12 +125,13 @@ class Transformed(dist_base.Distribution):
 
     self._dtype = shape_dtype.dtype
 
-    # pylint:disable=invalid-unary-operand-type
     if self.bijector.event_ndims_out == 0:
       self._event_shape = ()
       self._batch_shape = shape_dtype.shape
     else:
+      # pylint: disable-next=invalid-unary-operand-type
       self._event_shape = shape_dtype.shape[-self.bijector.event_ndims_out:]
+      # pylint: disable-next=invalid-unary-operand-type
       self._batch_shape = shape_dtype.shape[:-self.bijector.event_ndims_out]
 
   @property
@@ -145,6 +146,7 @@ class Transformed(dist_base.Distribution):
     """See `Distribution.event_shape`."""
     if self._event_shape is None:
       self._infer_shapes_and_dtype()
+    assert self._event_shape is not None  # By _infer_shapes_and_dtype()
     return self._event_shape
 
   @property
@@ -152,6 +154,7 @@ class Transformed(dist_base.Distribution):
     """See `Distribution.batch_shape`."""
     if self._batch_shape is None:
       self._infer_shapes_and_dtype()
+    assert self._batch_shape is not None  # By _infer_shapes_and_dtype()
     return self._batch_shape
 
   def log_prob(self, value: EventT) -> Array:

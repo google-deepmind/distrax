@@ -92,6 +92,7 @@ class ScalarAffine(base.Bijector):
   @property
   def scale(self) -> Numeric:
     """The bijector's scale."""
+    assert self._scale is not None  # By construction.
     return self._scale
 
   def forward(self, x: Array) -> Array:
