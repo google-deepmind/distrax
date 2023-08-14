@@ -14,7 +14,7 @@
 # ==============================================================================
 """Bernoulli distribution."""
 
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -44,7 +44,7 @@ class Bernoulli(distribution.Distribution):
   def __init__(self,
                logits: Optional[Numeric] = None,
                probs: Optional[Numeric] = None,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes a Bernoulli distribution.
 
     Args:

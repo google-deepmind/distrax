@@ -14,6 +14,8 @@
 # ==============================================================================
 """Epsilon-Greedy distributions with respect to a set of preferences."""
 
+from typing import Any, Union
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -46,7 +48,7 @@ class EpsilonGreedy(categorical.Categorical):
   def __init__(self,
                preferences: Array,
                epsilon: float,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes an EpsilonGreedy distribution.
 
     Args:

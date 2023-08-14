@@ -14,6 +14,8 @@
 # ==============================================================================
 """Greedy distributions with respect to a set of preferences."""
 
+from typing import Any, Union
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -37,7 +39,9 @@ class Greedy(categorical.Categorical):
   all other indices will be assigned a probability of zero.
   """
 
-  def __init__(self, preferences: Array, dtype: jnp.dtype = int):
+  def __init__(
+      self, preferences: Array, dtype: Union[jnp.dtype, type[Any]] = int
+  ):
     """Initializes a Greedy distribution.
 
     Args:

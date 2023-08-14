@@ -17,7 +17,7 @@
 import functools
 import operator
 
-from typing import Tuple, Optional, Union
+from typing import Any, Tuple, Optional, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -46,7 +46,7 @@ class Multinomial(distribution.Distribution):
                total_count: Numeric,
                logits: Optional[Array] = None,
                probs: Optional[Array] = None,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes a Multinomial distribution.
 
     Args:
@@ -162,7 +162,7 @@ class Multinomial(distribution.Distribution):
 
   @staticmethod
   def _sample_n_scalar(
-      key: PRNGKey, total_count: int, n: int, logits: Array,
+      key: PRNGKey, total_count: Union[int, Array], n: int, logits: Array,
       dtype: jnp.dtype) -> Array:
     """Sample method for a Multinomial with integer `total_count`."""
 

@@ -14,7 +14,7 @@
 # ==============================================================================
 """OneHotCategorical distribution."""
 
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import chex
 from distrax._src.distributions import categorical
@@ -40,7 +40,7 @@ class OneHotCategorical(categorical.Categorical):
   def __init__(self,
                logits: Optional[Array] = None,
                probs: Optional[Array] = None,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes a OneHotCategorical distribution.
 
     Args:
@@ -80,6 +80,7 @@ class OneHotCategorical(categorical.Categorical):
   def mode(self) -> Array:
     """Calculates the mode."""
     preferences = self._probs if self._logits is None else self._logits
+    assert preferences is not None
     greedy_index = jnp.argmax(preferences, axis=-1)
     return jax.nn.one_hot(greedy_index, self.num_categories).astype(self._dtype)
 

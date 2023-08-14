@@ -14,6 +14,8 @@
 # ==============================================================================
 """Softmax distribution."""
 
+from typing import Any, Union
+
 import chex
 from distrax._src.distributions import categorical
 from distrax._src.distributions import distribution
@@ -35,7 +37,7 @@ class Softmax(categorical.Categorical):
   def __init__(self,
                logits: Array,
                temperature: float = 1.,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes a Softmax distribution.
 
     Args:

@@ -139,6 +139,7 @@ class Transformed(dist_base.Distribution):
     """See `Distribution.dtype`."""
     if self._dtype is None:
       self._infer_shapes_and_dtype()
+    assert self._dtype is not None  # By _infer_shapes_and_dtype()
     return self._dtype
 
   @property

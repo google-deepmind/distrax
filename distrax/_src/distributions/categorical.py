@@ -14,7 +14,7 @@
 # ==============================================================================
 """Categorical distribution."""
 
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import chex
 from distrax._src.distributions import distribution
@@ -38,7 +38,7 @@ class Categorical(distribution.Distribution):
   def __init__(self,
                logits: Optional[Array] = None,
                probs: Optional[Array] = None,
-               dtype: jnp.dtype = int):
+               dtype: Union[jnp.dtype, type[Any]] = int):
     """Initializes a Categorical distribution.
 
     Args:
