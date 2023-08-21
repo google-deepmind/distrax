@@ -20,6 +20,7 @@ import chex
 from distrax._src.distributions import distribution as base_distribution
 from distrax._src.utils import conversion
 from distrax._src.utils import math
+import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
 
@@ -48,7 +49,8 @@ class Quantized(
   def __init__(self,
                distribution: DistributionLike,
                low: Optional[Numeric] = None,
-               high: Optional[Numeric] = None):
+               high: Optional[Numeric] = None,
+               eps: Optional[Numeric] = None):
     """Initializes a Quantized distribution.
 
     Args:
@@ -61,9 +63,13 @@ class Quantized(
         floor(high)`. Its shape must broadcast with the shape of samples from
         `distribution` and must not result in additional batch dimensions after
         broadcasting.
+      eps: An optional gap to enforce between "big" and "small". Useful for
+        avoiding NANs in computing log_probs, when "big" and "small"
+        are too close.
     """
     self._dist: base_distribution.Distribution[Array, Tuple[
         int, ...], jnp.dtype] = conversion.as_distribution(distribution)
+    self._eps = eps
     if self._dist.event_shape:
       raise ValueError(f'The base distribution must be univariate, but its '
                        f'`event_shape` is {self._dist.event_shape}.')
@@ -180,6 +186,10 @@ class Quantized(
     # which happens to the right of the median of the distribution.
     big = jnp.where(log_sf < log_cdf, log_sf_m1, log_cdf)
     small = jnp.where(log_sf < log_cdf, log_sf, log_cdf_m1)
+    if self._eps is not None:
+      # use stop_gradient to block updating in this case
+      big = jnp.where(big - small > self._eps, big,
+                      jax.lax.stop_gradient(small) + self._eps)
     log_probs = math.log_expbig_minus_expsmall(big, small)
 
     # Return -inf when evaluating on non-integer value.
