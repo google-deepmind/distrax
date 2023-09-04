@@ -32,6 +32,14 @@ PRNGKey = chex.PRNGKey
 EventT = distribution.EventT
 
 
+def _log_cdf_laplace(norm_value: EventT) -> Array:
+  """Log CDF of a standardized Laplace distribution."""
+  lower_value = norm_value - math.log(2.0)
+  exp_neg_norm_value = jnp.exp(-jnp.abs(norm_value))
+  upper_value = jnp.log1p(-0.5 * exp_neg_norm_value)
+  return jnp.where(jnp.less_equal(norm_value, 0.), lower_value, upper_value)
+
+
 class Laplace(distribution.Distribution):
   """Laplace distribution with location `loc` and `scale` parameters."""
 
@@ -107,10 +115,12 @@ class Laplace(distribution.Distribution):
   def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     norm_value = self._standardize(value)
-    lower_value = norm_value - math.log(2.)
-    exp_neg_norm_value = jnp.exp(-jnp.abs(norm_value))
-    upper_value = jnp.log1p(-0.5 * exp_neg_norm_value)
-    return jnp.where(jnp.less_equal(norm_value, 0.), lower_value, upper_value)
+    return _log_cdf_laplace(norm_value)
+
+  def log_survival_function(self, value: EventT) -> Array:
+    """See `Distribution.log_survival_function`."""
+    norm_value = self._standardize(value)
+    return _log_cdf_laplace(-norm_value)
 
   def mean(self) -> Array:
     """Calculates the mean."""
