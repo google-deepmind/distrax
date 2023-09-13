@@ -324,7 +324,7 @@ def convert_seed_and_sample_shape(
   else:  # key is of type PRNGKey
     rng = seed
 
-  return rng, sample_shape
+  return rng, sample_shape  # type: ignore[bad-return-type]
 
 
 def to_batch_shape_index(
