@@ -62,16 +62,20 @@ class McTest(absltest.TestCase):
       distribution = normal.Normal(
           loc=np.zeros((4, 5, 100)),
           scale=np.ones((4, 5, 100)))
+      # pytype: disable=wrong-arg-types
       mode_estimate = monte_carlo.mc_estimate_mode(
           distribution, rng_key=42, num_samples=100)
+      # pytype: enable=wrong-arg-types
       mean_mode_estimate = np.abs(np.mean(mode_estimate))
       self.assertLess(mean_mode_estimate, 1e-3)
     with self.subTest('NonScalarEventShape'):
       distribution = mvn_diag.MultivariateNormalDiag(
           loc=np.zeros((4, 5, 100)),
           scale_diag=np.ones((4, 5, 100)))
+      # pytype: disable=wrong-arg-types
       mv_mode_estimate = monte_carlo.mc_estimate_mode(
           distribution, rng_key=42, num_samples=100)
+      # pytype: enable=wrong-arg-types
       mean_mv_mode_estimate = np.abs(np.mean(mv_mode_estimate))
       self.assertLess(mean_mv_mode_estimate, 1e-1)
       # The mean of the mode-estimate of the Normal should be a lot closer
