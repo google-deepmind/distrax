@@ -40,7 +40,9 @@ class MockLinear(linear.Linear):
   """A mock linear bijector."""
 
   def __init__(self, event_dims: int):
+    # pytype: disable=wrong-arg-types  # jnp-type
     super().__init__(event_dims, batch_shape=(), dtype=float)
+    # pytype: enable=wrong-arg-types
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
