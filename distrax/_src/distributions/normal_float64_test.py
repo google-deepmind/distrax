@@ -20,7 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import normal
 import jax
-from jax.config import config as jax_config
+from jax import config as jax_config
 import jax.numpy as jnp
 
 
