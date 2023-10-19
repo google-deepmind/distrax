@@ -23,7 +23,7 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.bijectors import rational_quadratic_spline
-from jax.config import config as jax_config
+from jax import config as jax_config
 import jax.numpy as jnp
 
 

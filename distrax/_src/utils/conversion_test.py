@@ -29,7 +29,7 @@ from distrax._src.distributions.normal import Normal
 from distrax._src.distributions.transformed import Transformed
 from distrax._src.utils import conversion
 import jax
-from jax.config import config as jax_config
+from jax import config as jax_config
 import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
