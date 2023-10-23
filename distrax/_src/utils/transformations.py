@@ -258,7 +258,7 @@ def _interpret_inverse(jaxpr, consts, *args):
     # if primitive is an xla_call, get subexpressions and evaluate recursively
     call_jaxpr, params = _extract_call_jaxpr(eqn.primitive, params)
     if call_jaxpr:
-      subfuns = [jax.linear_util.wrap_init(
+      subfuns = [jax.extend.linear_util.wrap_init(
           functools.partial(_interpret_inverse, call_jaxpr, ()))]
       prim_inv = eqn.primitive
 
