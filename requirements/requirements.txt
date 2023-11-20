@@ -3,4 +3,5 @@ chex>=0.1.8
 jax>=0.1.55
 jaxlib>=0.1.67
 numpy>=1.23.0
+setuptools;python_version>="3.12"
 tensorflow-probability>=0.15.0
