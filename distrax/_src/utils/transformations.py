@@ -53,11 +53,15 @@ from absl import logging
 import jax
 import jax.numpy as jnp
 
+# pylint: disable=g-import-not-at-top
+# pytype: disable=import-error
 try:
   # jax >= 0.4.16
-  from jax.extend import linear_util as lu  # pylint: disable=g-import-not-at-top
+  from jax.extend import linear_util as lu
 except ImportError:
-  from jax import linear_util as lu  # pylint: disable=g-import-not-at-top
+  from jax import linear_util as lu
+# pytype: enable=import-error
+# pylint: enable=g-import-not-at-top
 
 
 _inverse_registry = {
