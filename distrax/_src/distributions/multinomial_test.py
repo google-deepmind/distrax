@@ -22,6 +22,7 @@ from distrax._src.distributions import multinomial
 from distrax._src.utils import equivalence
 from distrax._src.utils import math
 import jax
+import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 from scipy import stats
@@ -405,12 +406,16 @@ class MultinomialTest(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    dist_params = {
-        'logits': self.logits, 'dtype': dtype, 'total_count': self.total_count}
-    dist = self.distrax_cls(**dist_params)
-    samples = self.variant(dist.sample)(seed=self.key)
-    self.assertEqual(samples.dtype, dist.dtype)
-    chex.assert_type(samples, dtype)
+    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+      dist_params = {
+          'logits': self.logits,
+          'dtype': dtype,
+          'total_count': self.total_count,
+      }
+      dist = self.distrax_cls(**dist_params)
+      samples = self.variant(dist.sample)(seed=self.key)
+      self.assertEqual(samples.dtype, dist.dtype)
+      chex.assert_type(samples, dtype)
 
   @chex.all_variants
   def test_sample_extreme_probs(self):

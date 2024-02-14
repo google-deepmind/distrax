@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import logistic
 from distrax._src.utils import equivalence
+import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 
@@ -66,11 +67,12 @@ class Logistic(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    dist = self.distrax_cls(
-        loc=jnp.zeros((), dtype), scale=jnp.ones((), dtype))
-    samples = self.variant(dist.sample)(seed=self.key)
-    self.assertEqual(samples.dtype, dist.dtype)
-    chex.assert_type(samples, dtype)
+    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+      dist = self.distrax_cls(
+          loc=jnp.zeros((), dtype), scale=jnp.ones((), dtype))
+      samples = self.variant(dist.sample)(seed=self.key)
+      self.assertEqual(samples.dtype, dist.dtype)
+      chex.assert_type(samples, dtype)
 
   @chex.all_variants
   @parameterized.named_parameters(
