@@ -71,11 +71,12 @@ class SoftmaxTest(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    dist = self.distrax_cls(
-        logits=self.logits, temperature=self.temperature, dtype=dtype)
-    samples = self.variant(dist.sample)(seed=self.key)
-    self.assertEqual(samples.dtype, dist.dtype)
-    chex.assert_type(samples, dtype)
+    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+      dist = self.distrax_cls(
+          logits=self.logits, temperature=self.temperature, dtype=dtype)
+      samples = self.variant(dist.sample)(seed=self.key)
+      self.assertEqual(samples.dtype, dist.dtype)
+      chex.assert_type(samples, dtype)
 
   def test_jittable(self):
     super()._test_jittable((np.array([2., 4., 1., 3.]),))

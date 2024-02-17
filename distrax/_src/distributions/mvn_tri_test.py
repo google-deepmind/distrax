@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions.mvn_tri import MultivariateNormalTri
 from distrax._src.utils import equivalence
+import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 
@@ -114,13 +115,14 @@ class MultivariateNormalTriTest(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    dist_params = {
-        'loc': np.array([0., 0.], dtype),
-        'scale_tri': np.array([[1., 0.], [0., 1.]], dtype)}
-    dist = self.distrax_cls(**dist_params)
-    samples = self.variant(dist.sample)(seed=self.key)
-    self.assertEqual(samples.dtype, dist.dtype)
-    chex.assert_type(samples, dtype)
+    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+      dist_params = {
+          'loc': np.array([0., 0.], dtype),
+          'scale_tri': np.array([[1., 0.], [0., 1.]], dtype)}
+      dist = self.distrax_cls(**dist_params)
+      samples = self.variant(dist.sample)(seed=self.key)
+      self.assertEqual(samples.dtype, dist.dtype)
+      chex.assert_type(samples, dtype)
 
   @chex.all_variants
   @parameterized.named_parameters(

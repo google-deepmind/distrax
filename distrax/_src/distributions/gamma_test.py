@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import gamma
 from distrax._src.utils import equivalence
+import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 
@@ -73,11 +74,12 @@ class GammaTest(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    dist = self.distrax_cls(
-        concentration=jnp.ones((), dtype), rate=jnp.ones((), dtype))
-    samples = self.variant(dist.sample)(seed=self.key)
-    self.assertEqual(samples.dtype, dist.dtype)
-    chex.assert_type(samples, dtype)
+    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+      dist = self.distrax_cls(
+          concentration=jnp.ones((), dtype), rate=jnp.ones((), dtype))
+      samples = self.variant(dist.sample)(seed=self.key)
+      self.assertEqual(samples.dtype, dist.dtype)
+      chex.assert_type(samples, dtype)
 
   @chex.all_variants
   @parameterized.named_parameters(
