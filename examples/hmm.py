@@ -28,7 +28,7 @@ import jax
 import jax.numpy as jnp
 import optax
 import scipy.stats
-import tensorflow_probability as tfp
+import tensorflow_probability.substrates.jax as tfp
 
 
 flags.DEFINE_list("true_rates", [40, 3, 20, 50],
@@ -91,7 +91,7 @@ def build_latent_state(num_states, max_num_states, daily_change_prob):
 def make_hmm(log_rates, transition_probs, initial_state_probs):
   """Make a Hidden Markov Model with Poisson observation distribution."""
   return distrax.HMM(
-      obs_dist=tfp.substrates.jax.distributions.Poisson(log_rate=log_rates),
+      obs_dist=tfp.distributions.Poisson(log_rate=log_rates),
       trans_dist=distrax.Categorical(probs=transition_probs),
       init_dist=distrax.Categorical(probs=initial_state_probs))
 
