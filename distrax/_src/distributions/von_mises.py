@@ -177,8 +177,8 @@ class VonMises(distribution.Distribution):
     return jnp.clip(
         _von_mises_cdf(value - loc, self._concentration, dtype)
         - _von_mises_cdf(-math.pi - loc, self._concentration, dtype),
-        a_min=0.,
-        a_max=1.,
+        min=0.0,
+        max=1.0,
     )
 
   def log_cdf(self, value: EventT) -> Array:
@@ -192,8 +192,8 @@ class VonMises(distribution.Distribution):
     return jnp.clip(
         _von_mises_cdf(math.pi - loc, self._concentration, dtype)
         - _von_mises_cdf(value - loc, self._concentration, dtype),
-        a_min=0.,
-        a_max=1.,
+        min=0.0,
+        max=1.0,
     )
 
   def log_survival_function(self, value: EventT) -> Array:
@@ -236,7 +236,7 @@ def _von_mises_sample(
   r = 1. + jnp.sqrt(1 + 4 * jnp.square(conc))
   rho = (r - jnp.sqrt(2. * r)) / (2 * conc)
   s_exact = (1. + jnp.square(rho)) / (2. * rho)
-  s_approximate = 1. / jnp.clip(concentration, a_min=1e-7)
+  s_approximate = 1.0 / jnp.clip(concentration, min=1e-7)
   s = jnp.where(use_exact, s_exact, s_approximate)
 
   def loop_body(arg):
@@ -274,7 +274,7 @@ def _von_mises_sample(
           0
       )
   )
-  return jnp.sign(u) * jnp.arccos(jnp.clip(w, a_min=-1., a_max=1.))
+  return jnp.sign(u) * jnp.arccos(jnp.clip(w, min=-1.0, max=1.0))
 
 
 # Since rejection sampling does not permit autodiff, add an analytic gradient.
@@ -290,7 +290,7 @@ def _von_mises_sample_jvp(
   concentration, = primals
   dconcentration, = tangents
 
-  concentration = jnp.clip(concentration, a_min=1e-7)
+  concentration = jnp.clip(concentration, min=1e-7)
   samples = _von_mises_sample(shape, concentration, seed, dtype)
   vectorized_grad_cdf = jnp.vectorize(
       jax.grad(_von_mises_cdf, argnums=1),
@@ -493,4 +493,3 @@ tfd.RegisterKL(VonMises, VonMises.equiv_tfp_cls)(
 tfd.RegisterKL(VonMises.equiv_tfp_cls, VonMises)(
     _kl_divergence_vonmises_vonmises
 )
-
