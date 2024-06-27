@@ -163,6 +163,8 @@ def _obtain_alpha_beta(dist: BetaLike) -> Tuple[Array, Array]:
     alpha, beta = dist.alpha, dist.beta
   elif isinstance(dist, tfd.Beta):
     alpha, beta = dist.concentration1, dist.concentration0
+  else:
+    raise ValueError(f'Unsupported distribution: {type(dist)}.')
   return alpha, beta
 
 

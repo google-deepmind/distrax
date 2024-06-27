@@ -170,6 +170,8 @@ def _obtain_concentration(dist: DirichletLike) -> Array:
         (dist.concentration1, dist.concentration0), axis=-1)
   elif isinstance(dist, tfd.Dirichlet):
     concentration = dist.concentration
+  else:
+    raise ValueError(f'Unsupported distribution: {type(dist)}.')
   return concentration
 
 

@@ -168,7 +168,7 @@ class Multinomial(distribution.Distribution):
 
     def cond_func(args):
       i, _, _ = args
-      return jnp.less(i, total_count)
+      return jnp.less(i, total_count)  # pylint: disable=not-callable
 
     def body_func(args):
       i, key_i, sample_aggregator = args
@@ -233,7 +233,7 @@ class Multinomial(distribution.Distribution):
 
     def cond_func(args):
       xi, _ = args
-      return jnp.less_equal(xi, total_count)
+      return jnp.less_equal(xi, total_count)  # pylint: disable=not-callable
 
     def body_func(args):
       xi, accumulated_sum = args

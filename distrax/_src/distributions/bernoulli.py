@@ -111,7 +111,7 @@ class Bernoulli(distribution.Distribution):
     new_shape = (n,) + probs.shape
     uniform = jax.random.uniform(
         key=key, shape=new_shape, dtype=probs.dtype, minval=0., maxval=1.)
-    return jnp.less(uniform, probs).astype(self._dtype)
+    return jnp.less(uniform, probs).astype(self._dtype)  # pylint: disable=not-callable
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""

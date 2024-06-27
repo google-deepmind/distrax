@@ -66,6 +66,8 @@ def _get_dist_params(dist, batch_shape, dim, rng):
         'covariance_matrix': np.matmul(matrix, matrix_t),
     }
     tfp_dist_params = distrax_dist_params
+  else:
+    raise ValueError(f'Unsupported distribution type: {dist}')
   loc = rng.normal(size=batch_shape + (dim,))
   distrax_dist_params.update({'loc': loc})
   tfp_dist_params.update({'loc': loc})
@@ -118,6 +120,8 @@ class MultivariateNormalKLTest(parameterized.TestCase):
           elif mode == 'tfp_to_distrax':
             result1 = self.variant(getattr(dist1_tfp, method))(dist2_distrax)
             result2 = self.variant(getattr(dist2_tfp, method))(dist1_distrax)
+          else:
+            raise ValueError(f'Unsupported mode: {mode}')
           np.testing.assert_allclose(result1, expected_result1, rtol=0.03)
           np.testing.assert_allclose(result2, expected_result2, rtol=0.03)
 

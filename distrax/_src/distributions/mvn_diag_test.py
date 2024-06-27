@@ -326,6 +326,8 @@ class MultivariateNormalDiagTest(equivalence.EquivalenceTest):
       reduce_fn = lambda x: jnp.prod(x, axis=-1)
     elif function_string == 'log_cdf':
       reduce_fn = lambda x: jnp.sum(x, axis=-1)
+    else:
+      raise ValueError(f'Unsupported function: {function_string}')
     expected_result = reduce_fn(expected_result)
     self.assertion_fn(rtol=1e-3)(result, expected_result)
 

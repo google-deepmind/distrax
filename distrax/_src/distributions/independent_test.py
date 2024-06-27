@@ -46,7 +46,7 @@ class IndependentTest(parameterized.TestCase):
   @parameterized.parameters(None, 0, 1, 2)
   def test_constructor_is_jittable_given_ndims(self, ndims):
     constructor = lambda d: independent.Independent(d, ndims)
-    jax.jit(constructor)(self.base)
+    jax.jit(constructor)(self.base)  # pylint: disable=not-callable
 
   @parameterized.named_parameters(
       ('single element', 1, (3,)),

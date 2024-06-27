@@ -94,6 +94,7 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
         scale_tri)
     _check_parameters(loc, scale_tri)
 
+    num_dims = None
     if loc is not None:
       num_dims = loc.shape[-1]
     elif scale_tri is not None:
@@ -102,6 +103,7 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
     dtype = jnp.result_type(*[x for x in [loc, scale_tri] if x is not None])
 
     if loc is None:
+      assert num_dims is not None
       loc = jnp.zeros((num_dims,), dtype=dtype)
 
     if scale_tri is None:

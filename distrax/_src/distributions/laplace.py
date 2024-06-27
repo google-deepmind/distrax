@@ -37,7 +37,7 @@ def _log_cdf_laplace(norm_value: EventT) -> Array:
   lower_value = norm_value - math.log(2.0)
   exp_neg_norm_value = jnp.exp(-jnp.abs(norm_value))
   upper_value = jnp.log1p(-0.5 * exp_neg_norm_value)
-  return jnp.where(jnp.less_equal(norm_value, 0.), lower_value, upper_value)
+  return jnp.where(jnp.less_equal(norm_value, 0.0), lower_value, upper_value)  # pylint: disable=not-callable
 
 
 class Laplace(distribution.Distribution):

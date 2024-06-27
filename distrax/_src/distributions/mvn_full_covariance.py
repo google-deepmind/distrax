@@ -89,6 +89,7 @@ class MultivariateNormalFullCovariance(MultivariateNormalTri):
         conversion.as_float_array(covariance_matrix))
     _check_parameters(loc, covariance_matrix)
 
+    num_dims = None
     if loc is not None:
       num_dims = loc.shape[-1]
     elif covariance_matrix is not None:
@@ -98,6 +99,7 @@ class MultivariateNormalFullCovariance(MultivariateNormalTri):
         *[x for x in [loc, covariance_matrix] if x is not None])
 
     if loc is None:
+      assert num_dims is not None
       loc = jnp.zeros((num_dims,), dtype=dtype)
 
     if covariance_matrix is None:

@@ -147,6 +147,8 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
               jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(
                   jnp.square(scale_diag)),
               batch_shape + loc.shape[-1:] + loc.shape[-1:])
+        else:
+          raise ValueError(f'Unsupported method: {method}')
         np.testing.assert_allclose(fn(), expected_result, rtol=5e-3)
 
   @chex.all_variants(with_pmap=False)
@@ -219,6 +221,8 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
         elif mode == 'tfp_to_distrax':
           result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)
           result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)
+        else:
+          raise ValueError(f'Unsupported mode: {mode}')
         np.testing.assert_allclose(result1, expected_result1, rtol=1e-3)
         np.testing.assert_allclose(result2, expected_result2, rtol=1e-3)
 
@@ -256,6 +260,8 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
         elif mode == 'tfp_to_distrax':
           result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)
           result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)
+        else:
+          raise ValueError(f'Unsupported mode: {mode}')
         np.testing.assert_allclose(result1, expected_result1, rtol=1e-3)
         np.testing.assert_allclose(result2, expected_result2, rtol=1e-3)
 

@@ -402,7 +402,8 @@ class TransformedTest(parameterized.TestCase):
     elif mode_string == 'tfp_to_distrax':
       result_fwd = tfp_dist1.kl_divergence(distrax_dist2)
       result_inv = tfp_dist2.kl_divergence(distrax_dist1)
-
+    else:
+      raise ValueError(f'Unsupported mode: {mode_string}')
     np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=1e-2)
     np.testing.assert_allclose(result_inv, expected_result_inv, rtol=1e-2)
 

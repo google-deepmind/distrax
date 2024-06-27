@@ -398,6 +398,8 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     elif mode_string == 'tfp_to_distrax':
       comp_dist1_dist2 = getattr(tfp_dist1, function_string)(dist2)
       comp_dist2_dist1 = getattr(tfp_dist2, function_string)(dist1)
+    else:
+      raise ValueError(f'Unsupported mode: {mode_string}')
 
     # The target values (obtained with TFP-only methods) are obtained with two
     # distributions of the same class (namely, Categorical) because TFP doesn't

@@ -167,6 +167,8 @@ def _log_abs_determinant(d: MultivariateNormalLike) -> Array:
         jnp.zeros(d.event_shape, dtype=d.dtype))
   elif isinstance(d, tfd.MultivariateNormalLinearOperator):
     log_det_scale = d.scale.log_abs_determinant()
+  else:
+    raise ValueError(f'Unsupported distribution: {type(d)}.')
   return log_det_scale
 
 
@@ -176,6 +178,8 @@ def _inv_scale_operator(d: MultivariateNormalLike) -> Callable[[Array], Array]:
     inverse_fn = jax.vmap(d.scale.inverse, in_axes=-1, out_axes=-1)
   elif isinstance(d, tfd.MultivariateNormalLinearOperator):
     inverse_fn = d.scale.solve
+  else:
+    raise ValueError(f'Unsupported distribution: {type(d)}.')
   return inverse_fn
 
 
@@ -185,6 +189,8 @@ def _scale_matrix(d: MultivariateNormalLike) -> Array:
     matrix = d.scale.matrix
   elif isinstance(d, tfd.MultivariateNormalLinearOperator):
     matrix = d.scale.to_dense()
+  else:
+    raise ValueError(f'Unsupported distribution: {type(d)}.')
   return matrix
 
 

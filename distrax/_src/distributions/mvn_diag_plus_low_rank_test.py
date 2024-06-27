@@ -336,6 +336,8 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
     elif mode_string == 'tfp_to_distrax':
       result1 = self.variant(getattr(tfp_dist1, function_string))(distrax_dist2)
       result2 = self.variant(getattr(tfp_dist2, function_string))(distrax_dist1)
+    else:
+      raise ValueError(f'Unsupported mode: {mode_string}')
     self.assertion_fn(rtol=3e-3)(result1, expected_result1)
     self.assertion_fn(rtol=3e-3)(result2, expected_result2)
 

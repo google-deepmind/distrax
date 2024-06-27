@@ -137,6 +137,7 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
 
     _check_parameters(loc, scale_diag, scale_u_matrix, scale_v_matrix)
 
+    num_dims = None
     if loc is not None:
       num_dims = loc.shape[-1]
     elif scale_diag is not None:
@@ -149,6 +150,7 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
           if x is not None])
 
     if loc is None:
+      assert num_dims is not None
       loc = jnp.zeros((num_dims,), dtype=dtype)
 
     self._scale_diag = scale_diag

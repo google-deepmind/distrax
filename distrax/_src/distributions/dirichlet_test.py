@@ -204,6 +204,8 @@ class DirichletTest(equivalence.EquivalenceTest):
         elif mode_string == 'tfp_to_distrax':
           result1 = self.variant(getattr(tfp_dist1, method))(distrax_dist2)
           result2 = self.variant(getattr(tfp_dist2, method))(distrax_dist1)
+        else:
+          raise ValueError(f'Unsupported mode: {mode_string}')
         self.assertion_fn(rtol=3e-2)(result1, expected_result_1)
         self.assertion_fn(rtol=3e-2)(result2, expected_result_2)
 
@@ -223,6 +225,8 @@ class DirichletTest(equivalence.EquivalenceTest):
     elif dist2_type is beta.Beta:
       dist2_kwargs = {'alpha': rng.uniform(size=(5,)),
                       'beta': rng.uniform(size=(5,))}
+    else:
+      raise ValueError(f'Unsupported distribution: {dist2_type}')
     dist2 = dist2_type(**dist2_kwargs)
     with self.assertRaises(ValueError):
       self.variant(dist1.kl_divergence)(dist2)
