@@ -93,6 +93,12 @@ _inverse_registry = {
     jax.lax.integer_pow_p: lambda x, y: jax.lax.pow_p.bind(x, 1.0/y)
 }
 
+if hasattr(jax.lax, "square_p"):
+  _inverse_registry.update({
+      jax.lax.square_p: jax.lax.sqrt_p,
+      jax.lax.sqrt_p: jax.lax.square_p,
+      jax.lax.rsqrt_p: lambda x: 1.0 / jax.lax.square_p.bind(x),
+  })
 
 _potentially_unstable_primitives = {
     jax.lax.tanh_p: "distrax.Tanh or distrax.Inverse(distrax.Tanh)",
