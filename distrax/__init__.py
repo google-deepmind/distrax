@@ -74,6 +74,7 @@ from distrax._src.distributions.transformed import Transformed
 from distrax._src.distributions.uniform import Uniform
 from distrax._src.distributions.von_mises import VonMises
 
+
 # Utilities.
 from distrax._src.utils.conversion import as_bijector
 from distrax._src.utils.conversion import as_distribution
