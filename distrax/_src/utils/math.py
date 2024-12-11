@@ -72,7 +72,7 @@ def multiply_no_nan_jvp(
   x, y = primals
   x_dot, y_dot = tangents
   primal_out = multiply_no_nan(x, y)
-  primal_aval = jax_core.raise_to_shaped(jax_core.get_aval(primal_out))
+  primal_aval = jax_core.get_aval(primal_out)
   result_aval = primal_aval.at_least_vspace()
   tangent_out_1 = scale_maybe_symbolic(result_aval, x_dot, y)
   tangent_out_2 = scale_maybe_symbolic(result_aval, y_dot, x)
