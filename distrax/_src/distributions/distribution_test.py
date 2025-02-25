@@ -36,7 +36,7 @@ class DummyUnivariateDist(distribution.Distribution):
   @property
   def event_shape(self):
     """Shape of the events."""
-    return jnp.shape([])
+    return np.shape([])
 
 
 class DummyMultivariateDist(distribution.Distribution):
