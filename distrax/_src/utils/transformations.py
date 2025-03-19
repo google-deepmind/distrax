@@ -97,8 +97,8 @@ _inverse_registry = {
 if hasattr(jax.lax, "square_p"):
   _inverse_registry.update({
       jax.lax.square_p: jax.lax.sqrt_p,
-      jax.lax.sqrt_p: jax.lax.square_p,
-      jax.lax.rsqrt_p: lambda x: 1.0 / jax.lax.square_p.bind(x),
+      jax.lax.sqrt_p: lambda x, accuracy: jax.lax.square_p.bind(x),
+      jax.lax.rsqrt_p: lambda x, accuracy: 1.0 / jax.lax.square_p.bind(x),
   })
 
 _potentially_unstable_primitives = {
