@@ -67,7 +67,7 @@ except ImportError:
 
 _inverse_registry = {
     # unary ops
-    jax.lax.tanh_p: jax.lax.atanh_p,
+    jax.lax.tanh_p: lambda x, **kwargs: jax.lax.atanh_p.bind(x),
     jax.lax.atanh_p: jax.lax.tanh_p,
     jax.lax.sinh_p: jax.lax.asinh_p,
     jax.lax.asinh_p: jax.lax.sinh_p,
@@ -75,8 +75,8 @@ _inverse_registry = {
     jax.lax.acosh_p: jax.lax.cosh_p,
     jax.lax.exp_p: jax.lax.log_p,
     jax.lax.log_p: jax.lax.exp_p,
-    jax.lax.sqrt_p: lambda x: jax.lax.pow_p.bind(x, 2.0),
-    jax.lax.rsqrt_p: lambda x: 1.0 / jax.lax.pow_p.bind(x, 2.0),
+    jax.lax.sqrt_p: lambda x, **kwargs: jax.lax.pow_p.bind(x, 2.0),
+    jax.lax.rsqrt_p: lambda x, **kwargs: 1.0 / jax.lax.pow_p.bind(x, 2.0),
     jax.lax.neg_p: jax.lax.neg_p,
     jax.lax.log1p_p: jax.lax.expm1_p,
     jax.lax.expm1_p: jax.lax.log1p_p,
@@ -97,8 +97,8 @@ _inverse_registry = {
 if hasattr(jax.lax, "square_p"):
   _inverse_registry.update({
       jax.lax.square_p: jax.lax.sqrt_p,
-      jax.lax.sqrt_p: jax.lax.square_p,
-      jax.lax.rsqrt_p: lambda x: 1.0 / jax.lax.square_p.bind(x),
+      jax.lax.sqrt_p: lambda x, **kwargs: jax.lax.square_p.bind(x),
+      jax.lax.rsqrt_p: lambda x, **kwargs: 1.0 / jax.lax.square_p.bind(x),
   })
 
 _potentially_unstable_primitives = {
