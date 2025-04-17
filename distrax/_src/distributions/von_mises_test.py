@@ -28,6 +28,8 @@ from scipy import stats as sp_stats
 import scipy.special
 from tensorflow_probability.substrates import jax as tfp
 
+jax.config.update('jax_threefry_partitionable', False)
+
 
 class VonMisesTest(equivalence.EquivalenceTest):
 
