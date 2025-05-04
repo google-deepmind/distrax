@@ -63,7 +63,7 @@ def _is_jax_data(x):
 
   # Otherwise, try to make it into a tracer. If it succeeds, then it's JAX data.
   try:
-    jax.interpreters.xla.abstractify(x)
+    jax.core.get_aval(x)
     return True
   except TypeError:
     return False
