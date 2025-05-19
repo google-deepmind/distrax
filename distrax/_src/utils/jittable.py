@@ -61,9 +61,5 @@ def _is_jax_data(x):
   if isinstance(x, (bool, int, float)) or x is None:
     return False
 
-  # Otherwise, try to make it into a tracer. If it succeeds, then it's JAX data.
-  try:
-    jax.interpreters.xla.abstractify(x)
-    return True
-  except TypeError:
-    return False
+  # Return True if JAX considers `x` a valid JAX type.
+  return jax.core.valid_jaxtype(x)
