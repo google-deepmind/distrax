@@ -279,7 +279,7 @@ def _interpret_inverse(jaxpr, consts, *args):
           functools.partial(_interpret_inverse, call_jaxpr, ()))]
       prim_inv = eqn.primitive
 
-    elif eqn.primitive is jax.experimental.pjit.pjit_p:
+    elif eqn.primitive is jex.core.primitives.jit_p:
       pjit_jaxpr = params.pop("jaxpr")
       partial_inverse = functools.partial(_interpret_inverse, pjit_jaxpr.jaxpr,
                                           pjit_jaxpr.consts)
