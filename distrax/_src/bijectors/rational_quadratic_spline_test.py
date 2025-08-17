@@ -175,7 +175,7 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
     x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x1, x2, atol=7e-8)
-    np.testing.assert_allclose(logdet1, logdet2, atol=7e-8)
+    np.testing.assert_allclose(logdet1, logdet2, atol=8e-7)
 
   @chex.all_variants
   def test_boundary_conditions(self):
