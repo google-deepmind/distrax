@@ -217,7 +217,7 @@ class BijectorFromTFPTest(parameterized.TestCase):
   def test_access_properties_tfp_bijector(self):
     tfp_bij = self._test_bijectors['BatchedChain']
     bij = bijector_from_tfp.BijectorFromTFP(tfp_bij)
-    # Access the attribute `bijectors`
+    # Access the attribute `bijectors`.
     np.testing.assert_allclose(
         bij.bijectors[0].shift, tfp_bij.bijectors[0].shift, atol=1e-8)
     np.testing.assert_allclose(
