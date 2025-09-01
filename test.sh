@@ -24,13 +24,29 @@ source "${VENV_DIR}/bin/activate"
 python --version
 
 # Install dependencies.
-pip install --upgrade pip setuptools wheel
-pip install flake8 pytest-xdist pytest-forked pylint pylint-exit
-pip install -r requirements/requirements.txt
-pip install -r requirements/requirements-tests.txt
+python3 -m pip install --upgrade pip uv
+python3 -m uv pip install --upgrade pip setuptools wheel
+python3 -m uv pip install --upgrade flake8 pytest-xdist pylint pylint-exit
+python3 -m uv pip install --editable ".[test]"
+
+# Install the requested JAX version
+if [ "$JAX_VERSION" = "" ]; then
+  : # use version installed in requirements above
+elif [ "$JAX_VERSION" = "newest" ]; then
+  pip install -U jax jaxlib
+elif [ "$JAX_VERSION" = "nightly" ]; then
+  pip install -U --pre jax jaxlib --extra-index-url https://us-python.pkg.dev/ml-oss-artifacts-published/jax-public-nightly-artifacts-registry/simple/
+else
+  pip install "jax==${JAX_VERSION}" "jaxlib==${JAX_VERSION}"
+fi
+
+# Ensure distrax was not installed by one of the dependencies above,
+# since if it is, the tests below will be run against that version instead of
+# the branch build.
+python3 -m uv pip uninstall distrax
 
 # Lint with flake8.
-flake8 `find distrax -name '*.py' | xargs` --count --select=E9,F63,F7,F82,E225,E251 --show-source --statistics
+python3 -m  flake8 `find distrax -name '*.py' | xargs` --count --select=E9,F63,F7,F82,E225,E251 --show-source --statistics
 
 # Lint with pylint.
 # Fail on errors, warning, conventions and refactoring messages.
@@ -48,21 +64,18 @@ pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0212,W022
 rm .pylintrc
 
 # Build the package.
-python setup.py sdist
-pip wheel --verbose --no-deps --no-clean dist/distrax*.tar.gz
-pip install distrax*.whl
-
-# Use TFP nightly builds in tests.
-pip uninstall tensorflow-probability -y
-pip install tfp-nightly
+python3 -m uv pip install build
+python3 -m build
+python3 -m pip wheel --no-deps dist/distrax-*.tar.gz
+python3 -m pip install distrax-*.whl
 
 # Check types with pytype.
 # Note: pytype does not support 3.11 as of 25.06.23
 # See https://github.com/google/pytype/issues/1308
 if [ `python -c 'import sys; print(sys.version_info.minor)'` -lt 11 ];
 then
-  pip install pytype
-  pytype `find distrax/_src/ -name "*py" | xargs` -k
+  python3 -m pip install pytype
+  python3 -m pytype "distrax" -j auto --keep-going --disable import-error
 fi;
 
 # Run tests using pytest.
@@ -70,13 +83,12 @@ fi;
 mkdir _testing && cd _testing
 
 # Main tests.
-
 # Disable JAX optimizations to speed up tests.
 export JAX_DISABLE_MOST_OPTIMIZATIONS=True
-pytest -n"$(grep -c ^processor /proc/cpuinfo)" --forked `find ../distrax/_src/ -name "*_test.py" | sort` -k 'not _float64_test'
+python3 -m pytest --numprocesses auto --pyargs distrax -k 'not _float64_test'
 
 # Isolate tests that set double precision.
-pytest -n"$(grep -c ^processor /proc/cpuinfo)" --forked `find ../distrax/_src/ -name "*_test.py" | sort` -k '_float64_test'
+python3 -m pytest --numprocesses auto --pyargs distrax -k '_float64_test'
 unset JAX_DISABLE_MOST_OPTIMIZATIONS
 
 cd ..

@@ -1,5 +1,0 @@
-tensorflow>=2.4.0
-tensorflow-datasets>=4.2.0
-dm-haiku>=0.0.14
-flax>=0.5.3
-optax>=0.2.5
