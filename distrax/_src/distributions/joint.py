@@ -14,7 +14,7 @@
 # ==============================================================================
 """Distrax joint distribution over a tree of distributions."""
 
-from typing import Tuple, TypeVar
+from typing import Any, Callable, Tuple, TypeVar
 
 import chex
 from distrax._src.distributions import distribution
@@ -22,13 +22,27 @@ from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
 from tensorflow_probability.substrates import jax as tfp
-import tree
-
-tfd = tfp.distributions
 
 
 DistributionT = TypeVar(
-    'DistributionT', bound=distribution.NestedT[conversion.DistributionLike])
+    'DistributionT', bound=distribution.NestedT[conversion.DistributionLike]
+)
+
+
+def _is_leaf_distribution(x: Any) -> bool:
+  return isinstance(x, conversion.DistributionLike)
+
+
+def _map_up_to_distribution(
+    fn: Callable[..., Any], distributions: Any, *xs: Any
+) -> Any:
+  """Maps `fn` over `x` up to `tree` to determine leaves."""
+  return jax.tree.map(fn, distributions, *xs, is_leaf=_is_leaf_distribution)
+
+
+def _leaves_up_to_distribution(distributions: Any) -> Any:
+  """Flattens `distributions` up to `tree` to determine leaves."""
+  return jax.tree.leaves(distributions, is_leaf=_is_leaf_distribution)
 
 
 class Joint(distribution.Distribution):
@@ -50,52 +64,65 @@ class Joint(distribution.Distribution):
       distributions: Tree of distributions that must have the same batch shape.
     """
     super().__init__()
-    self._distributions = tree.map_structure(conversion.as_distribution,
-                                             distributions)
+    self._distributions: DistributionT = _map_up_to_distribution(
+        conversion.as_distribution, distributions
+    )
+    self._distributions_treedef = jax.tree.structure(
+        self._distributions,
+        is_leaf=_is_leaf_distribution,
+    )
+    self._distributions_leaves = _leaves_up_to_distribution(self._distributions)
+
     batch_shape = None
-    first_path = None
-    for path, dist in tree.flatten_with_path(self._distributions):
+    for path, dist in jax.tree.leaves_with_path(
+        self._distributions,
+        is_leaf=_is_leaf_distribution,
+        is_leaf_takes_path=False,
+    ):
       batch_shape = batch_shape or dist.batch_shape
       first_path = '.'.join(map(str, path))
       if dist.batch_shape != batch_shape:
         path = '.'.join(map(str, path))
         raise ValueError(
-            f'Joint distributions must have the same batch shape, but '
+            'Joint distributions must have the same batch shape, but '
             f'distribution "{dist.name}" at location {path} had batch shape '
             f'{dist.batch_shape} which is not equal to the batch shape '
-            f'{batch_shape} of the distribution at location {first_path}.')
+            f'{batch_shape} of the distribution at location {first_path}.'
+        )
 
-  def _sample_n(
-      self,
-      key: chex.PRNGKey,
-      n: int) -> distribution.EventT:
-    keys = list(jax.random.split(key, len(tree.flatten(self._distributions))))
-    keys = tree.unflatten_as(self._distributions, keys)
-    return tree.map_structure(lambda d, k: d.sample(seed=k, sample_shape=n),
-                              self._distributions, keys)
+  def _sample_n(self, key: chex.PRNGKey, n: int) -> distribution.EventT:
+    keys = list(jax.random.split(key, len(self._distributions_leaves)))
+    keys = self._distributions_treedef.unflatten(keys)
+    return _map_up_to_distribution(
+        lambda d, k: d.sample(seed=k, sample_shape=n), self._distributions, keys
+    )
 
   def _sample_n_and_log_prob(
-      self,
-      key: chex.PRNGKey,
-      n: int) -> Tuple[distribution.EventT, chex.Array]:
-    keys = list(jax.random.split(key, len(tree.flatten(self._distributions))))
-    keys = tree.unflatten_as(self._distributions, keys)
-    samples_and_log_probs = tree.map_structure(
+      self, key: chex.PRNGKey, n: int
+  ) -> Tuple[distribution.EventT, chex.Array]:
+    keys = list(jax.random.split(key, len(self._distributions_leaves)))
+    keys = self._distributions_treedef.unflatten(keys)
+    samples_and_log_probs = _map_up_to_distribution(
         lambda d, k: d.sample_and_log_prob(seed=k, sample_shape=n),
-        self._distributions, keys)
-    samples = tree.map_structure_up_to(
-        self._distributions, lambda p: p[0], samples_and_log_probs)
-    log_probs = tree.map_structure_up_to(
-        self._distributions, lambda p: p[1], samples_and_log_probs)
-    log_probs = jnp.stack(tree.flatten(log_probs))
+        self._distributions,
+        keys,
+    )
+    samples = _map_up_to_distribution(
+        lambda _, p: p[0], self._distributions, samples_and_log_probs
+    )
+    log_probs = _map_up_to_distribution(
+        lambda _, p: p[1], self._distributions, samples_and_log_probs
+    )
+    log_probs = jnp.stack(jax.tree.leaves(log_probs))
     log_probs = jnp.sum(log_probs, axis=0)
     return samples, log_probs
 
   def log_prob(self, value: distribution.EventT) -> chex.Array:
     """Compute the total log probability of the distributions in the tree."""
-    log_probs = tree.map_structure(lambda dist, value: dist.log_prob(value),
-                                   self._distributions, value)
-    log_probs = jnp.stack(tree.flatten(log_probs))
+    log_probs = _map_up_to_distribution(
+        lambda dist, value: dist.log_prob(value), self._distributions, value
+    )
+    log_probs = jnp.stack(jax.tree.leaves(log_probs))
     return jnp.sum(log_probs, axis=0)
 
   @property
@@ -104,49 +131,74 @@ class Joint(distribution.Distribution):
 
   @property
   def event_shape(self) -> distribution.ShapeT:
-    return tree.map_structure(lambda dist: dist.event_shape,
-                              self._distributions)
+    return _map_up_to_distribution(
+        lambda dist: dist.event_shape, self._distributions
+    )
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
-    return tree.flatten(self._distributions)[0].batch_shape
+    return self._distributions_leaves[0].batch_shape
 
   @property
   def dtype(self) -> distribution.DTypeT:
-    return tree.map_structure(lambda dist: dist.dtype, self._distributions)
+    return _map_up_to_distribution(lambda dist: dist.dtype, self._distributions)
 
   def entropy(self) -> chex.Array:
-    return sum(dist.entropy() for dist in tree.flatten(self._distributions))
+    return sum(dist.entropy() for dist in self._distributions_leaves)
 
   def log_cdf(self, value: distribution.EventT) -> chex.Array:
-    return sum(dist.log_cdf(v)
-               for dist, v in zip(tree.flatten(self._distributions),
-                                  tree.flatten(value)))
+    return sum(
+        dist.log_cdf(v)
+        for dist, v in zip(self._distributions_leaves, jax.tree.leaves(value))
+    )
 
   def mean(self) -> distribution.EventT:
     """Calculates the mean."""
-    return tree.map_structure(lambda dist: dist.mean(), self._distributions)
+    return _map_up_to_distribution(
+        lambda dist: dist.mean(), self._distributions
+    )
 
   def median(self) -> distribution.EventT:
     """Calculates the median."""
-    return tree.map_structure(lambda dist: dist.median(), self._distributions)
+    return _map_up_to_distribution(
+        lambda dist: dist.median(), self._distributions
+    )
 
   def mode(self) -> distribution.EventT:
     """Calculates the mode."""
-    return tree.map_structure(lambda dist: dist.mode(), self._distributions)
+    return _map_up_to_distribution(
+        lambda dist: dist.mode(), self._distributions
+    )
 
   def __getitem__(self, index) -> 'Joint':
     """See `Distribution.__getitem__`."""
-    return Joint(tree.map_structure(lambda dist: dist[index],
-                                    self._distributions))
+    return Joint(
+        _map_up_to_distribution(lambda dist: dist[index], self._distributions)
+    )
 
 
 def _kl_divergence_joint_joint(
-    dist1: Joint, dist2: Joint, *unused_args, **unused_kwargs) -> chex.Array:
-  tree.assert_same_structure(
-      dist1.distributions, dist2.distributions, check_types=False)
-  return sum(inner1.kl_divergence(inner2)
-             for inner1, inner2 in zip(tree.flatten(dist1.distributions),
-                                       tree.flatten(dist2.distributions)))
+    dist1: Joint, dist2: Joint, *unused_args, **unused_kwargs
+) -> chex.Array:
+  """Calculates the KL divergence between two Joint distributions."""
+  treedef1 = jax.tree.structure(
+      dist1.distributions, is_leaf=_is_leaf_distribution
+  )
+  treedef2 = jax.tree.structure(
+      dist2.distributions, is_leaf=_is_leaf_distribution
+  )
+  if treedef1 != treedef2:
+    raise ValueError(
+        'Joint distributions must have the same tree structure, but\n'
+        f'{treedef1=}\n{treedef2=}.'
+    )
+  return sum(
+      inner1.kl_divergence(inner2)
+      for inner1, inner2 in zip(
+          _leaves_up_to_distribution(dist1.distributions),
+          _leaves_up_to_distribution(dist2.distributions),
+      )
+  )
 
-tfd.RegisterKL(Joint, Joint)(_kl_divergence_joint_joint)
+
+tfp.distributions.RegisterKL(Joint, Joint)(_kl_divergence_joint_joint)

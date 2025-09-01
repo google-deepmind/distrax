@@ -18,13 +18,14 @@ from absl.testing import absltest
 from absl.testing import parameterized
 import chex
 from distrax._src.distributions.categorical import Categorical
+from distrax._src.distributions.joint import _leaves_up_to_distribution
+from distrax._src.distributions.joint import _map_up_to_distribution
 from distrax._src.distributions.joint import Joint
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
 from distrax._src.distributions.normal import Normal
 import jax
 import jax.numpy as jnp
 import numpy as np
-import tree
 
 
 def _make_nested_distributions_and_inputs(batch_shape=None, shift=0.0):
@@ -38,8 +39,10 @@ def _make_nested_distributions_and_inputs(batch_shape=None, shift=0.0):
           Normal(np.array(2) + shift, np.array(1) + shift),
           Normal(np.array(5) + shift, np.array(4) + shift),
       ),
-      multivariate=MultivariateNormalDiag(np.array([5, 6, 7]) + shift,
-                                          np.array([3, 3, 3]) + shift))
+      multivariate=MultivariateNormalDiag(
+          np.array([5, 6, 7]) + shift, np.array([3, 3, 3]) + shift
+      ),
+  )
 
   inputs = dict(
       categoricals=[
@@ -51,9 +54,11 @@ def _make_nested_distributions_and_inputs(batch_shape=None, shift=0.0):
           np.array(3.1),
           np.array(4.2),
       ),
-      multivariate=np.array([5.1, 5.2, 5.3]))
+      multivariate=np.array([5.1, 5.2, 5.3]),
+  )
 
   if isinstance(batch_shape, tuple):
+
     def _add_batch_shape_to_tensor(x):
       for dim in reversed(batch_shape):
         x = jnp.repeat(x[None, ...], dim, axis=0)
@@ -63,15 +68,20 @@ def _make_nested_distributions_and_inputs(batch_shape=None, shift=0.0):
       if isinstance(d, Categorical):
         return Categorical(_add_batch_shape_to_tensor(d.logits_parameter()))
       elif isinstance(d, Normal):
-        return Normal(_add_batch_shape_to_tensor(d.loc),
-                      _add_batch_shape_to_tensor(d.scale))
+        return Normal(
+            _add_batch_shape_to_tensor(d.loc),
+            _add_batch_shape_to_tensor(d.scale),
+        )
       elif isinstance(d, MultivariateNormalDiag):
-        return MultivariateNormalDiag(_add_batch_shape_to_tensor(d.loc),
-                                      _add_batch_shape_to_tensor(d.scale_diag))
+        return MultivariateNormalDiag(
+            _add_batch_shape_to_tensor(d.loc),
+            _add_batch_shape_to_tensor(d.scale_diag),
+        )
 
-    distributions = tree.map_structure(_add_batch_shape_to_distribution,
-                                       distributions)
-    inputs = tree.map_structure(_add_batch_shape_to_tensor, inputs)
+    distributions = _map_up_to_distribution(
+        _add_batch_shape_to_distribution, distributions
+    )
+    inputs = jax.tree.map(_add_batch_shape_to_tensor, inputs)
 
   return distributions, inputs
 
@@ -81,18 +91,25 @@ class JointTest(parameterized.TestCase):
   @chex.all_variants
   @parameterized.named_parameters(
       ('categorical', Categorical, (np.array([0, 1, 2]),), np.array(0)),
-      ('normal', Normal, (np.array([0, 1, 2]), np.array([1, 2, 3])),
-       np.array([0, 0, 0])),
-      ('mvn', MultivariateNormalDiag,
-       (np.array([[0, 1, 2], [3, 4, 5]]), np.array([[1, 2, 3], [4, 5, 6]])),
-       np.array([[0, 0, 0], [0, 0, 0]])),
+      (
+          'normal',
+          Normal,
+          (np.array([0, 1, 2]), np.array([1, 2, 3])),
+          np.array([0, 0, 0]),
+      ),
+      (
+          'mvn',
+          MultivariateNormalDiag,
+          (np.array([[0, 1, 2], [3, 4, 5]]), np.array([[1, 2, 3], [4, 5, 6]])),
+          np.array([[0, 0, 0], [0, 0, 0]]),
+      ),
   )
   def test_single_distribution(self, fn, params, x):
     dist = fn(*params)
     joint = Joint(dist)
 
     key = jax.random.PRNGKey(0)
-    subkey, = jax.random.split(key, 1)
+    (subkey,) = jax.random.split(key, 1)
 
     with self.subTest('sample'):
       actual = self.variant(joint.sample)(seed=key)
@@ -106,7 +123,8 @@ class JointTest(parameterized.TestCase):
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
-          seed=key)
+          seed=key
+      )
       expected_sample, expected_log_prob = dist.sample_and_log_prob(seed=subkey)
       np.testing.assert_allclose(actual_sample, expected_sample, rtol=3e-5)
       np.testing.assert_allclose(actual_log_prob, expected_log_prob, rtol=3e-5)
@@ -115,7 +133,8 @@ class JointTest(parameterized.TestCase):
   def test_distribution_tuple(self):
     distributions = (
         Categorical(np.array([0, 1, 2])),
-        MultivariateNormalDiag(np.array([1, 2, 3]), np.array([2, 3, 4])))
+        MultivariateNormalDiag(np.array([1, 2, 3]), np.array([2, 3, 4])),
+    )
     inputs = (np.array(0), np.array([0.1, 0.2, 0.3]))
     joint = Joint(distributions)
 
@@ -137,7 +156,8 @@ class JointTest(parameterized.TestCase):
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
-          seed=key)
+          seed=key
+      )
       assert isinstance(actual_sample, tuple)
       samples = []
       log_probs = []
@@ -155,7 +175,8 @@ class JointTest(parameterized.TestCase):
   def test_distribution_list(self):
     distributions = [
         Categorical(np.array([0, 1, 2])),
-        MultivariateNormalDiag(np.array([1, 2, 3]), np.array([2, 3, 4]))]
+        MultivariateNormalDiag(np.array([1, 2, 3]), np.array([2, 3, 4])),
+    ]
     inputs = [np.array(0), np.array([0.1, 0.2, 0.3])]
     joint = Joint(distributions)
 
@@ -177,7 +198,8 @@ class JointTest(parameterized.TestCase):
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
-          seed=key)
+          seed=key
+      )
       assert isinstance(actual_sample, list)
       expected_sample = []
       log_probs = []
@@ -196,7 +218,9 @@ class JointTest(parameterized.TestCase):
         Categorical(np.array([[0, 1, 2], [3, 4, 5]])),
         MultivariateNormalDiag(
             np.array([[0, 1, 2, 3, 4], [2, 3, 4, 5, 6]]),
-            np.array([[1, 2, 3, 5, 6], [2, 3, 4, 5, 6]]))]
+            np.array([[1, 2, 3, 5, 6], [2, 3, 4, 5, 6]]),
+        ),
+    ]
     inputs = [np.array([0, 1]), np.zeros((2, 5))]
     joint = Joint(distributions)
     assert joint.batch_shape == distributions[0].batch_shape
@@ -223,7 +247,8 @@ class JointTest(parameterized.TestCase):
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
-          seed=key)
+          seed=key
+      )
       assert isinstance(actual_sample, list)
       assert actual_sample[0].shape == (2,)
       assert actual_sample[1].shape == (2, 5)
@@ -254,23 +279,24 @@ class JointTest(parameterized.TestCase):
       assert isinstance(actuals['normals'], tuple)
       assert isinstance(actuals['multivariate'], jnp.ndarray)
 
-      flat_actuals = tree.flatten(actuals)
-      flat_dists = tree.flatten(distributions)
+      flat_actuals = jax.tree.leaves(actuals)
+      flat_dists = _leaves_up_to_distribution(distributions)
       for actual, dist, subkey in zip(flat_actuals, flat_dists, subkeys):
         expected = dist.sample(seed=subkey)
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
       actual = self.variant(joint.log_prob)(inputs)
-      flat_dists = tree.flatten(distributions)
-      flat_inputs = tree.flatten(inputs)
+      flat_dists = _leaves_up_to_distribution(distributions)
+      flat_inputs = jax.tree.leaves(inputs)
       log_probs = [dist.log_prob(x) for dist, x in zip(flat_dists, flat_inputs)]
       expected = sum(log_probs)
       np.testing.assert_array_equal(actual, expected)
 
     with self.subTest('sample_and_log_prob'):
       actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
-          seed=key)
+          seed=key
+      )
       assert isinstance(actual_sample, dict)
       assert isinstance(actual_sample['categoricals'], list)
       assert isinstance(actual_sample['normals'], tuple)
@@ -278,13 +304,13 @@ class JointTest(parameterized.TestCase):
 
       expected_sample = []
       log_probs = []
-      flat_dists = tree.flatten(distributions)
+      flat_dists = _leaves_up_to_distribution(distributions)
       for dist, subkey in zip(flat_dists, subkeys):
         sample, log_prob = dist.sample_and_log_prob(seed=subkey)
         expected_sample.append(sample)
         log_probs.append(log_prob)
       expected_log_prob = sum(log_probs)
-      flat_actuals = tree.flatten(actual_sample)
+      flat_actuals = jax.tree.leaves(actual_sample)
       for actual, expected in zip(flat_actuals, expected_sample):
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
       np.testing.assert_allclose(actual_log_prob, expected_log_prob, rtol=1e-6)
@@ -294,7 +320,7 @@ class JointTest(parameterized.TestCase):
     distributions, _ = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
     actual = self.variant(joint.entropy)()
-    flat_dists = tree.flatten(distributions)
+    flat_dists = _leaves_up_to_distribution(distributions)
     expected = sum(dist.entropy() for dist in flat_dists)
     np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
@@ -303,9 +329,8 @@ class JointTest(parameterized.TestCase):
     distributions, _ = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
     actual = self.variant(joint.mode)()
-    expected = tree.map_structure(lambda d: d.mode(), distributions)
-    for actual, expected in zip(tree.flatten(actual), tree.flatten(expected)):
-      np.testing.assert_array_equal(actual, expected)
+    expected = _map_up_to_distribution(lambda d: d.mode(), distributions)
+    chex.assert_trees_all_equal(actual, expected)
 
   @chex.all_variants(with_pmap=False)
   def test_mean(self):
@@ -313,9 +338,8 @@ class JointTest(parameterized.TestCase):
     del distributions['categoricals']  # Mean is not defined for these.
     joint = Joint(distributions)
     actual = self.variant(joint.mean)()
-    expected = tree.map_structure(lambda d: d.mean(), distributions)
-    for actual, expected in zip(tree.flatten(actual), tree.flatten(expected)):
-      np.testing.assert_array_equal(actual, expected)
+    expected = _map_up_to_distribution(lambda d: d.mean(), distributions)
+    chex.assert_trees_all_equal(actual, expected)
 
   @chex.all_variants(with_pmap=False)
   def test_median(self):
@@ -323,9 +347,8 @@ class JointTest(parameterized.TestCase):
     del distributions['categoricals']  # Median is not defined for these.
     joint = Joint(distributions)
     actual = self.variant(joint.median)()
-    expected = tree.map_structure(lambda d: d.median(), distributions)
-    for actual, expected in zip(tree.flatten(actual), tree.flatten(expected)):
-      np.testing.assert_array_equal(actual, expected)
+    expected = _map_up_to_distribution(lambda d: d.median(), distributions)
+    chex.assert_trees_all_equal(actual, expected)
 
   @chex.all_variants
   def test_kl_divergence(self):
@@ -337,7 +360,9 @@ class JointTest(parameterized.TestCase):
     actual = self.variant(joint_a.kl_divergence)(joint_b)
 
     kls = []
-    for dist_a, dist_b in zip(tree.flatten(dists_a), tree.flatten(dists_b)):
+    for dist_a, dist_b in zip(
+        _leaves_up_to_distribution(dists_a), _leaves_up_to_distribution(dists_b)
+    ):
       kls.append(dist_a.kl_divergence(dist_b))
     expected = sum(kls)
 
@@ -348,31 +373,33 @@ class JointTest(parameterized.TestCase):
     distributions, inputs = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
     actual = self.variant(joint.log_cdf)(inputs)
-    flat_dists = tree.flatten(distributions)
-    flat_inputs = tree.flatten(inputs)
+    flat_dists = _leaves_up_to_distribution(distributions)
+    flat_inputs = jax.tree.leaves(inputs)
     expected = sum(dist.log_cdf(x) for dist, x in zip(flat_dists, flat_inputs))
     np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
   def test_distributions_property(self):
     distributions, _ = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
-    tree.assert_same_structure(joint.distributions, distributions)
+    chex.assert_trees_all_equal_structs(joint.distributions, distributions)
 
   def test_event_shape_property(self):
     distributions, _ = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
     all_event_shapes = joint.event_shape
-    for dist, event_shape in zip(tree.flatten(distributions),
-                                 tree.flatten_up_to(distributions,
-                                                    all_event_shapes)):
+
+    def _test_leaf(dist, event_shape):
       np.testing.assert_equal(dist.event_shape, event_shape)
+
+    _map_up_to_distribution(_test_leaf, distributions, all_event_shapes)
 
   def test_dtype_property(self):
     distributions, _ = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
     all_dtypes = joint.dtype
-    for dist, dtype in zip(tree.flatten(distributions),
-                           tree.flatten(all_dtypes)):
+    for dist, dtype in zip(
+        _leaves_up_to_distribution(distributions), jax.tree.leaves(all_dtypes)
+    ):
       np.testing.assert_equal(dist.dtype, dtype)
 
   @chex.all_variants
@@ -388,8 +415,9 @@ class JointTest(parameterized.TestCase):
   )
   def test_indexing(self, batch_shape, index):
     distributions, inputs = _make_nested_distributions_and_inputs(
-        batch_shape=batch_shape)
-    inputs = tree.map_structure(lambda x: x[index], inputs)
+        batch_shape=batch_shape
+    )
+    inputs = jax.tree.map(lambda x: x[index], inputs)
 
     joint = Joint(distributions)
     joint_indexed = joint[index]
@@ -398,47 +426,64 @@ class JointTest(parameterized.TestCase):
     subkeys = jax.random.split(key, 6)
 
     with self.subTest('batch shape'):
-      for dist, indexed in zip(tree.flatten(distributions),
-                               tree.flatten(joint_indexed.distributions)):
+      for dist, indexed in zip(
+          _leaves_up_to_distribution(distributions),
+          _leaves_up_to_distribution(joint_indexed.distributions),
+      ):
         assert dist[index].batch_shape == indexed.batch_shape
 
     with self.subTest('event shape'):
-      for dist, indexed in zip(tree.flatten(distributions),
-                               tree.flatten(joint_indexed.distributions)):
+      for dist, indexed in zip(
+          _leaves_up_to_distribution(distributions),
+          _leaves_up_to_distribution(joint_indexed.distributions),
+      ):
         assert dist[index].event_shape == indexed.event_shape
 
     with self.subTest('sample'):
       all_samples = self.variant(joint_indexed.sample)(seed=key)
-      for dist, subkey, actual in zip(tree.flatten(distributions),
-                                      subkeys,
-                                      tree.flatten(all_samples)):
+      for dist, subkey, actual in zip(
+          _leaves_up_to_distribution(distributions),
+          subkeys,
+          jax.tree.leaves(all_samples),
+      ):
         expected = dist[index].sample(seed=subkey)
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     with self.subTest('sample_and_log_prob'):
       actual_samples, actual_log_probs = self.variant(
-          joint_indexed.sample_and_log_prob)(seed=key)
+          joint_indexed.sample_and_log_prob
+      )(seed=key)
       expected_outputs = [
           dist[index].sample_and_log_prob(seed=subkey)
-          for dist, subkey in zip(tree.flatten(distributions), subkeys)]
+          for dist, subkey in zip(
+              _leaves_up_to_distribution(distributions), subkeys
+          )
+      ]
       expected_samples = [sample for sample, _ in expected_outputs]
       expected_log_probs = sum(lp for _, lp in expected_outputs)
-      for actual, expected in zip(tree.flatten(actual_samples),
-                                  expected_samples):
+      for actual, expected in zip(
+          jax.tree.leaves(actual_samples), expected_samples
+      ):
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
       np.testing.assert_allclose(
-          actual_log_probs, expected_log_probs, rtol=1e-6)
+          actual_log_probs, expected_log_probs, rtol=1e-6
+      )
 
     with self.subTest('log_prob'):
       actual = self.variant(joint_indexed.log_prob)(inputs)
-      expected = sum(dist[index].log_prob(x) for dist, x in zip(
-          tree.flatten(distributions), tree.flatten(inputs)))
+      expected = sum(
+          dist[index].log_prob(x)
+          for dist, x in zip(
+              _leaves_up_to_distribution(distributions), jax.tree.leaves(inputs)
+          )
+      )
       np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
   def test_raise_on_mismatched_batch_shape(self):
     distributions = dict(
         unbatched=Categorical(np.zeros((3,))),
-        batched=Normal(np.zeros((3, 4, 5)), np.ones((3, 4, 5))))
+        batched=Normal(np.zeros((3, 4, 5)), np.ones((3, 4, 5))),
+    )
 
     with self.assertRaises(ValueError):
       Joint(distributions)
@@ -449,7 +494,8 @@ class JointTest(parameterized.TestCase):
     incompatible = dict(
         categoricals=distributions['normals'],
         normals=distributions['categoricals'],
-        multivariate=distributions['multivariate'])
+        multivariate=distributions['multivariate'],
+    )
 
     joint_a = Joint(distributions)
     joint_b = Joint(incompatible)

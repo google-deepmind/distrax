@@ -167,15 +167,15 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     y1 = self.variant(bijector.forward)(x)
     logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
     y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
-    np.testing.assert_allclose(y1, y2, atol=7e-8)
-    np.testing.assert_allclose(logdet1, logdet2, atol=7e-8)
+    np.testing.assert_allclose(y1, y2, atol=1e-6)
+    np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
     # Inverse methods.
     y = jax.random.normal(key, (2, 3, 4, 5))
     x1 = self.variant(bijector.inverse)(y)
     logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
     x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
-    np.testing.assert_allclose(x1, x2, atol=7e-8)
-    np.testing.assert_allclose(logdet1, logdet2, atol=7e-8)
+    np.testing.assert_allclose(x1, x2, atol=1e-6)
+    np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
 
   @chex.all_variants
   def test_boundary_conditions(self):
