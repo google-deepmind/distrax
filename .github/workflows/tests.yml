@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: "Pytest ${{ matrix.python-version }} on ${{ matrix.os }}"
+    name: "Pytest ${{ matrix.python-version }} on ${{ matrix.os }} jax=${{ matrix.jax-version}}"
     runs-on: "${{ matrix.os }}"
 
     strategy:
