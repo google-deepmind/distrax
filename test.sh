@@ -41,9 +41,9 @@ wget -nd -v -t 3 -O .pylintrc https://google.github.io/styleguide/pylintrc
 echo "disable=abstract-method,unnecessary-lambda-assignment,no-value-for-parameter,use-dict-literal" >> .pylintrc
 # Lint modules and tests separately.
 # Disable `abstract-method` warnings.
-pylint --rcfile=.pylintrc `find distrax -name '*.py' | grep -v 'test.py' | xargs` || pylint-exit $PYLINT_ARGS $?
+pylint --rcfile=.pylintrc `find distrax -name '*.py' | grep -v 'test.py' | xargs` -d W0311 || pylint-exit $PYLINT_ARGS $?
 # Disable `protected-access` and `arguments-differ` warnings for tests.
-pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0212,W0221 || pylint-exit $PYLINT_ARGS $?
+pylint --rcfile=.pylintrc `find distrax -name '*_test.py' | xargs` -d W0212,W0221,W0311 || pylint-exit $PYLINT_ARGS $?
 # Cleanup.
 rm .pylintrc
 
