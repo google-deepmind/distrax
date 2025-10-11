@@ -19,6 +19,7 @@ from absl.testing import parameterized
 
 import chex
 from distrax._src.distributions.mvn_diag_plus_low_rank import MultivariateNormalDiagPlusLowRank
+from distrax._src.utils import compat
 from distrax._src.utils import equivalence
 
 import jax
@@ -181,7 +182,7 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+    with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist_params = {
           'loc': np.array([0., 0.], dtype),
           'scale_diag': np.array([1., 1.], dtype)}

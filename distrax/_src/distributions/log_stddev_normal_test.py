@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import log_stddev_normal as lsn
 from distrax._src.distributions import normal
+from distrax._src.utils import compat
 import jax
 import jax.experimental
 import jax.numpy as jnp
@@ -106,7 +107,7 @@ class LogStddevNormalTest(parameterized.TestCase):
       ('float32', jnp.float32),
       ('float64', jnp.float64))
   def test_sample_dtype(self, dtype):
-    with jax.experimental.enable_x64(dtype.dtype.itemsize == 8):
+    with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = lsn.LogStddevNormal(
           loc=jnp.zeros((), dtype), log_scale=jnp.zeros((), dtype))
       samples = self.variant(dist.sample)(seed=jax.random.PRNGKey(0))
