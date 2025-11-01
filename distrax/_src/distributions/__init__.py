@@ -12,3 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Distrax distributions."""
+
+from distrax._src.distributions.binomial import Binomial
