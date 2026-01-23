@@ -23,7 +23,6 @@ from distrax._src.distributions import normal
 from distrax._src.utils import compat
 from distrax._src.utils import equivalence
 import jax
-import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 

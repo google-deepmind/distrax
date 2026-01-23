@@ -24,7 +24,6 @@ from distrax._src.utils import compat
 from distrax._src.utils import equivalence
 from distrax._src.utils import math
 import jax
-import jax.experimental
 import jax.numpy as jnp
 import numpy as np
 import scipy

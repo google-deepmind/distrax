@@ -22,7 +22,6 @@ from distrax._src.distributions import log_stddev_normal as lsn
 from distrax._src.distributions import normal
 from distrax._src.utils import compat
 import jax
-import jax.experimental
 import jax.numpy as jnp
 import mock
 import numpy as np
