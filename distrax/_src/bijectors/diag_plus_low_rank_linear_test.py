@@ -219,7 +219,7 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     for fn in [bij.forward, bij.inverse,
                bij.forward_log_det_jacobian, bij.inverse_log_det_jacobian,
                bij.forward_and_log_det, bij.inverse_and_log_det]:
-      with self.subTest(fn=fn):
+      with self.subTest(fn=fn.__name__):
         with self.assertRaises(ValueError):
           fn(jnp.array(0))
 
