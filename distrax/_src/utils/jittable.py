@@ -17,6 +17,13 @@
 import abc
 import jax
 
+try:
+  # JAX v0.10.0 or newer
+  from jax.extend.core import valid_jaxtype  # pylint: disable=g-import-not-at-top
+except ImportError:
+  # JAX v0.9.2 or older
+  from jax.core import valid_jaxtype  # pylint: disable=g-import-not-at-top
+
 
 class Jittable(metaclass=abc.ABCMeta):
   """ABC that can be passed as an arg to a jitted fn, with readable state."""
@@ -62,4 +69,4 @@ def _is_jax_data(x):
     return False
 
   # Return True if JAX considers `x` a valid JAX type.
-  return jax.core.valid_jaxtype(x)
+  return valid_jaxtype(x)
