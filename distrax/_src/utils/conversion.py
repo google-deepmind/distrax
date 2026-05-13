@@ -142,7 +142,7 @@ def as_float_array(x: Numeric) -> Array:
   if jnp.issubdtype(x.dtype, jnp.floating):
     return x
   elif jnp.issubdtype(x.dtype, jnp.integer):
-    return x.astype(jnp.float_)
+    return x.astype(float)
   else:
     raise ValueError(
         f"Expected either floating or integer dtype, got {x.dtype}.")

@@ -43,7 +43,7 @@ class DummyBijector(base_bijector.Bijector):
 
   def forward_and_log_det(self, x):
     super()._check_forward_input_shape(x)
-    return x, jnp.zeros((x.shape[:-self.event_ndims_in]), dtype=jnp.float_)
+    return x, jnp.zeros(x.shape[: -self.event_ndims_in], dtype=float)
 
 
 class SplitCouplingTest(parameterized.TestCase):

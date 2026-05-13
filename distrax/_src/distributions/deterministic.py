@@ -118,7 +118,7 @@ class Deterministic(distribution.Distribution):
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
-    return jnp.zeros(self.batch_shape, jnp.float_)
+    return jnp.zeros(self.batch_shape, float)
 
   def mean(self) -> Array:
     """Calculates the mean."""
@@ -130,7 +130,7 @@ class Deterministic(distribution.Distribution):
 
   def variance(self) -> Array:
     """Calculates the variance."""
-    return jnp.zeros(self.batch_shape, jnp.float_)
+    return jnp.zeros(self.batch_shape, float)
 
   def stddev(self) -> Array:
     """Calculates the standard deviation."""

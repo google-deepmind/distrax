@@ -414,7 +414,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
       return dist.log_prob(x).sum()
 
     dist = categorical.Categorical(jnp.arange(3 * 4 * 5).reshape((3, 4, 5)))
-    x = jnp.zeros((3, 4), jnp.int_)
+    x = jnp.zeros((3, 4), int)
 
     with self.subTest('no vmap'):
       actual = log_prob_sum(dist, x)
@@ -449,7 +449,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
     np.testing.assert_equal(actual.batch_shape, expected.batch_shape)
     np.testing.assert_equal(actual.event_shape, expected.event_shape)
 
-    x = jnp.array([[[0]], [[1]], [[0]]], jnp.int_)
+    x = jnp.array([[[0]], [[1]], [[0]]], int)
     self.assertion_fn(rtol=1e-6)(actual.log_prob(x), expected.log_prob(x))
 
   @parameterized.named_parameters(

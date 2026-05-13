@@ -28,11 +28,11 @@ class DummyBijector(bijector.Bijector):
 
   def forward_and_log_det(self, x):
     super()._check_forward_input_shape(x)
-    return x, jnp.zeros(x.shape[:-1], jnp.float_)
+    return x, jnp.zeros(x.shape[:-1], float)
 
   def inverse_and_log_det(self, y):
     super()._check_inverse_input_shape(y)
-    return y, jnp.zeros(y.shape[:-1], jnp.float_)
+    return y, jnp.zeros(y.shape[:-1], float)
 
 
 class BijectorTest(parameterized.TestCase):
