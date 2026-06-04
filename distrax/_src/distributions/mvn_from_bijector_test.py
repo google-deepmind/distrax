@@ -280,6 +280,68 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
       dist1.kl_divergence(dist2)
 
 
+class VmapBatchShapeTest(absltest.TestCase):
+  """Regression tests for https://github.com/google-deepmind/distrax/issues/276.
+
+  When a MultivariateNormal* distribution is constructed inside jax.vmap,
+  the vmapped execution prepends a batch dimension to all JAX arrays, including
+  the stored `_loc`.  The static `_batch_shape` tuple captured at trace time
+  does not include this extra dimension, causing `batch_shape` to be stale and
+  `loc` to raise:
+      ValueError: Cannot broadcast to shape with fewer dimensions
+  """
+
+  def test_batch_shape_after_vmap(self):
+    """batch_shape should reflect the vmap batch dimension."""
+    @jax.jit
+    def build():
+      def single(_):
+        return MultivariateNormalFromBijector(
+            loc=jnp.zeros(4),
+            scale=DiagLinear(diag=jnp.ones(4)),
+        )
+      return jax.vmap(single)(jnp.arange(3))
+
+    dist = build()
+    self.assertEqual(dist.batch_shape, (3,))
+    self.assertEqual(dist.event_shape, (4,))
+    self.assertEqual(dist.loc.shape, (3, 4))
+
+  def test_loc_accessible_after_vmap(self):
+    """`loc` must not raise after vmap-construction (the reported symptom)."""
+    @jax.jit
+    def build():
+      def single(_):
+        return MultivariateNormalFromBijector(
+            loc=jnp.zeros(4),
+            scale=DiagLinear(diag=jnp.ones(4)),
+        )
+      return jax.vmap(single)(jnp.arange(5))
+
+    dist = build()
+    loc = dist.loc                              # must not raise
+    np.testing.assert_array_equal(loc, jnp.zeros((5, 4)))
+
+  def test_non_vmapped_batch_shape_unchanged(self):
+    """Regression: static batch_shape must still be correct without vmap."""
+    dist = MultivariateNormalFromBijector(
+        loc=jnp.zeros(4),
+        scale=DiagLinear(diag=jnp.ones(4)),
+    )
+    self.assertEqual(dist.batch_shape, ())
+    self.assertEqual(dist.loc.shape, (4,))
+
+  def test_scale_broadcasting_batch_shape_unchanged(self):
+    """Scale-batch broadcasting must still be respected without vmap."""
+    # scale.batch_shape=(4,1), loc.batch=(1,3) → broadcast batch=(4,3)
+    dist = MultivariateNormalFromBijector(
+        loc=jnp.zeros((1, 3, 5)),
+        scale=DiagLinear(diag=jnp.ones((4, 1, 5))),
+    )
+    self.assertEqual(dist.batch_shape, (4, 3))
+    self.assertEqual(dist.loc.shape, (4, 3, 5))
+
+
 if __name__ == '__main__':
   jax.config.update('jax_threefry_partitionable', False)
   absltest.main()
