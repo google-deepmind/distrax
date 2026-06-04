@@ -138,9 +138,16 @@ class TanhTest(parameterized.TestCase):
     np.testing.assert_allclose(fldj_, fldj, rtol=RTOL)
 
     y = bijector.forward(x)  # pytype: disable=wrong-arg-types  # jax-ndarray
-    ildj = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
+    # For the inverse log-det, distrax clips boundary values to prevent NaN
+    # (unlike TFP which returns NaN for tanh(±10) = ±1 in float32).
+    # We verify finiteness rather than matching TFP's NaN for those entries.
+    # Interior values (|x| < 10) still agree with TFP.
     ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    np.testing.assert_allclose(ildj_, ildj, rtol=RTOL)
+    self.assertFalse(np.any(np.isnan(ildj_)),
+                     'inverse_log_det_jacobian should be finite, got NaN')
+    interior = np.array([1, 2, 3], dtype=int)  # indices for x in {-3.3,0,3.3}
+    ildj_tfp = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
+    np.testing.assert_allclose(ildj_[interior], ildj_tfp[interior], rtol=RTOL)
 
   @chex.all_variants
   @parameterized.named_parameters(
@@ -172,6 +179,40 @@ class TanhTest(parameterized.TestCase):
     self.assertTrue(bijector.same_as(bijector))
     self.assertTrue(bijector.same_as(tanh.Tanh()))
     self.assertFalse(bijector.same_as(sigmoid.Sigmoid()))
+
+  def test_inverse_clips_boundary_values_to_prevent_nan(self):
+    """Regression test for https://github.com/google-deepmind/distrax/issues/216.
+
+    In float32, sampling from a Tanh-transformed distribution can yield values
+    numerically equal to ±1 due to limited precision.  arctanh(±1) = ±∞,
+    which causes NaN in log_prob.  The fix clips y to (-1+eps, 1-eps).
+    """
+    bijector = tanh.Tanh()
+    # Exact boundary values that would produce NaN without clipping.
+    y_boundary = jnp.array([-1.0, 1.0], dtype=jnp.float32)
+    x, log_det = bijector.inverse_and_log_det(y_boundary)
+    self.assertFalse(jnp.any(jnp.isnan(x)), 'x should be finite, got NaN')
+    self.assertFalse(jnp.any(jnp.isnan(log_det)),
+                     'log_det should be finite, got NaN')
+    self.assertFalse(jnp.any(jnp.isinf(x)), 'x should be finite, got Inf')
+    self.assertFalse(jnp.any(jnp.isinf(log_det)),
+                     'log_det should be finite, got Inf')
+
+  def test_log_prob_finite_at_float32_boundary_samples(self):
+    """log_prob must be finite for samples that saturate float32 tanh."""
+    import distrax
+    import jax.random as jr
+    # Build a Tanh-wrapped normal that is likely to produce boundary samples.
+    dist = distrax.Transformed(
+        distribution=distrax.MultivariateNormalDiag(
+            loc=jnp.zeros(4, dtype=jnp.float32),
+            scale_diag=jnp.ones(4, dtype=jnp.float32) * 10.0),  # wide → ±1
+        bijector=distrax.Block(distrax.Tanh(), ndims=1))
+    key = jr.PRNGKey(0)
+    samples = dist.sample(seed=key, sample_shape=(16,))
+    log_probs = dist.log_prob(samples)
+    self.assertFalse(jnp.any(jnp.isnan(log_probs)),
+                     'log_prob returned NaN for float32 boundary samples')
 
 
 if __name__ == '__main__':
