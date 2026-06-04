@@ -51,6 +51,7 @@ from distrax._src.distributions.distribution import DistributionLike
 from distrax._src.distributions.epsilon_greedy import EpsilonGreedy
 from distrax._src.distributions.gamma import Gamma
 from distrax._src.distributions.greedy import Greedy
+from distrax._src.distributions.poisson import Poisson
 from distrax._src.distributions.gumbel import Gumbel
 from distrax._src.distributions.independent import Independent
 from distrax._src.distributions.joint import Joint
@@ -114,6 +115,7 @@ __all__ = (
     "Gamma",
     "Greedy",
     "Gumbel",
+    "Poisson",
     "GumbelCDF",
     "HMM",
     "importance_sampling_ratios",
