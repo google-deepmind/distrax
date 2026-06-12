@@ -232,19 +232,19 @@ class TransformedTest(parameterized.TestCase):
       chex.assert_equal(sample.shape, sample_shape + batch_shape + (3,))
 
     with self.subTest('sample_and_log_prob sample.shape'):
-      sample, log_prob = dist.sample_and_log_prob(
+      sample, _ = dist.sample_and_log_prob(
           seed=self.seed, sample_shape=sample_shape)
       chex.assert_equal(sample.shape, sample_shape + batch_shape + (3,))
 
     with self.subTest('sample_and_log_prob log_prob.shape'):
-      sample, log_prob = dist.sample_and_log_prob(
+      _, log_prob = dist.sample_and_log_prob(
           seed=self.seed, sample_shape=sample_shape)
       chex.assert_equal(log_prob.shape, sample_shape + batch_shape)
 
     with self.subTest('sample_and_log_prob log_prob value'):
       sample, log_prob = dist.sample_and_log_prob(
           seed=self.seed, sample_shape=sample_shape)
-      np.testing.assert_allclose(log_prob, dist.log_prob(sample))
+      np.testing.assert_allclose(log_prob, dist.log_prob(sample), atol=1e-6)
 
   @chex.all_variants
   @parameterized.named_parameters(

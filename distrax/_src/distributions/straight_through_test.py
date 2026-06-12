@@ -144,7 +144,11 @@ class StraightThroughTest(equivalence.EquivalenceTest):
     # samples match most of the time).
     sample_grad_v = jnp.stack(jnp.array(*sample_grad.values()))
     tfp_st_sample_grad_v = jnp.stack(jnp.array(*tfp_st_sample_grad.values()))
+    sample, tfp_st_sample = jax.device_get((sample, tfp_st_sample))
     if np.all(sample == tfp_st_sample):
+      sample_grad_v, tfp_st_sample_grad_v = jax.device_get(
+          (sample_grad_v, tfp_st_sample_grad_v)
+      )
       self.assertion_fn(rtol=2e-3)(sample_grad_v, tfp_st_sample_grad_v)
 
 
