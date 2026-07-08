@@ -68,7 +68,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     """Check sample returns -1 if probs are negative after normalization."""
     dist = self.distrax_cls(probs=np.asarray([[0.1, -0.4, 0.2, 0.3],
                                               [0.1, 0.1, 0.6, 0.2]]))
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
     self.assertion_fn(rtol=2e-3)(samples[:, 0, :], -1)
@@ -79,7 +79,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     """Checks sample returns -1 if probs are nan after normalization."""
     dist = self.distrax_cls(
         probs=np.asarray([[-0.1, 0.1, 0.0, 0.0], [0.1, 0.1, 0.6, 0.2]]))
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
     self.assertion_fn(rtol=2e-3)(samples[:, 0, :], -1)
@@ -182,7 +182,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist_params = {'logits': self.logits, 'dtype': dtype}
       dist = self.distrax_cls(**dist_params)
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -193,7 +193,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
   def test_sample_unique_values(self, from_logits):
     dist_params = {'logits': self.logits} if from_logits else {'probs': self.p}
     dist = self.distrax_cls(**dist_params)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
     np.testing.assert_equal(np.unique(samples), np.arange(2))
@@ -202,7 +202,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
   def test_sample_extreme_probs(self):
     dist_params = {'probs': np.asarray([1., 0., 0., 0.])}
     dist = self.distrax_cls(**dist_params)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
     np.testing.assert_equal(np.unique(samples[..., 0]), 1)
@@ -311,7 +311,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     value = np.array(value)
     dist = self.distrax_cls(**distr_params)
     self.assertion_fn(rtol=2e-3)(
-        self.variant(getattr(dist, function_string))(value), expected)
+        self.variant(getattr(dist, function_string))(value), expected)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -350,7 +350,7 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     else:
       probs = scipy.special.softmax(distr_params['logits'], axis=-1)
     expected = np.sum(np.cumsum(probs, axis=-1) * values, axis=-1)
-    self.assertion_fn(rtol=2e-3)(self.variant(dist.cdf)(values), expected)
+    self.assertion_fn(rtol=2e-3)(self.variant(dist.cdf)(values), expected)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -386,8 +386,8 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     dist2 = one_hot_categorical.OneHotCategorical(**dist2_params)
     tfp_dist2 = tfd.OneHotCategorical(**dist2_params)
 
-    distrax_fn_1 = self.variant(getattr(dist1, function_string))
-    distrax_fn_2 = self.variant(getattr(dist2, function_string))
+    distrax_fn_1 = self.variant(getattr(dist1, function_string))  # pyrefly: ignore[missing-attribute]
+    distrax_fn_2 = self.variant(getattr(dist2, function_string))  # pyrefly: ignore[missing-attribute]
 
     if mode_string == 'distrax_to_distrax':
       comp_dist1_dist2 = distrax_fn_1(dist2)

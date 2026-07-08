@@ -69,7 +69,7 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
     _check_parameters(loc, scale_diag)
 
     if scale_diag is None:
-      loc = conversion.as_float_array(loc)
+      loc = conversion.as_float_array(loc)  # pyrefly: ignore[bad-argument-type]
       scale_diag = jnp.ones(loc.shape[-1], loc.dtype)
     elif loc is None:
       scale_diag = conversion.as_float_array(scale_diag)
@@ -100,6 +100,7 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
         self._scale_diag, self.batch_shape + self.event_shape)
 
   def _standardize(self, value: Array) -> Array:
+    # pyrefly: ignore[unsupported-operation]
     return (value - self._loc) / self._scale_diag
 
   def cdf(self, value: EventT) -> Array:
@@ -115,4 +116,5 @@ class MultivariateNormalDiag(MultivariateNormalFromBijector):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return MultivariateNormalDiag(
+        # pyrefly: ignore[bad-index]
         loc=self.loc[index], scale_diag=self.scale_diag[index])

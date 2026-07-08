@@ -51,7 +51,7 @@ class GreedyTest(equivalence.EquivalenceTest):
   def test_sample_dtype(self, dtype):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = self.distrax_cls(preferences=self.preferences, dtype=dtype)
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 

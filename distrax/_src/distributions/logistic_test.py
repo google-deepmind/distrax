@@ -70,7 +70,7 @@ class Logistic(equivalence.EquivalenceTest):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = self.distrax_cls(
           loc=jnp.zeros((), dtype), scale=jnp.ones((), dtype))
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -152,7 +152,7 @@ class Logistic(equivalence.EquivalenceTest):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(rtol=1e-2)(self.variant(dist.median)(), dist.mean())
+    self.assertion_fn(rtol=1e-2)(self.variant(dist.median)(), dist.mean())  # pyrefly: ignore[missing-attribute]
 
   def test_jitable(self):
     super()._test_jittable((0., 1.))

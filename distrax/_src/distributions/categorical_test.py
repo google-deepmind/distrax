@@ -148,7 +148,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
   def test_sample_dtype(self, method, dtype):
     dist_params = {'logits': [0.1, -0.1, 0.5, -0.8, 1.5], 'dtype': dtype}
     dist = self.distrax_cls(**dist_params)
-    samples = self.variant(getattr(dist, method))(seed=self.key)
+    samples = self.variant(getattr(dist, method))(seed=self.key)  # pyrefly: ignore[missing-attribute]
     samples = samples[0] if method == 'sample_and_log_prob' else samples
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)
@@ -167,7 +167,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
     n_samples = 100000
     dist_kwargs = {'probs': probs} if from_probs else {'logits': logits}
     dist = self.distrax_cls(**dist_kwargs)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: getattr(dist, method)(seed=key, sample_shape=n_samples))
     samples = sample_fn(self.key)
     samples = samples[0] if method == 'sample_and_log_prob' else samples
@@ -192,7 +192,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
         [0.1, 0.25, 0.2, 0.8],  # Valid (unnormalized) probabilities.
     ])
     dist = self.distrax_cls(probs=probs)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: getattr(dist, method)(seed=key, sample_shape=n_samples))
     samples = sample_fn(self.key)
     samples = samples[0] if method == 'sample_and_log_prob' else samples
@@ -235,7 +235,7 @@ class CategoricalTest(equivalence.EquivalenceTest):
     log_sf = jnp.where(value == num_categories - 1, -jnp.inf, log_sf)
     with self.subTest(method='log_survival_function'):
       self.assertion_fn(atol=3e-5)(
-          self.variant(dist.log_survival_function)(value), log_sf)
+          self.variant(dist.log_survival_function)(value), log_sf)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants
   def test_method_with_input_unnormalized_probs(self):
@@ -247,21 +247,21 @@ class CategoricalTest(equivalence.EquivalenceTest):
     value = np.asarray([0, 1, 2], dtype=np.int32)
     dist = self.distrax_cls(**distr_params)
     self.assertion_fn(rtol=1e-3)(
-        self.variant(dist.prob)(value), normalized_probs)
+        self.variant(dist.prob)(value), normalized_probs)  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(rtol=1e-3)(
-        self.variant(dist.log_prob)(value), np.log(normalized_probs))
+        self.variant(dist.log_prob)(value), np.log(normalized_probs))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(rtol=1e-3)(
-        self.variant(dist.cdf)(value), np.cumsum(normalized_probs))
+        self.variant(dist.cdf)(value), np.cumsum(normalized_probs))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(atol=5e-5)(
-        self.variant(dist.log_cdf)(value), np.log(np.cumsum(normalized_probs)))
+        self.variant(dist.log_cdf)(value), np.log(np.cumsum(normalized_probs)))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.survival_function)(value),
+        self.variant(dist.survival_function)(value),  # pyrefly: ignore[missing-attribute]
         1. - np.cumsum(normalized_probs))
     # In the line below, we compare against `jnp` instead of `np` because the
     # latter gives `1. - np.cumsum(normalized_probs)[-1] = 1.1e-16` instead of
     # `0.`, so its log is innacurate: it gives `-36.7` instead of `-np.inf`.
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.log_survival_function)(value),
+        self.variant(dist.log_survival_function)(value),  # pyrefly: ignore[missing-attribute]
         jnp.log(1. - jnp.cumsum(normalized_probs)))
 
   @chex.all_variants
@@ -270,17 +270,17 @@ class CategoricalTest(equivalence.EquivalenceTest):
     dist = self.distrax_cls(probs=probs)
     value = jnp.asarray([-1, -2, 3, 4], dtype=jnp.int32)
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.prob)(value), np.asarray([0., 0., 0., 0.]))
-    self.assertTrue(np.all(self.variant(dist.log_prob)(value) == -jnp.inf))
+        self.variant(dist.prob)(value), np.asarray([0., 0., 0., 0.]))  # pyrefly: ignore[missing-attribute]
+    self.assertTrue(np.all(self.variant(dist.log_prob)(value) == -jnp.inf))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.cdf)(value), np.asarray([0., 0., 1., 1.]))
+        self.variant(dist.cdf)(value), np.asarray([0., 0., 1., 1.]))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(rtol=1e-3)(
-        self.variant(dist.log_cdf)(value), np.log(np.asarray([0., 0., 1., 1.])))
+        self.variant(dist.log_cdf)(value), np.log(np.asarray([0., 0., 1., 1.])))  # pyrefly: ignore[missing-attribute]
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.survival_function)(value),
+        self.variant(dist.survival_function)(value),  # pyrefly: ignore[missing-attribute]
         np.asarray([1., 1., 0., 0.]))
     self.assertion_fn(atol=1e-5)(
-        self.variant(dist.log_survival_function)(value),
+        self.variant(dist.log_survival_function)(value),  # pyrefly: ignore[missing-attribute]
         np.log(np.asarray([1., 1., 0., 0.])))
 
   @chex.all_variants(with_pmap=False)
@@ -365,12 +365,12 @@ class CategoricalTest(equivalence.EquivalenceTest):
     tfp_dist2 = self.distrax_cls.equiv_tfp_cls(logits=logits2)
     dist_a = tfp_dist1 if mode_string == 'tfp_to_distrax' else distrax_dist1
     dist_b = tfp_dist2 if mode_string == 'distrax_to_tfp' else distrax_dist2
-    first_fn = self.variant(getattr(dist_a, function_string))
+    first_fn = self.variant(getattr(dist_a, function_string))  # pyrefly: ignore[missing-attribute]
     with self.assertRaises(ValueError):
       _ = first_fn(dist_b)
     dist_a = tfp_dist2 if mode_string == 'tfp_to_distrax' else distrax_dist2
     dist_b = tfp_dist1 if mode_string == 'distrax_to_tfp' else distrax_dist1
-    second_fn = self.variant(getattr(dist_a, function_string))
+    second_fn = self.variant(getattr(dist_a, function_string))  # pyrefly: ignore[missing-attribute]
     with self.assertRaises(ValueError):
       _ = second_fn(dist_b)
 

@@ -119,8 +119,8 @@ class Clipped(base_distribution.Distribution):
     index = base_distribution.to_batch_shape_index(self.batch_shape, index)
     return Clipped(
         distribution=self.distribution[index],
-        minimum=self.minimum[index],
-        maximum=self.maximum[index])
+        minimum=self.minimum[index],  # pyrefly: ignore[bad-index]
+        maximum=self.maximum[index])  # pyrefly: ignore[bad-index]
 
 
 class ClippedNormal(Clipped):

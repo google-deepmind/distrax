@@ -220,7 +220,7 @@ class MultivariateNormalDiagTest(equivalence.EquivalenceTest):
           'loc': np.array([0., 0.], dtype),
           'scale_diag': np.array([1., 1.], dtype)}
       dist = self.distrax_cls(**dist_params)
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -317,7 +317,7 @@ class MultivariateNormalDiagTest(equivalence.EquivalenceTest):
         k: np.asarray(v, dtype=np.float32) for k, v in distr_params.items()}
     value = np.asarray(value)
     dist = self.distrax_cls(**distr_params)
-    result = self.variant(getattr(dist, function_string))(value)
+    result = self.variant(getattr(dist, function_string))(value)  # pyrefly: ignore[missing-attribute]
     # The `cdf` is not implemented in TFP, so we test against a `Normal`.
     loc = 0. if 'loc' not in distr_params else distr_params['loc']
     univariate_normal = normal.Normal(loc, distr_params['scale_diag'])
@@ -412,7 +412,7 @@ class MultivariateNormalDiagTest(equivalence.EquivalenceTest):
     dist_params = {'loc': np.array([0.3, -0.1, 0.0]),
                    'scale_diag': np.array([0.1, 1.4, 0.5])}
     dist = self.distrax_cls(**dist_params)
-    self.assertion_fn(rtol=1e-3)(self.variant(dist.median)(), dist.mean())
+    self.assertion_fn(rtol=1e-3)(self.variant(dist.median)(), dist.mean())  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

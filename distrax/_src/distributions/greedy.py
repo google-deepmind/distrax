@@ -61,4 +61,5 @@ class Greedy(categorical.Categorical):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return Greedy(
+        # pyrefly: ignore[bad-index]
         preferences=self.preferences[index], dtype=self.dtype)

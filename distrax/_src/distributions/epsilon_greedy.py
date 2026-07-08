@@ -76,6 +76,6 @@ class EpsilonGreedy(categorical.Categorical):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return EpsilonGreedy(
-        preferences=self.preferences[index],
+        preferences=self.preferences[index],  # pyrefly: ignore[bad-index]
         epsilon=self.epsilon,
         dtype=self.dtype)

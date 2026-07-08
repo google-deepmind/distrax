@@ -71,7 +71,7 @@ class Beta(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def alpha(self) -> Array:
@@ -99,6 +99,7 @@ class Beta(distribution.Distribution):
     return jnp.where(
         jnp.logical_or(jnp.logical_and(self._alpha == 1., value == 0.),
                        jnp.logical_and(self._beta == 1., value == 1.)),
+        # pyrefly: ignore[unsupported-operation]
         -self._log_normalization_constant,
         result
     )
@@ -152,6 +153,7 @@ class Beta(distribution.Distribution):
   def __getitem__(self, index) -> 'Beta':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Beta(alpha=self.alpha[index], beta=self.beta[index])
 
 
@@ -185,9 +187,13 @@ def _kl_divergence_beta_beta(
   """
   alpha1, beta1 = _obtain_alpha_beta(dist1)
   alpha2, beta2 = _obtain_alpha_beta(dist2)
+  # pyrefly: ignore[unsupported-operation]
   t1 = math.log_beta(alpha2, beta2) - math.log_beta(alpha1, beta1)
+  # pyrefly: ignore[unsupported-operation]
   t2 = (alpha1 - alpha2) * jax.lax.digamma(alpha1)
+  # pyrefly: ignore[unsupported-operation]
   t3 = (beta1 - beta2) * jax.lax.digamma(beta1)
+  # pyrefly: ignore[unsupported-operation]
   t4 = (alpha2 - alpha1 + beta2 - beta1) * jax.lax.digamma(alpha1 + beta1)
   return t1 + t2 + t3 + t4
 

@@ -142,12 +142,14 @@ class Deterministic(distribution.Distribution):
 
   def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
+    # pyrefly: ignore[unsupported-operation]
     return jnp.where(value >= self.loc - self.slack, 1., 0.)
 
   def __getitem__(self, index) -> 'Deterministic':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return Deterministic(
+        # pyrefly: ignore[bad-index]
         loc=self.loc[index], atol=self.atol[index], rtol=self.rtol[index])
 
 
@@ -169,6 +171,7 @@ def _kl_divergence_deterministic_deterministic(
     Batchwise `KL(dist1 || dist2)`.
   """
   slack2 = dist2.atol + dist2.rtol * jnp.abs(dist2.loc)
+  # pyrefly: ignore[unsupported-operation]
   return - jnp.log(jnp.where(jnp.abs(dist1.loc - dist2.loc) <= slack2, 1., 0.))
 
 

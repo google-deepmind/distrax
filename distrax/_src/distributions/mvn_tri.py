@@ -133,6 +133,6 @@ class MultivariateNormalTri(MultivariateNormalFromBijector):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return MultivariateNormalTri(
-        loc=self.loc[index],
-        scale_tri=self.scale_tri[index],
+        loc=self.loc[index],  # pyrefly: ignore[bad-index]
+        scale_tri=self.scale_tri[index],  # pyrefly: ignore[bad-index]
         is_lower=self.is_lower)

@@ -77,7 +77,7 @@ class BetaTest(equivalence.EquivalenceTest):
   )
   def test_sample_dtype(self, method, dtype):
     dist = self.distrax_cls(alpha=jnp.ones((), dtype), beta=jnp.ones((), dtype))
-    samples = self.variant(getattr(dist, method))(seed=self.key)
+    samples = self.variant(getattr(dist, method))(seed=self.key)  # pyrefly: ignore[missing-attribute]
     samples = samples[0] if method == 'sample_and_log_prob' else samples
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)
@@ -93,7 +93,7 @@ class BetaTest(equivalence.EquivalenceTest):
     beta = jnp.array(np.abs(rng.normal(size=(4, 3, 2))))
     n_samples = 100000
     dist = self.distrax_cls(alpha, beta)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: getattr(dist, method)(seed=key, sample_shape=n_samples))
     samples = sample_fn(self.key)
     samples = samples[0] if method == 'sample_and_log_prob' else samples
@@ -180,7 +180,7 @@ class BetaTest(equivalence.EquivalenceTest):
   )
   def test_mode(self, alpha, beta, expected_result):
     dist = self.distrax_cls(alpha, beta)
-    result = self.variant(dist.mode)()
+    result = self.variant(dist.mode)()  # pyrefly: ignore[missing-attribute]
     if np.any(np.isnan(expected_result)):
       self.assertTrue(jnp.isnan(result))
     else:

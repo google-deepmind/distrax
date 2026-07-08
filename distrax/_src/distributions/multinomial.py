@@ -97,12 +97,12 @@ class Multinomial(distribution.Distribution):
     if self._logits is not None:
       return self._logits.shape[-1:]
     else:
-      return self._probs.shape[-1:]
+      return self._probs.shape[-1:]  # pyrefly: ignore[missing-attribute]
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def total_count(self) -> Array:
@@ -119,6 +119,7 @@ class Multinomial(distribution.Distribution):
     """The logits for each event."""
     if self._logits is not None:
       return jnp.broadcast_to(self._logits, self.batch_shape + self.event_shape)
+    # pyrefly: ignore[bad-argument-type]
     return jnp.broadcast_to(jnp.log(self._probs),
                             self.batch_shape + self.event_shape)
 
@@ -127,6 +128,7 @@ class Multinomial(distribution.Distribution):
     """The probabilities for each event."""
     if self._probs is not None:
       return jnp.broadcast_to(self._probs, self.batch_shape + self.event_shape)
+    # pyrefly: ignore[bad-argument-type]
     return jnp.broadcast_to(jax.nn.softmax(self._logits, axis=-1),
                             self.batch_shape + self.event_shape)
 
@@ -137,6 +139,7 @@ class Multinomial(distribution.Distribution):
       # jax.nn.log_softmax was already applied in init to logits.
       return jnp.broadcast_to(self._logits,
                               self.batch_shape + self.event_shape)
+    # pyrefly: ignore[bad-argument-type]
     return jnp.broadcast_to(jnp.log(self._probs),
                             self.batch_shape + self.event_shape)
 
@@ -207,7 +210,9 @@ class Multinomial(distribution.Distribution):
     comb_n_xi = jnp.round(jnp.exp(log_comb_n_xi))
     chex.assert_shape(comb_n_xi, (total_count + 1,))
 
+    # pyrefly: ignore[bad-index]
     likelihood1 = math.power_no_nan(probs[..., None], xi)
+    # pyrefly: ignore[bad-index]
     likelihood2 = math.power_no_nan(1. - probs[..., None], total_count - xi)
     chex.assert_shape(likelihood1, (probs.shape[-1], total_count + 1,))
     chex.assert_shape(likelihood2, (probs.shape[-1], total_count + 1,))
@@ -271,7 +276,7 @@ class Multinomial(distribution.Distribution):
     """Calculates the covariance."""
     probs = self.probs
     cov_matrix = -self._total_count[..., None, None] * (
-        probs[..., None, :] * probs[..., :, None])
+        probs[..., None, :] * probs[..., :, None])  # pyrefly: ignore[bad-index]
     chex.assert_shape(cov_matrix, probs.shape + self.event_shape)
     # Missing diagonal term in the covariance matrix.
     cov_matrix += jnp.vectorize(
@@ -282,9 +287,11 @@ class Multinomial(distribution.Distribution):
   def __getitem__(self, index) -> 'Multinomial':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
-    total_count = self.total_count[index]
+    total_count = self.total_count[index]  # pyrefly: ignore[bad-index]
     if self._logits is not None:
       return Multinomial(
+          # pyrefly: ignore[bad-index]
           total_count=total_count, logits=self.logits[index], dtype=self._dtype)
     return Multinomial(
+        # pyrefly: ignore[bad-index]
         total_count=total_count, probs=self.probs[index], dtype=self._dtype)

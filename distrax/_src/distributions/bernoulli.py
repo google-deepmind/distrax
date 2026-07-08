@@ -82,13 +82,14 @@ class Bernoulli(distribution.Distribution):
     """See `Distribution.batch_shape`."""
     if self._logits is not None:
       return self._logits.shape
-    return self._probs.shape
+    return self._probs.shape  # pyrefly: ignore[missing-attribute]
 
   @property
   def logits(self) -> Array:
     """The logits of a `1` event."""
     if self._logits is not None:
       return self._logits
+    # pyrefly: ignore[bad-argument-type, unsupported-operation]
     return jnp.log(self._probs) - jnp.log(1 - self._probs)
 
   @property
@@ -96,12 +97,13 @@ class Bernoulli(distribution.Distribution):
     """The probabilities of a `1` event.."""
     if self._probs is not None:
       return self._probs
-    return jax.nn.sigmoid(self._logits)
+    return jax.nn.sigmoid(self._logits)  # pyrefly: ignore[bad-argument-type]
 
   def _log_probs_parameter(self) -> Tuple[Array, Array]:
     if self._logits is None:
+      # pyrefly: ignore[unsupported-operation]
       return (jnp.log1p(-1. * self._probs),
-              jnp.log(self._probs))
+              jnp.log(self._probs))  # pyrefly: ignore[bad-argument-type]
     return (-jax.nn.softplus(self._logits),
             -jax.nn.softplus(-1. * self._logits))
 
@@ -163,7 +165,9 @@ class Bernoulli(distribution.Distribution):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     if self._logits is not None:
+      # pyrefly: ignore[bad-index]
       return Bernoulli(logits=self.logits[index], dtype=self._dtype)
+    # pyrefly: ignore[bad-index]
     return Bernoulli(probs=self.probs[index], dtype=self._dtype)
 
 
@@ -173,16 +177,17 @@ def _probs_and_log_probs(
   """Calculates both `probs` and `log_probs`."""
   # pylint: disable=protected-access
   if dist._logits is None:
-    probs0 = 1. - dist._probs
+    probs0 = 1. - dist._probs  # pyrefly: ignore[unsupported-operation]
     probs1 = 1. - probs0
+    # pyrefly: ignore[unsupported-operation]
     log_probs0 = jnp.log1p(-1. * dist._probs)
-    log_probs1 = jnp.log(dist._probs)
+    log_probs1 = jnp.log(dist._probs)  # pyrefly: ignore[bad-argument-type]
   else:
     probs0 = jax.nn.sigmoid(-1. * dist._logits)
     probs1 = jax.nn.sigmoid(dist._logits)
     log_probs0 = -jax.nn.softplus(dist._logits)
     log_probs1 = -jax.nn.softplus(-1. * dist._logits)
-  return probs0, probs1, log_probs0, log_probs1
+  return probs0, probs1, log_probs0, log_probs1  # pyrefly: ignore[bad-return]
 
 
 def _kl_divergence_bernoulli_bernoulli(

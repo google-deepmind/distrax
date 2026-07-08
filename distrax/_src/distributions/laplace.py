@@ -66,7 +66,7 @@ class Laplace(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def loc(self) -> Array:
@@ -110,6 +110,7 @@ class Laplace(distribution.Distribution):
     return 0.5 - 0.5 * jnp.sign(norm_value) * jnp.expm1(-jnp.abs(norm_value))
 
   def _standardize(self, value: Array) -> Array:
+    # pyrefly: ignore[unsupported-operation]
     return (value - self._loc) / self._scale
 
   def log_cdf(self, value: EventT) -> Array:
@@ -120,6 +121,7 @@ class Laplace(distribution.Distribution):
   def log_survival_function(self, value: EventT) -> Array:
     """See `Distribution.log_survival_function`."""
     norm_value = self._standardize(value)
+    # pyrefly: ignore[unsupported-operation]
     return _log_cdf_laplace(-norm_value)
 
   def mean(self) -> Array:
@@ -145,6 +147,7 @@ class Laplace(distribution.Distribution):
   def __getitem__(self, index) -> 'Laplace':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Laplace(loc=self.loc[index], scale=self.scale[index])
 
 
@@ -162,6 +165,7 @@ def _kl_divergence_laplace_laplace(
   Returns:
     Batchwise `KL(dist1 || dist2)`.
   """
+  # pyrefly: ignore[unsupported-operation]
   distance = jnp.abs(dist1.loc - dist2.loc)
   diff_log_scale = jnp.log(dist1.scale) - jnp.log(dist2.scale)
   return (- diff_log_scale +

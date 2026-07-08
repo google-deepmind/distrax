@@ -136,7 +136,8 @@ def tfp_compatible_distribution(
                **unused_kwargs) -> EventT:
       """See `Distribution.sample`."""
       if not np.isscalar(sample_shape):
-        sample_shape = tuple(sample_shape)
+        sample_shape = tuple(sample_shape)  # pyrefly: ignore[bad-argument-type]
+      # pyrefly: ignore[bad-argument-type]
       return base_distribution.sample(sample_shape=sample_shape, seed=seed)
 
     def experimental_local_measure(
@@ -167,4 +168,4 @@ def tfp_compatible_distribution(
       del unused_kwargs
       return self.log_prob(value), tangent_spaces.FullSpace()
 
-  return TFPCompatibleDistribution()
+  return TFPCompatibleDistribution()  # pyrefly: ignore[bad-return]

@@ -116,7 +116,7 @@ class UniformTest(equivalence.EquivalenceTest):
   @chex.all_variants(with_pmap=False)
   def test_median(self):
     np.testing.assert_allclose(
-        self.variant(self.distrax_cls(-1, 1).median)(), 0)
+        self.variant(self.distrax_cls(-1, 1).median)(), 0)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

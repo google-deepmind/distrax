@@ -96,7 +96,7 @@ class DistributionTest(parameterized.TestCase):
       ('2d input', (2, 3), (2, 3)),
       ('3d input', (2, 3, 4), (2, 3, 4)))
   def test_sample_univariate_shape(self, shape, expected_shape):
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: self.uni_dist.sample(seed=key, sample_shape=shape))
     samples = sample_fn(0)
     np.testing.assert_equal(samples.shape, expected_shape)
@@ -113,7 +113,7 @@ class DistributionTest(parameterized.TestCase):
       ('2d input', (4, 5), (2, 3), (2, 3, 4, 5)))
   def test_sample_multivariate_shape(self, var_dim, shape, expected_shape):
     mult_dist = DummyMultivariateDist(var_dim)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: mult_dist.sample(seed=key, sample_shape=shape))
     samples = sample_fn(0)
     np.testing.assert_equal(samples.shape, expected_shape)
@@ -130,7 +130,7 @@ class DistributionTest(parameterized.TestCase):
   )
   def test_sample_nested_shape(self, shape):
     dist = DummyNestedDist()
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=shape))
     samples = sample_fn(0)
     # Ensure shape is a tuple.
@@ -155,7 +155,7 @@ class DistributionTest(parameterized.TestCase):
   def test_sample_keys(self):
     shape = 5
     key = 0
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: self.uni_dist.sample(seed=key, sample_shape=shape))
     samples_from_int = sample_fn(key)
     rng = jax.random.PRNGKey(key)

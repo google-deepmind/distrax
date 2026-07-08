@@ -94,8 +94,10 @@ class Transformed(dist_base.Distribution):
           f"events (i.e. not nested). Received '{distribution.name}' with "
           f"event shape '{distribution.event_shape}'.")
 
+    # pyrefly: ignore[missing-attribute]
     if len(event_shape) != bijector.event_ndims_in:
       raise ValueError(
+          # pyrefly: ignore[missing-attribute]
           f"Base distribution '{distribution.name}' has event shape "
           f"{distribution.event_shape}, but bijector '{bijector.name}' expects "
           f"events to have {bijector.event_ndims_in} dimensions. Perhaps use "

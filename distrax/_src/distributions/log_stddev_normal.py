@@ -76,8 +76,8 @@ class LogStddevNormal(normal.Normal):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return LogStddevNormal(
-        loc=self.loc[index],
-        log_scale=self.log_scale[index],
+        loc=self.loc[index],  # pyrefly: ignore[bad-index]
+        log_scale=self.log_scale[index],  # pyrefly: ignore[bad-index]
         max_scale=self._max_scale)
 
 
@@ -97,6 +97,7 @@ def _kl_logstddevnormal_logstddevnormal(
   # (s_a^2 + (u_a - u_b)^2)/(2*s_b^2) + log(s_b) - log(s_a) - 1/2.
   variance1 = jnp.square(dist1.scale)
   variance2 = jnp.square(dist2.scale)
+  # pyrefly: ignore[unsupported-operation]
   return ((variance1 + jnp.square(dist1.loc - dist2.loc)) / (2.0 * variance2) +
           dist2.log_scale - dist1.log_scale - 0.5)
 

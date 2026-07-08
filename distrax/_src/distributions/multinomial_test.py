@@ -80,7 +80,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
   )
   def test_event_shape(self, dist_params):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
-    dist_params.update({'total_count': self.total_count})
+    dist_params.update({'total_count': self.total_count})  # pyrefly: ignore[no-matching-overload]
     super()._test_event_shape((), dist_params)
 
   @chex.all_variants
@@ -137,7 +137,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
   def test_sample_shape_with_int_total_count(
       self, dist_params, sample_shape):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
-    dist_params.update({
+    dist_params.update({  # pyrefly: ignore[no-matching-overload]
         'total_count': 3,
     })
     super()._test_sample_shape(
@@ -199,7 +199,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
   def test_sample_shape_with_1d_total_count(
       self, dist_params, sample_shape):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
-    dist_params.update({
+    dist_params.update({  # pyrefly: ignore[no-matching-overload]
         'total_count': np.asarray([4, 3], dtype=np.float32),
     })
     super()._test_sample_shape(
@@ -263,7 +263,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
     total_count = np.asarray(
         [[4, 3], [5, 4], [3, 2], [1, 4]], dtype=np.float32)
-    dist_params.update({'total_count': total_count})
+    dist_params.update({'total_count': total_count})  # pyrefly: ignore[no-matching-overload]
     super()._test_sample_shape(
         dist_args=(),
         dist_kwargs=dist_params,
@@ -325,9 +325,9 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
     total_count = np.asarray(
         [[4, 3], [5, 4], [3, 2], [1, 4]], dtype=np.float32)
-    dist_params.update({'total_count': total_count})
+    dist_params.update({'total_count': total_count})  # pyrefly: ignore[no-matching-overload]
     dist = self.distrax_cls(**dist_params)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=sample_shape))
     samples = sample_fn(self.key)
     sum_samples = jnp.sum(samples, axis=-1)
@@ -390,7 +390,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
     total_count = np.asarray(
         [[4, 3], [5, 4], [3, 2], [1, 4]], dtype=np.float32)
-    dist_params.update({'total_count': total_count})
+    dist_params.update({'total_count': total_count})  # pyrefly: ignore[no-matching-overload]
     super()._test_sample_and_log_prob(
         dist_args=(),
         dist_kwargs=dist_params,
@@ -413,7 +413,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
           'total_count': self.total_count,
       }
       dist = self.distrax_cls(**dist_params)
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -422,7 +422,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist_params = {
         'probs': np.asarray([1., 0., 0., 0.]), 'total_count': 10}
     dist = self.distrax_cls(**dist_params)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: dist.sample(seed=key, sample_shape=100))
     samples = sample_fn(self.key)
     np.testing.assert_equal(np.unique(samples[..., 0]), 10)
@@ -457,7 +457,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
   )
   def test_log_prob(self, dist_params, value):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
-    dist_params.update({'total_count': 3})
+    dist_params.update({'total_count': 3})  # pyrefly: ignore[no-matching-overload]
     value = jnp.asarray(value)
     super()._test_attribute(
         attribute_string='log_prob',
@@ -475,7 +475,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     expected_result = np.asarray([0., -np.inf])
     dist = self.distrax_cls(**dist_params)
     np.testing.assert_allclose(
-        self.variant(dist.log_prob)(value), expected_result, atol=1e-5)
+        self.variant(dist.log_prob)(value), expected_result, atol=1e-5)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -495,7 +495,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     for probs, counts in zip(dist.probs, dist.total_count):
       entropy.append(stats.multinomial(n=counts, p=probs).entropy())
     self.assertion_fn(atol=1e-6, rtol=1e-3)(
-        self.variant(dist.entropy)(), np.asarray(entropy))
+        self.variant(dist.entropy)(), np.asarray(entropy))  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   def test_entropy_extreme_probs(self):
@@ -506,7 +506,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist = self.distrax_cls(**dist_params)
     expected_result = np.asarray([0., 0.])
     np.testing.assert_allclose(
-        self.variant(dist.entropy)(), expected_result, atol=3e-4)
+        self.variant(dist.entropy)(), expected_result, atol=3e-4)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   def test_entropy_scalar(self):
@@ -515,7 +515,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     probs = np.asarray([0.1, 0.5, 0.4])
     total_count = 5
     scipy_entropy = stats.multinomial(n=total_count, p=probs).entropy()
-    distrax_entropy_fn = self.variant(
+    distrax_entropy_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda x, y: multinomial.Multinomial._entropy_scalar(total_count, x, y))
     self.assertion_fn(atol=1e-6, rtol=1e-3)(
         distrax_entropy_fn(probs, np.log(probs)), scipy_entropy)
@@ -525,7 +525,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     probs = np.asarray([1., 0., 0.])
     total_count = 5
     expected_result = 0.
-    distrax_entropy_fn = self.variant(
+    distrax_entropy_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda x, y: multinomial.Multinomial._entropy_scalar(total_count, x, y))
     np.testing.assert_allclose(
         distrax_entropy_fn(probs, np.log(probs)), expected_result, atol=1e-5)
@@ -549,7 +549,7 @@ class MultinomialTest(equivalence.EquivalenceTest):
     dist_params = {k: jnp.asarray(v) for k, v in dist_params.items()}
     total_count = np.asarray(
         [[4, 3], [5, 4], [3, 2], [1, 4]], dtype=np.float32)
-    dist_params.update({'total_count': total_count})
+    dist_params.update({'total_count': total_count})  # pyrefly: ignore[no-matching-overload]
     super()._test_attribute(
         attribute_string=function_string,
         dist_kwargs=dist_params,

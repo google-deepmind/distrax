@@ -254,6 +254,7 @@ class Distribution(
     """
     if not self.event_shape:
       # Defined for univariate distributions only.
+      # pyrefly: ignore[unsupported-operation]
       return jnp.log1p(-self.cdf(value))
     else:
       raise NotImplementedError('`log_survival_function` is not defined for '
@@ -276,6 +277,7 @@ class Distribution(
 
   def stddev(self) -> EventT:
     """Calculates the standard deviation."""
+    # pyrefly: ignore[bad-argument-type, bad-return]
     return jnp.sqrt(self.variance())
 
   def mode(self) -> EventT:

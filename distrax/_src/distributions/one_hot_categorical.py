@@ -93,5 +93,7 @@ class OneHotCategorical(categorical.Categorical):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     if self._logits is not None:
+      # pyrefly: ignore[bad-index]
       return OneHotCategorical(logits=self.logits[index], dtype=self._dtype)
+    # pyrefly: ignore[bad-index]
     return OneHotCategorical(probs=self.probs[index], dtype=self._dtype)

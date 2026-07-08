@@ -75,7 +75,7 @@ class SoftmaxTest(equivalence.EquivalenceTest):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = self.distrax_cls(
           logits=self.logits, temperature=self.temperature, dtype=dtype)
-      samples = self.variant(dist.sample)(seed=self.key)
+      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 

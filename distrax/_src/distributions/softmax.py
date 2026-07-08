@@ -64,6 +64,6 @@ class Softmax(categorical.Categorical):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return Softmax(
-        logits=self.unscaled_logits[index],
+        logits=self.unscaled_logits[index],  # pyrefly: ignore[bad-index]
         temperature=self.temperature,
         dtype=self.dtype)

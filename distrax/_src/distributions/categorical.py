@@ -73,13 +73,14 @@ class Categorical(distribution.Distribution):
     """The logits for each event."""
     if self._logits is not None:
       return self._logits
-    return jnp.log(self._probs)
+    return jnp.log(self._probs)  # pyrefly: ignore[bad-argument-type]
 
   @property
   def probs(self) -> Array:
     """The probabilities for each event."""
     if self._probs is not None:
       return self._probs
+    # pyrefly: ignore[bad-argument-type]
     return jax.nn.softmax(self._logits, axis=-1)
 
   @property
@@ -87,7 +88,7 @@ class Categorical(distribution.Distribution):
     """Number of categories."""
     if self._probs is not None:
       return self._probs.shape[-1]
-    return self._logits.shape[-1]
+    return self._logits.shape[-1]  # pyrefly: ignore[missing-attribute]
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
@@ -117,7 +118,7 @@ class Categorical(distribution.Distribution):
   def entropy(self) -> Array:
     """See `Distribution.entropy`."""
     if self._logits is None:
-      log_probs = jnp.log(self._probs)
+      log_probs = jnp.log(self._probs)  # pyrefly: ignore[bad-argument-type]
     else:
       log_probs = jax.nn.log_softmax(self._logits)
     return -jnp.sum(math.mul_exp(log_probs, log_probs), axis=-1)
@@ -125,6 +126,7 @@ class Categorical(distribution.Distribution):
   def mode(self) -> Array:
     """See `Distribution.mode`."""
     parameter = self._probs if self._logits is None else self._logits
+    # pyrefly: ignore[bad-argument-type]
     return jnp.argmax(parameter, axis=-1).astype(self._dtype)
 
   def cdf(self, value: EventT) -> Array:
@@ -155,7 +157,9 @@ class Categorical(distribution.Distribution):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     if self._logits is not None:
+      # pyrefly: ignore[bad-index]
       return Categorical(logits=self.logits[index], dtype=self._dtype)
+    # pyrefly: ignore[bad-index]
     return Categorical(probs=self.probs[index], dtype=self._dtype)
 
 

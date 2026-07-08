@@ -79,7 +79,7 @@ class CategoricalUniform(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return jax.lax.broadcast_shapes(
+    return jax.lax.broadcast_shapes(  # pyrefly: ignore[bad-return]
         self._low.shape, self._high.shape, self._logits.shape[:-1])
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
@@ -96,6 +96,7 @@ class CategoricalUniform(distribution.Distribution):
     # The following holds because the components have non-overlapping domains.
     mixture = self._get_mixture()
     return mixture.mixture_distribution.entropy() + jnp.log(
+        # pyrefly: ignore[unsupported-operation]
         (self._high - self._low) / self.num_bins)
 
   def mean(self) -> Array:
@@ -110,6 +111,7 @@ class CategoricalUniform(distribution.Distribution):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return CategoricalUniform(
+        # pyrefly: ignore[bad-index]
         low=self.low[index], high=self.high[index], logits=self.logits[index])
 
   def _get_category_limits(self) -> Array:
@@ -121,6 +123,7 @@ class CategoricalUniform(distribution.Distribution):
     limits = self._get_category_limits()
     return mixture_same_family.MixtureSameFamily(
         components_distribution=uniform.Uniform(
+            # pyrefly: ignore[bad-index]
             low=limits[..., :-1], high=limits[..., 1:]),
         mixture_distribution=categorical.Categorical(logits=self.logits),
     )

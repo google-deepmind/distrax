@@ -169,7 +169,7 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
         covariance_matrix=_covariance_matrix_from_low_rank(
             scale_diag, scale_u_matrix, scale_v_matrix)
     )
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda rng: dist.sample(sample_shape=sample_shape, seed=rng))
     distrax_samples = sample_fn(jax.random.PRNGKey(0))
     tfp_samples = tfp_dist.sample(
@@ -186,7 +186,7 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
           'loc': np.array([0., 0.], dtype),
           'scale_diag': np.array([1., 1.], dtype)}
       dist = MultivariateNormalDiagPlusLowRank(**dist_params)
-      samples = self.variant(dist.sample)(seed=jax.random.PRNGKey(0))
+      samples = self.variant(dist.sample)(seed=jax.random.PRNGKey(0))  # pyrefly: ignore[missing-attribute]
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -229,7 +229,7 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
     )
     value = rng.normal(size=value_shape)
     self.assertion_fn(rtol=2e-3)(
-        self.variant(dist.log_prob)(value), tfp_dist.log_prob(value))
+        self.variant(dist.log_prob)(value), tfp_dist.log_prob(value))  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -274,7 +274,7 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
       else:
         rtol = 1e-3
       with self.subTest(method=method):
-        fn = self.variant(getattr(dist, method))
+        fn = self.variant(getattr(dist, method))  # pyrefly: ignore[missing-attribute]
         self.assertion_fn(rtol=rtol)(fn(), getattr(tfp_dist, method)())
 
   @chex.all_variants(with_pmap=False)
@@ -326,16 +326,16 @@ class MultivariateNormalDiagPlusLowRankTest(equivalence.EquivalenceTest):
     expected_result1 = getattr(tfp_dist1, function_string)(tfp_dist2)
     expected_result2 = getattr(tfp_dist2, function_string)(tfp_dist1)
     if mode_string == 'distrax_to_distrax':
-      result1 = self.variant(getattr(distrax_dist1, function_string))(
+      result1 = self.variant(getattr(distrax_dist1, function_string))(  # pyrefly: ignore[missing-attribute]
           distrax_dist2)
-      result2 = self.variant(getattr(distrax_dist2, function_string))(
+      result2 = self.variant(getattr(distrax_dist2, function_string))(  # pyrefly: ignore[missing-attribute]
           distrax_dist1)
     elif mode_string == 'distrax_to_tfp':
-      result1 = self.variant(getattr(distrax_dist1, function_string))(tfp_dist2)
-      result2 = self.variant(getattr(distrax_dist2, function_string))(tfp_dist1)
+      result1 = self.variant(getattr(distrax_dist1, function_string))(tfp_dist2)  # pyrefly: ignore[missing-attribute]
+      result2 = self.variant(getattr(distrax_dist2, function_string))(tfp_dist1)  # pyrefly: ignore[missing-attribute]
     elif mode_string == 'tfp_to_distrax':
-      result1 = self.variant(getattr(tfp_dist1, function_string))(distrax_dist2)
-      result2 = self.variant(getattr(tfp_dist2, function_string))(distrax_dist1)
+      result1 = self.variant(getattr(tfp_dist1, function_string))(distrax_dist2)  # pyrefly: ignore[missing-attribute]
+      result2 = self.variant(getattr(tfp_dist2, function_string))(distrax_dist1)  # pyrefly: ignore[missing-attribute]
     else:
       raise ValueError(f'Unsupported mode: {mode_string}')
     self.assertion_fn(rtol=3e-3)(result1, expected_result1)

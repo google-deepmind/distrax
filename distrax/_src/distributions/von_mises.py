@@ -116,7 +116,7 @@ class VonMises(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   def mean(self) -> Array:
     """The circular mean of the distribution."""
@@ -203,8 +203,8 @@ class VonMises(distribution.Distribution):
   def __getitem__(self, index) -> 'VonMises':
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return VonMises(
-        loc=self.loc[index],
-        concentration=self.concentration[index],
+        loc=self.loc[index],  # pyrefly: ignore[bad-index]
+        concentration=self.concentration[index],  # pyrefly: ignore[bad-index]
     )
 
 
@@ -244,11 +244,13 @@ def _von_mises_sample(
     del u_in
     u_seed, v_seed, next_seed = jax.random.split(seed, 3)
     u = jax.random.uniform(
+        # pyrefly: ignore[bad-argument-type]
         u_seed, shape=shape, dtype=dtype, minval=-1., maxval=1.
     )
     z = jnp.cos(math.pi * u)
     w = jnp.where(done, w, (1 + s * z) / (s + z))
     y = concentration * (s - w)
+    # pyrefly: ignore[bad-argument-type]
     v = jax.random.uniform(v_seed, shape, dtype=dtype, minval=0., maxval=1.)
     # Use `logical_not` to accept all "nan" samples.
     accept = jnp.logical_not(y * jnp.exp(1 - y) < v)
@@ -476,10 +478,12 @@ def _kl_divergence_vonmises_vonmises(
   i1e_concentration1 = jax.scipy.special.i1e(dist1.concentration)
   i0e_concentration2 = jax.scipy.special.i0e(dist2.concentration)
   return (
+      # pyrefly: ignore[unsupported-operation]
       (dist2.concentration - dist1.concentration) +
       jnp.log(i0e_concentration2 / i0e_concentration1) +
       (i1e_concentration1 / i0e_concentration1) * (
           dist1.concentration
+          # pyrefly: ignore[unsupported-operation]
           - dist2.concentration * jnp.cos(dist1.loc - dist2.loc)
       )
   )

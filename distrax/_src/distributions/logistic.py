@@ -57,7 +57,7 @@ class Logistic(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def loc(self) -> Array:
@@ -70,7 +70,7 @@ class Logistic(distribution.Distribution):
     return jnp.broadcast_to(self._scale, self.batch_shape)
 
   def _standardize(self, x: Array) -> Array:
-    return (x - self.loc) / self.scale
+    return (x - self.loc) / self.scale  # pyrefly: ignore[unsupported-operation]
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
@@ -88,6 +88,7 @@ class Logistic(distribution.Distribution):
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
+    # pyrefly: ignore[unsupported-operation]
     return -z - 2. * jax.nn.softplus(-z) - jnp.log(self._scale)
 
   def entropy(self) -> Array:
@@ -100,10 +101,12 @@ class Logistic(distribution.Distribution):
 
   def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
+    # pyrefly: ignore[unsupported-operation]
     return -jax.nn.softplus(-self._standardize(value))
 
   def survival_function(self, value: EventT) -> Array:
     """See `Distribution.survival_function`."""
+    # pyrefly: ignore[unsupported-operation]
     return jax.nn.sigmoid(-self._standardize(value))
 
   def log_survival_function(self, value: EventT) -> Array:
@@ -133,4 +136,5 @@ class Logistic(distribution.Distribution):
   def __getitem__(self, index) -> 'Logistic':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Logistic(loc=self.loc[index], scale=self.scale[index])

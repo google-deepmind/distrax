@@ -131,5 +131,6 @@ class MultivariateNormalFullCovariance(MultivariateNormalTri):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return MultivariateNormalFullCovariance(
-        loc=self.loc[index],
+        loc=self.loc[index],  # pyrefly: ignore[bad-index]
+        # pyrefly: ignore[bad-index]
         covariance_matrix=self.covariance_matrix[index])

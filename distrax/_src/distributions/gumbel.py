@@ -58,7 +58,7 @@ class Gumbel(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def loc(self) -> Array:
@@ -72,11 +72,13 @@ class Gumbel(distribution.Distribution):
 
   def _standardize(self, value: Array) -> Array:
     """Standardizes the input `value` in location and scale."""
+    # pyrefly: ignore[unsupported-operation]
     return (value - self._loc) / self._scale
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
+    # pyrefly: ignore[unsupported-operation]
     return -(z + jnp.exp(-z)) - jnp.log(self._scale)
 
   def _sample_from_std_gumbel(self, key: PRNGKey, n: int) -> Array:
@@ -93,6 +95,7 @@ class Gumbel(distribution.Distribution):
     """See `Distribution._sample_n_and_log_prob`."""
     rnd = self._sample_from_std_gumbel(key, n)
     samples = self._scale * rnd + self._loc
+    # pyrefly: ignore[unsupported-operation]
     log_prob = -(rnd + jnp.exp(-rnd)) - jnp.log(self._scale)
     return samples, log_prob
 
@@ -103,7 +106,7 @@ class Gumbel(distribution.Distribution):
   def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
     z = self._standardize(value)
-    return -jnp.exp(-z)
+    return -jnp.exp(-z)  # pyrefly: ignore[unsupported-operation]
 
   def mean(self) -> Array:
     """Calculates the mean."""
@@ -128,6 +131,7 @@ class Gumbel(distribution.Distribution):
   def __getitem__(self, index) -> 'Gumbel':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Gumbel(loc=self.loc[index], scale=self.scale[index])
 
 
@@ -147,8 +151,10 @@ def _kl_divergence_gumbel_gumbel(
   """
   return (jnp.log(dist2.scale) - jnp.log(dist1.scale) + jnp.euler_gamma *
           (dist1.scale / dist2.scale - 1.) +
+          # pyrefly: ignore[unsupported-operation]
           jnp.expm1((dist2.loc - dist1.loc) / dist2.scale +
                     jax.lax.lgamma(dist1.scale / dist2.scale + 1.)) +
+          # pyrefly: ignore[unsupported-operation]
           (dist1.loc - dist2.loc) / dist2.scale)
 
 

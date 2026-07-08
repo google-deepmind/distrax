@@ -67,11 +67,11 @@ class Uniform(distribution.Distribution):
 
   @property
   def range(self) -> Array:
-    return self.high - self.low
+    return self.high - self.low  # pyrefly: ignore[unsupported-operation]
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
@@ -135,6 +135,7 @@ class Uniform(distribution.Distribution):
   def __getitem__(self, index) -> 'Uniform':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Uniform(low=self.low[index], high=self.high[index])
 
 
@@ -157,6 +158,7 @@ def _kl_divergence_uniform_uniform(
   """
   return jnp.where(
       jnp.logical_and(dist2.low <= dist1.low, dist1.high <= dist2.high),
+      # pyrefly: ignore[unsupported-operation]
       jnp.log(dist2.high - dist2.low) - jnp.log(dist1.high - dist1.low),
       jnp.inf)
 

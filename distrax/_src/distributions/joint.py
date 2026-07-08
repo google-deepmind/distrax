@@ -64,6 +64,7 @@ class Joint(distribution.Distribution):
       distributions: Tree of distributions that must have the same batch shape.
     """
     super().__init__()
+    # pyrefly: ignore[invalid-type-var]
     self._distributions: DistributionT = _map_up_to_distribution(
         conversion.as_distribution, distributions
     )
@@ -144,10 +145,11 @@ class Joint(distribution.Distribution):
     return _map_up_to_distribution(lambda dist: dist.dtype, self._distributions)
 
   def entropy(self) -> chex.Array:
+    # pyrefly: ignore[bad-return]
     return sum(dist.entropy() for dist in self._distributions_leaves)
 
   def log_cdf(self, value: distribution.EventT) -> chex.Array:
-    return sum(
+    return sum(  # pyrefly: ignore[bad-return]
         dist.log_cdf(v)
         for dist, v in zip(self._distributions_leaves, jax.tree.leaves(value))
     )
@@ -192,7 +194,7 @@ def _kl_divergence_joint_joint(
         'Joint distributions must have the same tree structure, but\n'
         f'{treedef1=}\n{treedef2=}.'
     )
-  return sum(
+  return sum(  # pyrefly: ignore[bad-return]
       inner1.kl_divergence(inner2)
       for inner1, inner2 in zip(
           _leaves_up_to_distribution(dist1.distributions),

@@ -79,7 +79,7 @@ class DirichletTest(equivalence.EquivalenceTest):
       ('float16', jnp.float16))
   def test_sample_dtype(self, dtype):
     dist = self.distrax_cls(concentration=jnp.ones((3,), dtype=dtype))
-    samples = self.variant(dist.sample)(seed=self.key)
+    samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)
 
@@ -146,7 +146,7 @@ class DirichletTest(equivalence.EquivalenceTest):
   )
   def test_mode(self, concentration, expected_result):
     dist = self.distrax_cls(concentration)
-    result = self.variant(dist.mode)()
+    result = self.variant(dist.mode)()  # pyrefly: ignore[missing-attribute]
     if np.any(np.isnan(expected_result)):
       self.assertTrue(jnp.all(jnp.isnan(result)))
     else:
@@ -196,14 +196,14 @@ class DirichletTest(equivalence.EquivalenceTest):
         expected_result_1 = getattr(tfd.Beta(alpha1, beta1), method)(tfp_dist2)
         expected_result_2 = getattr(tfp_dist2, method)(tfd.Beta(alpha1, beta1))
         if mode_string == 'distrax_to_distrax':
-          result1 = self.variant(getattr(distrax_dist1, method))(distrax_dist2)
-          result2 = self.variant(getattr(distrax_dist2, method))(distrax_dist1)
+          result1 = self.variant(getattr(distrax_dist1, method))(distrax_dist2)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(getattr(distrax_dist2, method))(distrax_dist1)  # pyrefly: ignore[missing-attribute]
         elif mode_string == 'distrax_to_tfp':
-          result1 = self.variant(getattr(distrax_dist1, method))(tfp_dist2)
-          result2 = self.variant(getattr(distrax_dist2, method))(tfp_dist1)
+          result1 = self.variant(getattr(distrax_dist1, method))(tfp_dist2)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(getattr(distrax_dist2, method))(tfp_dist1)  # pyrefly: ignore[missing-attribute]
         elif mode_string == 'tfp_to_distrax':
-          result1 = self.variant(getattr(tfp_dist1, method))(distrax_dist2)
-          result2 = self.variant(getattr(tfp_dist2, method))(distrax_dist1)
+          result1 = self.variant(getattr(tfp_dist1, method))(distrax_dist2)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(getattr(tfp_dist2, method))(distrax_dist1)  # pyrefly: ignore[missing-attribute]
         else:
           raise ValueError(f'Unsupported mode: {mode_string}')
         self.assertion_fn(rtol=3e-2)(result1, expected_result_1)
@@ -229,9 +229,9 @@ class DirichletTest(equivalence.EquivalenceTest):
       raise ValueError(f'Unsupported distribution: {dist2_type}')
     dist2 = dist2_type(**dist2_kwargs)
     with self.assertRaises(ValueError):
-      self.variant(dist1.kl_divergence)(dist2)
+      self.variant(dist1.kl_divergence)(dist2)  # pyrefly: ignore[missing-attribute]
     with self.assertRaises(ValueError):
-      self.variant(dist2.kl_divergence)(dist1)
+      self.variant(dist2.kl_divergence)(dist1)  # pyrefly: ignore[missing-attribute]
 
   def test_jitable(self):
     rng = np.random.default_rng(42)

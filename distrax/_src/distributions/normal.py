@@ -58,6 +58,7 @@ class Normal(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
+    # pyrefly: ignore[bad-return]
     return jax.lax.broadcast_shapes(self._loc.shape, self._scale.shape)
 
   @property
@@ -105,10 +106,12 @@ class Normal(distribution.Distribution):
 
   def survival_function(self, value: EventT) -> Array:
     """See `Distribution.survival_function`."""
+    # pyrefly: ignore[unsupported-operation]
     return jax.scipy.special.ndtr(-self._standardize(value))
 
   def log_survival_function(self, value: EventT) -> Array:
     """See `Distribution.log_survival_function`."""
+    # pyrefly: ignore[unsupported-operation]
     return jax.scipy.special.log_ndtr(-self._standardize(value))
 
   def _standardize(self, value: EventT) -> Array:
@@ -143,6 +146,7 @@ class Normal(distribution.Distribution):
   def __getitem__(self, index) -> 'Normal':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Normal(loc=self.loc[index], scale=self.scale[index])
 
 

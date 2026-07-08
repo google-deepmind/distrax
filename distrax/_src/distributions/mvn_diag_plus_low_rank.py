@@ -167,39 +167,42 @@ class MultivariateNormalDiagPlusLowRank(MultivariateNormalFromBijector):
 
     if scale_u_matrix is None:
       # The scale matrix is diagonal.
-      scale = DiagLinear(self._scale_diag)
+      scale = DiagLinear(self._scale_diag)  # pyrefly: ignore[bad-argument-type]
     else:
       scale = DiagPlusLowRankLinear(
-          u_matrix=self._scale_u_matrix,
-          v_matrix=self._scale_v_matrix,
-          diag=self._scale_diag)
+          u_matrix=self._scale_u_matrix,  # pyrefly: ignore[bad-argument-type]
+          v_matrix=self._scale_v_matrix,  # pyrefly: ignore[bad-argument-type]
+          diag=self._scale_diag)  # pyrefly: ignore[bad-argument-type]
     super().__init__(loc=loc, scale=scale)
 
   @property
   def scale_diag(self) -> Array:
     """Diagonal matrix that is added to the scale."""
     return jnp.broadcast_to(
+        # pyrefly: ignore[bad-argument-type]
         self._scale_diag, self.batch_shape + self.event_shape)
 
   @property
   def scale_u_matrix(self) -> Array:
     """Matrix `U` that defines the low-rank part of the scale matrix."""
     return jnp.broadcast_to(
-        self._scale_u_matrix,
+        self._scale_u_matrix,  # pyrefly: ignore[bad-argument-type]
+        # pyrefly: ignore[missing-attribute]
         self.batch_shape + self._scale_u_matrix.shape[-2:])
 
   @property
   def scale_v_matrix(self) -> Array:
     """Matrix `V` that defines the low-rank part of the scale matrix."""
     return jnp.broadcast_to(
-        self._scale_v_matrix,
+        self._scale_v_matrix,  # pyrefly: ignore[bad-argument-type]
+        # pyrefly: ignore[missing-attribute]
         self.batch_shape + self._scale_v_matrix.shape[-2:])
 
   def __getitem__(self, index) -> 'MultivariateNormalDiagPlusLowRank':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return MultivariateNormalDiagPlusLowRank(
-        loc=self.loc[index],
-        scale_diag=self.scale_diag[index],
-        scale_u_matrix=self.scale_u_matrix[index],
-        scale_v_matrix=self.scale_v_matrix[index])
+        loc=self.loc[index],  # pyrefly: ignore[bad-index]
+        scale_diag=self.scale_diag[index],  # pyrefly: ignore[bad-index]
+        scale_u_matrix=self.scale_u_matrix[index],  # pyrefly: ignore[bad-index]
+        scale_v_matrix=self.scale_v_matrix[index])  # pyrefly: ignore[bad-index]

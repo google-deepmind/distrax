@@ -109,7 +109,7 @@ class BernoulliTest(equivalence.EquivalenceTest):
     n_samples = 100000
     dist_kwargs = {'probs': probs} if from_probs else {'logits': logits}
     dist = self.distrax_cls(**dist_kwargs)
-    sample_fn = self.variant(
+    sample_fn = self.variant(  # pyrefly: ignore[missing-attribute]
         lambda key: getattr(dist, method)(seed=key, sample_shape=n_samples))
     samples = sample_fn(self.key)
     samples = samples[0] if method == 'sample_and_log_prob' else samples
@@ -173,7 +173,7 @@ class BernoulliTest(equivalence.EquivalenceTest):
   def test_sample_dtype(self, method, dtype):
     dist_params = {'logits': self.logits, 'dtype': dtype}
     dist = self.distrax_cls(**dist_params)
-    samples = self.variant(getattr(dist, method))(seed=self.key)
+    samples = self.variant(getattr(dist, method))(seed=self.key)  # pyrefly: ignore[missing-attribute]
     samples = samples[0] if method == 'sample_and_log_prob' else samples
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)

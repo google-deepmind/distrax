@@ -83,7 +83,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist = MultivariateNormalFromBijector(loc, scale)
     num_samples = 100_000
     sample_fn = lambda seed: dist.sample(seed=seed, sample_shape=num_samples)
-    samples = self.variant(sample_fn)(jax.random.PRNGKey(2000))
+    samples = self.variant(sample_fn)(jax.random.PRNGKey(2000))  # pyrefly: ignore[missing-attribute]
     self.assertEqual(samples.shape, (num_samples, 4))
     np.testing.assert_allclose(jnp.mean(samples, axis=0), loc, rtol=0.1)
     np.testing.assert_allclose(jnp.std(samples, axis=0), diag, rtol=0.1)
@@ -98,7 +98,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     values = jax.random.normal(next(prng), (5, 4))
     tfp_dist = tfd.MultivariateNormalDiag(loc=loc, scale_diag=diag)
     np.testing.assert_allclose(
-        self.variant(dist.log_prob)(values), tfp_dist.log_prob(values),
+        self.variant(dist.log_prob)(values), tfp_dist.log_prob(values),  # pyrefly: ignore[missing-attribute]
         rtol=2e-7)
 
   @chex.all_variants(with_pmap=False)
@@ -116,7 +116,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['mean', 'median', 'mode']:
       with self.subTest(method=method):
-        fn = self.variant(getattr(dist, method))
+        fn = self.variant(getattr(dist, method))  # pyrefly: ignore[missing-attribute]
         np.testing.assert_allclose(
             fn(), jnp.broadcast_to(loc, batch_shape + loc.shape[-1:]))
 
@@ -135,7 +135,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['variance', 'stddev', 'covariance']:
       with self.subTest(method=method):
-        fn = self.variant(getattr(dist, method))
+        fn = self.variant(getattr(dist, method))  # pyrefly: ignore[missing-attribute]
         if method == 'variance':
           expected_result = jnp.broadcast_to(
               jnp.square(scale_diag), batch_shape + loc.shape[-1:])
@@ -166,7 +166,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     dist = MultivariateNormalFromBijector(loc, scale)
     for method in ['variance', 'stddev', 'covariance']:
       with self.subTest(method=method):
-        fn = self.variant(getattr(dist, method))
+        fn = self.variant(getattr(dist, method))  # pyrefly: ignore[missing-attribute]
         scale_tril_t = jnp.vectorize(
             jnp.transpose, signature='(k,k)->(k,k)')(scale_tril)
         scale_times_scale_t = jnp.matmul(scale_tril, scale_tril_t)
@@ -183,7 +183,7 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
         elif method == 'covariance':
           expected_result = jnp.broadcast_to(
               scale_times_scale_t, batch_shape + scale_tril.shape[-2:])
-        np.testing.assert_allclose(fn(), expected_result, rtol=5e-3)
+        np.testing.assert_allclose(fn(), expected_result, rtol=5e-3)  # pyrefly: ignore[unbound-name]
 
   @chex.all_variants(with_pmap=False)
   def test_kl_divergence_diag_distributions(self):
@@ -213,14 +213,14 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     for mode in ['distrax_to_distrax', 'distrax_to_tfp', 'tfp_to_distrax']:
       with self.subTest(mode=mode):
         if mode == 'distrax_to_distrax':
-          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_distrax)
-          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_distrax)
+          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_distrax)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_distrax)  # pyrefly: ignore[missing-attribute]
         elif mode == 'distrax_to_tfp':
-          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_tfp)
-          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_tfp)
+          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_tfp)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_tfp)  # pyrefly: ignore[missing-attribute]
         elif mode == 'tfp_to_distrax':
-          result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)
-          result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)
+          result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)  # pyrefly: ignore[missing-attribute]
         else:
           raise ValueError(f'Unsupported mode: {mode}')
         np.testing.assert_allclose(result1, expected_result1, rtol=1e-3)
@@ -252,14 +252,14 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     for mode in ['distrax_to_distrax', 'distrax_to_tfp', 'tfp_to_distrax']:
       with self.subTest(mode=mode):
         if mode == 'distrax_to_distrax':
-          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_distrax)
-          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_distrax)
+          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_distrax)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_distrax)  # pyrefly: ignore[missing-attribute]
         elif mode == 'distrax_to_tfp':
-          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_tfp)
-          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_tfp)
+          result1 = self.variant(dist1_distrax.kl_divergence)(dist2_tfp)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_distrax.kl_divergence)(dist1_tfp)  # pyrefly: ignore[missing-attribute]
         elif mode == 'tfp_to_distrax':
-          result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)
-          result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)
+          result1 = self.variant(dist1_tfp.kl_divergence)(dist2_distrax)  # pyrefly: ignore[missing-attribute]
+          result2 = self.variant(dist2_tfp.kl_divergence)(dist1_distrax)  # pyrefly: ignore[missing-attribute]
         else:
           raise ValueError(f'Unsupported mode: {mode}')
         np.testing.assert_allclose(result1, expected_result1, rtol=1e-3)

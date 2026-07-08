@@ -231,6 +231,7 @@ class Quantized(
     sf_m1 = self.survival_function(value - 1.)
     # Use the survival function instead of the CDF when its value is smaller,
     # which happens to the right of the median of the distribution.
+    # pyrefly: ignore[unsupported-operation]
     probs = jnp.where(sf < cdf, sf_m1 - sf, cdf - cdf_m1)
 
     # Return 0. when evaluating on non-integer value.
@@ -327,6 +328,8 @@ class Quantized(
   def __getitem__(self, index) -> 'Quantized':
     """See `Distribution.__getitem__`."""
     index = base_distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index, unsupported-operation]
     low = None if self._low is None else self.low[index]
+    # pyrefly: ignore[bad-index, unsupported-operation]
     high = None if self._high is None else self.high[index]
     return Quantized(distribution=self.distribution[index], low=low, high=high)

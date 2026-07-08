@@ -41,7 +41,7 @@ class MixtureOfTwoTest(equivalence.EquivalenceTest):
     self.component_b = components[1]
     self.tfp_mixture = components[2]
 
-  def assertion_fn(self, rtol: float = 1e-3):
+  def assertion_fn(self, rtol: float = 1e-3):  # pyrefly: ignore[bad-override]
     return lambda x, y: np.testing.assert_allclose(x, y, rtol=rtol)
 
   def _get_components(self, rng_seq):
@@ -84,7 +84,7 @@ class MixtureOfTwoTest(equivalence.EquivalenceTest):
     expected_event = mix.sample(
         seed=jax.random.PRNGKey(42), sample_shape=sample_shape)
     expected_log_prob = mix.log_prob(expected_event)
-    event, log_prob = self.variant(
+    event, log_prob = self.variant(  # pyrefly: ignore[missing-attribute]
         mix.sample_and_log_prob, static_argnames='sample_shape')(
             seed=jax.random.PRNGKey(42), sample_shape=sample_shape)
 

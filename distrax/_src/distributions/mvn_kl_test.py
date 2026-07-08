@@ -110,16 +110,16 @@ class MultivariateNormalKLTest(parameterized.TestCase):
       for mode in ['distrax_to_distrax', 'distrax_to_tfp', 'tfp_to_distrax']:
         with self.subTest(method=method, mode=mode):
           if mode == 'distrax_to_distrax':
-            result1 = self.variant(getattr(dist1_distrax, method))(
+            result1 = self.variant(getattr(dist1_distrax, method))(  # pyrefly: ignore[missing-attribute]
                 dist2_distrax)
-            result2 = self.variant(getattr(dist2_distrax, method))(
+            result2 = self.variant(getattr(dist2_distrax, method))(  # pyrefly: ignore[missing-attribute]
                 dist1_distrax)
           elif mode == 'distrax_to_tfp':
-            result1 = self.variant(getattr(dist1_distrax, method))(dist2_tfp)
-            result2 = self.variant(getattr(dist2_distrax, method))(dist1_tfp)
+            result1 = self.variant(getattr(dist1_distrax, method))(dist2_tfp)  # pyrefly: ignore[missing-attribute]
+            result2 = self.variant(getattr(dist2_distrax, method))(dist1_tfp)  # pyrefly: ignore[missing-attribute]
           elif mode == 'tfp_to_distrax':
-            result1 = self.variant(getattr(dist1_tfp, method))(dist2_distrax)
-            result2 = self.variant(getattr(dist2_tfp, method))(dist1_distrax)
+            result1 = self.variant(getattr(dist1_tfp, method))(dist2_distrax)  # pyrefly: ignore[missing-attribute]
+            result2 = self.variant(getattr(dist2_tfp, method))(dist1_distrax)  # pyrefly: ignore[missing-attribute]
           else:
             raise ValueError(f'Unsupported mode: {mode}')
           np.testing.assert_allclose(result1, expected_result1, rtol=0.03)

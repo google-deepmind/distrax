@@ -153,6 +153,7 @@ class Dirichlet(distribution.Distribution):
   def __getitem__(self, index) -> 'Dirichlet':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # pyrefly: ignore[bad-index]
     return Dirichlet(concentration=self.concentration[index])
 
 
@@ -198,8 +199,10 @@ def _kl_divergence_dirichlet_dirichlet(
         f'{concentration1.shape[-1]} and {concentration2.shape[-1]} '
         f'dimensions.')
   sum_concentration1 = jnp.sum(concentration1, axis=-1, keepdims=True)
+  # pyrefly: ignore[unsupported-operation]
   t1 = (math.log_beta_multivariate(concentration2)
         - math.log_beta_multivariate(concentration1))
+  # pyrefly: ignore[unsupported-operation]
   t2 = jnp.sum((concentration1 - concentration2) * (
       jax.lax.digamma(concentration1) - jax.lax.digamma(sum_concentration1)),
                axis=-1)

@@ -237,12 +237,14 @@ def _kl_divergence_mvn_mvn(
   # If C_1 = AA.T, C_2 = BB.T, then
   #   tr[inv(C_2) C_1] = ||inv(B) A||_F^2
   # where ||.||_F^2 is the squared Frobenius norm.
+  # pyrefly: ignore[unsupported-operation]
   diff_lob_abs_det = _log_abs_determinant(dist2) - _log_abs_determinant(dist1)
   if _has_diagonal_scale(dist1) and _has_diagonal_scale(dist2):
     # This avoids instantiating the full scale matrix when it is diagonal.
     b_inv_a = jnp.expand_dims(dist1.stddev() / dist2.stddev(), axis=-1)
   else:
     b_inv_a = _inv_scale_operator(dist2)(_scale_matrix(dist1))
+  # pyrefly: ignore[unsupported-operation]
   diff_mean_expanded = jnp.expand_dims(dist2.mean() - dist1.mean(), axis=-1)
   b_inv_diff_mean = _inv_scale_operator(dist2)(diff_mean_expanded)
   kl_divergence = (

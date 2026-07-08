@@ -57,7 +57,7 @@ class Gamma(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape
+    return self._batch_shape  # pyrefly: ignore[bad-return]
 
   @property
   def concentration(self) -> Array:
@@ -129,6 +129,7 @@ class Gamma(distribution.Distribution):
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
     return Gamma(
+        # pyrefly: ignore[bad-index]
         concentration=self.concentration[index], rate=self.rate[index])
 
 
@@ -149,8 +150,10 @@ def _kl_divergence_gamma_gamma(
   """
   t1 = dist2.concentration * (jnp.log(dist1.rate) - jnp.log(dist2.rate))
   t2 = jax.lax.lgamma(dist2.concentration) - jax.lax.lgamma(dist1.concentration)
+  # pyrefly: ignore[unsupported-operation]
   t3 = (dist1.concentration - dist2.concentration) * jax.lax.digamma(
       dist1.concentration)
+  # pyrefly: ignore[unsupported-operation]
   t4 = (dist2.rate - dist1.rate) * (dist1.concentration / dist1.rate)
   return t1 + t2 + t3 + t4
 

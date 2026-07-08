@@ -102,7 +102,7 @@ class TransformedTest(parameterized.TestCase):
     base = dist_fn()
     bijector = bijector_fn()
     dist = transformed.Transformed(base, bijector)
-    sample = self.variant(dist.sample)(seed=self.seed)
+    sample = self.variant(dist.sample)(seed=self.seed)  # pyrefly: ignore[missing-attribute]
     assert dist.dtype == sample.dtype
     assert dist.dtype == expected_dtype
 
@@ -127,7 +127,7 @@ class TransformedTest(parameterized.TestCase):
     dist = transformed.Transformed(base, bijector)
     def sample_fn(seed, sample_shape):
       return dist.sample(seed=seed, sample_shape=sample_shape)
-    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(
+    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(  # pyrefly: ignore[missing-attribute]
         self.seed, sample_shape)
 
     tfp_dist = tfd.TransformedDistribution(conversion.to_tfp(base), bijector)
@@ -148,7 +148,7 @@ class TransformedTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = tfb.Scale(2)
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.log_prob)(value)
+    actual = self.variant(dist.log_prob)(value)  # pyrefly: ignore[missing-attribute]
 
     tfp_dist = tfd.TransformedDistribution(conversion.to_tfp(base), bijector)
     expected = tfp_dist.log_prob(value)
@@ -167,7 +167,7 @@ class TransformedTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = tfb.Scale(2)
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.prob)(value)
+    actual = self.variant(dist.prob)(value)  # pyrefly: ignore[missing-attribute]
 
     tfp_dist = tfd.TransformedDistribution(conversion.to_tfp(base), bijector)
     expected = tfp_dist.prob(value)
@@ -194,7 +194,7 @@ class TransformedTest(parameterized.TestCase):
     dist = transformed.Transformed(base, bijector)
     def sample_and_log_prob_fn(seed, sample_shape):
       return dist.sample_and_log_prob(seed=seed, sample_shape=sample_shape)
-    samples, log_prob = self.variant(
+    samples, log_prob = self.variant(  # pyrefly: ignore[missing-attribute]
         sample_and_log_prob_fn, ignore_argnums=(1,), static_argnums=(1,))(
             self.seed, sample_shape)
     expected_samples = bijector.forward(
@@ -276,22 +276,22 @@ class TransformedTest(parameterized.TestCase):
       np.testing.assert_equal(dx_dist.event_shape, tfp_dist.event_shape)
 
     with self.subTest('sample shape matches TFP'):
-      dx_sample = self.variant(dx_dist.sample)(seed=self.seed)
-      tfp_sample = self.variant(tfp_dist.sample)(seed=self.seed)
+      dx_sample = self.variant(dx_dist.sample)(seed=self.seed)  # pyrefly: ignore[missing-attribute]
+      tfp_sample = self.variant(tfp_dist.sample)(seed=self.seed)  # pyrefly: ignore[missing-attribute]
       chex.assert_equal_shape([dx_sample, tfp_sample])
 
     with self.subTest('log_prob(dx_sample) matches TFP'):
-      dx_logp_dx = self.variant(dx_dist.log_prob)(dx_sample)
-      tfp_logp_dx = self.variant(tfp_dist.log_prob)(dx_sample)
+      dx_logp_dx = self.variant(dx_dist.log_prob)(dx_sample)  # pyrefly: ignore[missing-attribute]
+      tfp_logp_dx = self.variant(tfp_dist.log_prob)(dx_sample)  # pyrefly: ignore[missing-attribute]
       np.testing.assert_allclose(dx_logp_dx, tfp_logp_dx, rtol=1e-2)
 
     with self.subTest('log_prob(tfp_sample) matches TFP'):
-      dx_logp_tfp = self.variant(dx_dist.log_prob)(tfp_sample)
-      tfp_logp_tfp = self.variant(tfp_dist.log_prob)(tfp_sample)
+      dx_logp_tfp = self.variant(dx_dist.log_prob)(tfp_sample)  # pyrefly: ignore[missing-attribute]
+      tfp_logp_tfp = self.variant(tfp_dist.log_prob)(tfp_sample)  # pyrefly: ignore[missing-attribute]
       np.testing.assert_allclose(dx_logp_tfp, tfp_logp_tfp, rtol=1e-2)
 
     with self.subTest('sample/lp shape is self-consistent'):
-      second_sample, log_prob = self.variant(dx_dist.sample_and_log_prob)(
+      second_sample, log_prob = self.variant(dx_dist.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
           seed=self.seed)
       chex.assert_equal_shape([dx_sample, second_sample])
       chex.assert_equal_shape([dx_logp_dx, log_prob])
@@ -329,9 +329,9 @@ class TransformedTest(parameterized.TestCase):
     assert dist.batch_shape == (2,)
     assert dist.event_shape == (3,)
     assert dist.dtype == jnp.float32
-    sample = self.variant(dist.sample)(seed=self.seed)
+    sample = self.variant(dist.sample)(seed=self.seed)  # pyrefly: ignore[missing-attribute]
     assert sample.dtype == dist.dtype
-    self.variant(dist.log_prob)(sample)
+    self.variant(dist.log_prob)(sample)  # pyrefly: ignore[missing-attribute]
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(_with_base_dists(
@@ -347,7 +347,7 @@ class TransformedTest(parameterized.TestCase):
     tfp_dist = tfd.TransformedDistribution(conversion.to_tfp(base), bijector)
 
     np.testing.assert_allclose(
-        self.variant(getattr(dist, function_string))(),
+        self.variant(getattr(dist, function_string))(),  # pyrefly: ignore[missing-attribute]
         getattr(tfp_dist, function_string)())
 
   @chex.all_variants
@@ -362,7 +362,7 @@ class TransformedTest(parameterized.TestCase):
     bijector = scalar_affine.ScalarAffine(shift=0.0)
     dist = transformed.Transformed(base, bijector)
 
-    log_prob = self.variant(dist.log_prob)(inputs)
+    log_prob = self.variant(dist.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
 
     standard_normal_log_prob_of_zero = -0.9189385
     expected_log_prob = jnp.full_like(
@@ -390,8 +390,8 @@ class TransformedTest(parameterized.TestCase):
     expected_result_fwd = base_dist1.kl_divergence(base_dist2)
     expected_result_inv = base_dist2.kl_divergence(base_dist1)
 
-    distrax_fn1 = self.variant(distrax_dist1.kl_divergence)
-    distrax_fn2 = self.variant(distrax_dist2.kl_divergence)
+    distrax_fn1 = self.variant(distrax_dist1.kl_divergence)  # pyrefly: ignore[missing-attribute]
+    distrax_fn2 = self.variant(distrax_dist2.kl_divergence)  # pyrefly: ignore[missing-attribute]
 
     if mode_string == 'distrax_to_distrax':
       result_fwd = distrax_fn1(distrax_dist2)
@@ -416,8 +416,8 @@ class TransformedTest(parameterized.TestCase):
     distrax_dist2 = transformed.Transformed(base_dist2, bij_distrax)
     expected_result_fwd = base_dist1.kl_divergence(base_dist2)
     expected_result_inv = base_dist2.kl_divergence(base_dist1)
-    result_fwd = self.variant(distrax_dist1.kl_divergence)(distrax_dist2)
-    result_inv = self.variant(distrax_dist2.kl_divergence)(distrax_dist1)
+    result_fwd = self.variant(distrax_dist1.kl_divergence)(distrax_dist2)  # pyrefly: ignore[missing-attribute]
+    result_inv = self.variant(distrax_dist2.kl_divergence)(distrax_dist1)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=1e-2)
     np.testing.assert_allclose(result_inv, expected_result_inv, rtol=1e-2)
 
