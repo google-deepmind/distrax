@@ -28,6 +28,8 @@ Array = base.Array
 
 def _get_small_matrix(u_matrix: Array, v_matrix: Array) -> Array:
   rank = u_matrix.shape[-1]
+  # pyrefly: ignore[unsupported-operation]
+
   return jnp.eye(rank) + v_matrix.T @ u_matrix
 
 
@@ -37,11 +39,13 @@ def _get_logdet(matrix: Array) -> Array:
 
 
 def _forward_unbatched(x: Array, u_matrix: Array, v_matrix: Array) -> Array:
+  # pyrefly: ignore[unsupported-operation]
   return x + u_matrix @ (v_matrix.T @ x)
 
 
 def _inverse_unbatched(
     y: Array, u_matrix: Array, v_matrix: Array, small_matrix: Array) -> Array:
+  # pyrefly: ignore[unsupported-operation]
   return y - u_matrix @ jax.scipy.linalg.solve(small_matrix, v_matrix.T @ y)
 
 
@@ -115,6 +119,7 @@ class _IdentityPlusLowRankLinear(base.Bijector):
 
   def inverse_log_det_jacobian(self, y: Array) -> Array:
     """Computes log|det J(f^{-1})(y)|."""
+    # pyrefly: ignore[unsupported-operation]
     return -self.forward_log_det_jacobian(y)
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
@@ -189,15 +194,20 @@ class DiagPlusLowRankLinear(linear.Linear):
     # Since `S + UV^T = S (I + WV^T)` where `W = S^{-1}U`, we can implement this
     # bijector by composing `_IdentityPlusLowRankLinear` with `DiagLinear`.
     id_plus_low_rank_linear = _IdentityPlusLowRankLinear(
-        u_matrix=u_matrix / diag[..., None],
-        v_matrix=v_matrix)
+        u_matrix=u_matrix / diag[..., None],  # pyrefly: ignore[bad-index]
+        v_matrix=v_matrix,
+    )
     self._bijector = chain.Chain(
         [diag_linear.DiagLinear(diag), id_plus_low_rank_linear])
     batch_shape = jnp.broadcast_shapes(
         diag.shape[:-1], u_matrix.shape[:-2], v_matrix.shape[:-2])
     dtype = jnp.result_type(diag, u_matrix, v_matrix)
     super().__init__(
-        event_dims=diag.shape[-1], batch_shape=batch_shape, dtype=dtype)
+        # pyrefly: ignore[bad-argument-type]
+        event_dims=diag.shape[-1],
+        batch_shape=batch_shape,
+        dtype=dtype,
+    )
     self._diag = diag
     self._u_matrix = u_matrix
     self._v_matrix = v_matrix

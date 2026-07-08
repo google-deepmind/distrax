@@ -34,8 +34,9 @@ class ImportanceSamplingTest(parameterized.TestCase):
     dist = categorical.Categorical(probs=probs)
     event = dist.sample(seed=key, sample_shape=())
 
-    ratios_fn = self.variant(
-        importance_sampling.importance_sampling_ratios)
+    ratios_fn = self.variant(  # pyrefly: ignore[missing-attribute]
+        importance_sampling.importance_sampling_ratios
+    )
     rhos = ratios_fn(target_dist=dist, sampling_dist=dist, event=event)
 
     expected_rhos = jnp.ones_like(rhos)
@@ -50,13 +51,15 @@ class ImportanceSamplingTest(parameterized.TestCase):
     mu = categorical.Categorical(logits=mu_logits)
     events = np.array([1, 0], dtype=np.int32)
 
-    ratios_fn = self.variant(
-        importance_sampling.importance_sampling_ratios)
+    ratios_fn = self.variant(  # pyrefly: ignore[missing-attribute]
+        importance_sampling.importance_sampling_ratios
+    )
     rhos = ratios_fn(pi, mu, events)
 
     expected_rhos = np.array(
-        [pi.probs[0][1] / mu.probs[0][1], pi.probs[1][0] / mu.probs[1][0]],
-        dtype=np.float32)
+        [pi.probs[0][1] / mu.probs[0][1], pi.probs[1][0] / mu.probs[1][0]],  # pyrefly: ignore[bad-index]
+        dtype=np.float32,
+    )
     np.testing.assert_allclose(expected_rhos, rhos, atol=1e-4)
 
 

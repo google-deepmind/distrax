@@ -317,7 +317,7 @@ def _interpret_inverse(jaxpr, consts, *args):
     if hasattr(prim_inv, "bind"):
       outvals = prim_inv.bind(*prim_args, **params)
     else:
-      outvals = prim_inv(*prim_args, **params)
+      outvals = prim_inv(*prim_args, **params)  # pyrefly: ignore[not-callable]
 
     # if the primitive returns multiple results, write them all to env
     if (hasattr(prim_inv, "multiple_results") and prim_inv.multiple_results):

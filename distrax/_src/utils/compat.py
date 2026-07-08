@@ -23,4 +23,4 @@ if hasattr(jax, 'enable_x64'):
   enable_x64 = jax.enable_x64
 else:
   # JAX v0.7.2 or earlier
-  enable_x64 = jax.experimental.enable_x64
+  enable_x64 = jax.experimental.enable_x64  # pyrefly: ignore[missing-attribute]

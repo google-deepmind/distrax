@@ -120,6 +120,7 @@ class UnconstrainedAffine(base.Bijector):
 
   def inverse_log_det_jacobian(self, y: Array) -> Array:
     """Computes log|det J(f^{-1})(y)|."""
+    # pyrefly: ignore[unsupported-operation]
     return -self.forward_log_det_jacobian(y)
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:

@@ -67,7 +67,8 @@ class ScalarAffine(base.Bijector):
       self._log_scale = 0.
     elif log_scale is None:
       self._scale = scale
-      self._inv_scale = 1. / scale
+      self._inv_scale = 1.0 / scale  # pyrefly: ignore[unsupported-operation]
+      # pyrefly: ignore[bad-argument-type]
       self._log_scale = jnp.log(jnp.abs(scale))
     elif scale is None:
       self._scale = jnp.exp(log_scale)
@@ -77,7 +78,10 @@ class ScalarAffine(base.Bijector):
       raise ValueError(
           'Only one of `scale` and `log_scale` can be specified, not both.')
     self._batch_shape = jax.lax.broadcast_shapes(
-        jnp.shape(self._shift), jnp.shape(self._scale))
+        # pyrefly: ignore[bad-argument-type]
+        jnp.shape(self._shift),
+        jnp.shape(self._scale),
+    )
 
   @property
   def shift(self) -> Numeric:
@@ -98,6 +102,7 @@ class ScalarAffine(base.Bijector):
   def forward(self, x: Array) -> Array:
     """Computes y = f(x)."""
     batch_shape = jax.lax.broadcast_shapes(self._batch_shape, x.shape)
+    # pyrefly: ignore[bad-argument-type]
     batched_scale = jnp.broadcast_to(self._scale, batch_shape)
     batched_shift = jnp.broadcast_to(self._shift, batch_shape)
     return batched_scale * x + batched_shift

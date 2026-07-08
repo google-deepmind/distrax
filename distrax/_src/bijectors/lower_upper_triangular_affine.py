@@ -89,7 +89,7 @@ class LowerUpperTriangularAffine(chain.Chain):
   @property
   def matrix(self) -> Array:
     """The matrix `A = LU` of the transformation."""
-    return self.lower @ self.upper
+    return self.lower @ self.upper  # pyrefly: ignore[unsupported-operation]
 
   @property
   def bias(self) -> Array:

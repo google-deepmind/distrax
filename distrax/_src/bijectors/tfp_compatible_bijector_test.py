@@ -254,12 +254,15 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
       chex.assert_shape(log_prob, batch_shape)
 
   def test_with_different_event_ndims(self):
-    dx_bij = Lambda(forward=lambda x: x.reshape(x.shape[:-1] + (2, 3)),
-                    inverse=lambda y: y.reshape(y.shape[:-2] + (6,)),
-                    forward_log_det_jacobian=lambda _: 0,
-                    inverse_log_det_jacobian=lambda _: 0,
-                    is_constant_jacobian=True,
-                    event_ndims_in=1, event_ndims_out=2)
+    dx_bij = Lambda(
+        forward=lambda x: x.reshape(x.shape[:-1] + (2, 3)),
+        inverse=lambda y: y.reshape(y.shape[:-2] + (6,)),
+        forward_log_det_jacobian=lambda _: 0,  # pyrefly: ignore[bad-argument-type]
+        inverse_log_det_jacobian=lambda _: 0,  # pyrefly: ignore[bad-argument-type]
+        is_constant_jacobian=True,
+        event_ndims_in=1,
+        event_ndims_out=2,
+    )
     tfp_bij = tfp_compatible_bijector(dx_bij)
 
     with self.subTest('forward_event_ndims'):
@@ -312,4 +315,3 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
 
 if __name__ == '__main__':
   absltest.main()
-

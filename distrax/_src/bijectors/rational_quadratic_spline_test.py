@@ -89,11 +89,11 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _make_bijector(params_shape=(4, 5))
     # Forward methods.
-    y, logdet = self.variant(bijector.forward_and_log_det)(x)
+    y, logdet = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(y.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, (2, 3, 4, 5))
     # Inverse methods.
-    x, logdet = self.variant(bijector.inverse_and_log_det)(y)
+    x, logdet = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(x.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, (2, 3, 4, 5))
 
@@ -102,8 +102,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     z = 0.5 * jnp.ones((2, 2))
     # Broadcast along first axis.
     bijector = _make_bijector(params_shape=(2,))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(z)
-    x, logdet_inv = self.variant(bijector.inverse_and_log_det)(z)
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(z)  # pyrefly: ignore[missing-attribute]
+    x, logdet_inv = self.variant(bijector.inverse_and_log_det)(z)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_array_equal(y[0], y[1])
     np.testing.assert_array_equal(x[0], x[1])
     np.testing.assert_array_equal(logdet_fwd[0], logdet_fwd[1])
@@ -114,8 +114,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     self.assertFalse(jnp.allclose(logdet_inv[:, 0], logdet_inv[:, 1]))
     # Broadcast along second axis.
     bijector = _make_bijector(params_shape=(2, 1))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(z)
-    x, logdet_inv = self.variant(bijector.inverse_and_log_det)(z)
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(z)  # pyrefly: ignore[missing-attribute]
+    x, logdet_inv = self.variant(bijector.inverse_and_log_det)(z)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_array_equal(y[:, 0], y[:, 1])
     np.testing.assert_array_equal(x[:, 0], x[:, 1])
     np.testing.assert_array_equal(logdet_fwd[:, 0], logdet_fwd[:, 1])
@@ -131,11 +131,11 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _make_bijector(params_shape=(4, 5), zero_params=True)
     # Forward methods.
-    y, logdet = self.variant(bijector.forward_and_log_det)(x)
+    y, logdet = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(y, x, atol=5e-5)
     np.testing.assert_allclose(logdet, jnp.zeros((2, 3, 4, 5)), atol=5e-5)
     # Inverse methods.
-    x, logdet = self.variant(bijector.inverse_and_log_det)(y)
+    x, logdet = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(y, x, atol=5e-5)
     np.testing.assert_allclose(logdet, jnp.zeros((2, 3, 4, 5)), atol=5e-5)
 
@@ -144,8 +144,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     key = jax.random.PRNGKey(42)
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _make_bijector(params_shape=(4, 5))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
-    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(x_rec, x, atol=7e-4)
     np.testing.assert_allclose(logdet_fwd, -logdet_inv, atol=7e-4)
 
@@ -153,8 +153,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
   def test_is_monotonically_increasing(self):
     z = jnp.linspace(start=-2, stop=2, num=100)
     bijector = _make_bijector(params_shape=())
-    y = self.variant(bijector.forward)(z)
-    x = self.variant(bijector.inverse)(z)
+    y = self.variant(bijector.forward)(z)  # pyrefly: ignore[missing-attribute]
+    x = self.variant(bijector.inverse)(z)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_array_less(y[:-1], y[1:])
     np.testing.assert_array_less(x[:-1], x[1:])
 
@@ -164,16 +164,16 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     bijector = _make_bijector(params_shape=(4, 5))
     # Forward methods.
     x = jax.random.normal(key, (2, 3, 4, 5))
-    y1 = self.variant(bijector.forward)(x)
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
+    y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(y1, y2, atol=1e-6)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
     # Inverse methods.
     y = jax.random.normal(key, (2, 3, 4, 5))
-    x1 = self.variant(bijector.inverse)(y)
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
+    x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(x1, x2, atol=1e-6)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
 
@@ -187,10 +187,10 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         range_min=float(a),
         range_max=float(b),
         boundary_slopes='unconstrained')
-    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)
-    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)
-    self.assertEqual(self.variant(bijector.forward)(a), a)
-    self.assertEqual(self.variant(bijector.forward)(b), b)
+    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)  # pyrefly: ignore[missing-attribute]
+    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(a), a)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(b), b)  # pyrefly: ignore[missing-attribute]
     self.assertFalse(jnp.allclose(log_slope_a, 0.))
     self.assertFalse(jnp.allclose(log_slope_b, 0.))
     # Lower boundary slope equal to 1.
@@ -199,10 +199,10 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         range_min=float(a),
         range_max=float(b),
         boundary_slopes='lower_identity')
-    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)
-    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)
-    self.assertEqual(self.variant(bijector.forward)(a), a)
-    self.assertEqual(self.variant(bijector.forward)(b), b)
+    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)  # pyrefly: ignore[missing-attribute]
+    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(a), a)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(b), b)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(log_slope_a, 0.)
     self.assertFalse(jnp.allclose(log_slope_b, 0.))
     # Upper boundary slope equal to 1.
@@ -211,10 +211,10 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         range_min=float(a),
         range_max=float(b),
         boundary_slopes='upper_identity')
-    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)
-    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)
-    self.assertEqual(self.variant(bijector.forward)(a), a)
-    self.assertEqual(self.variant(bijector.forward)(b), b)
+    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)  # pyrefly: ignore[missing-attribute]
+    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(a), a)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(b), b)  # pyrefly: ignore[missing-attribute]
     self.assertFalse(jnp.allclose(log_slope_a, 0.))
     self.assertEqual(log_slope_b, 0.)
     # Both boundary slopes equal to 1.
@@ -223,10 +223,10 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         range_min=float(a),
         range_max=float(b),
         boundary_slopes='identity')
-    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)
-    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)
-    self.assertEqual(self.variant(bijector.forward)(a), a)
-    self.assertEqual(self.variant(bijector.forward)(b), b)
+    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)  # pyrefly: ignore[missing-attribute]
+    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(a), a)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(b), b)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(log_slope_a, 0.)
     self.assertEqual(log_slope_b, 0.)
     # Circular spline (periodic slope).
@@ -235,10 +235,10 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         range_min=float(a),
         range_max=float(b),
         boundary_slopes='circular')
-    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)
-    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)
-    self.assertEqual(self.variant(bijector.forward)(a), a)
-    self.assertEqual(self.variant(bijector.forward)(b), b)
+    log_slope_a = self.variant(bijector.forward_log_det_jacobian)(a)  # pyrefly: ignore[missing-attribute]
+    log_slope_b = self.variant(bijector.forward_log_det_jacobian)(b)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(a), a)  # pyrefly: ignore[missing-attribute]
+    self.assertEqual(self.variant(bijector.forward)(b), b)  # pyrefly: ignore[missing-attribute]
     self.assertEqual(log_slope_a, log_slope_b)
     self.assertFalse(jnp.allclose(log_slope_b, 0.))
 
@@ -261,8 +261,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
         params, range_min=0., range_max=1.)
 
     x = jax.random.uniform(k2, input_batch_shape)
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
-    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
 
     output_batch_shape = jnp.broadcast_arrays(params[..., 0], x)[0].shape
 
@@ -282,8 +282,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     for i in range(np.prod(output_batch_shape)):
       bijector = rational_quadratic_spline.RationalQuadraticSpline(
           params[i], range_min=0., range_max=1.)
-      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
-      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
+      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
+      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
       np.testing.assert_allclose(this_y, y[i], atol=1e-7)
       np.testing.assert_allclose(this_z, z[i], atol=1e-6)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-5)
@@ -301,8 +301,11 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     b = jnp.array(b)
     c = jnp.array(c)
     x = jnp.array(x)
-    sol_x, grad = self.variant(jax.value_and_grad(
-        rational_quadratic_spline._safe_quadratic_root))(a, b, c)
+    sol_x, grad = self.variant(
+        jax.value_and_grad(  # pyrefly: ignore[missing-attribute]
+            rational_quadratic_spline._safe_quadratic_root
+        )
+    )(a, b, c)
     np.testing.assert_allclose(sol_x, x, atol=1e-5)
     self.assertFalse(np.any(np.isnan(grad)))
 

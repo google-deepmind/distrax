@@ -86,14 +86,16 @@ def as_bijector(obj: BijectorLike) -> bijector.BijectorT:
     A Distrax bijector.
   """
   if isinstance(obj, bijector.Bijector):
-    return obj
+    return obj  # pyrefly: ignore[bad-return]
   elif isinstance(obj, tfb.Bijector):
-    return bijector_from_tfp.BijectorFromTFP(obj)
+    return bijector_from_tfp.BijectorFromTFP(obj)  # pyrefly: ignore[bad-return]
   elif obj is jax.nn.sigmoid:
-    return sigmoid.Sigmoid()
+    return sigmoid.Sigmoid()  # pyrefly: ignore[bad-return]
   elif obj is jnp.tanh:
-    return tanh.Tanh()
+    return tanh.Tanh()  # pyrefly: ignore[bad-return]
   elif callable(obj):
+    # pyrefly: ignore[bad-argument-type, bad-return]
+
     return lambda_bijector.Lambda(obj)
   else:
     raise TypeError(
@@ -115,7 +117,7 @@ def as_distribution(obj: DistributionLike) -> distribution.DistributionT:
     A Distrax distribution.
   """
   if isinstance(obj, distribution.Distribution):
-    return obj
+    return obj  # pyrefly: ignore[bad-return]
   elif isinstance(obj, tfd.Distribution):
     return distribution_from_tfp.distribution_from_tfp(obj)
   else:

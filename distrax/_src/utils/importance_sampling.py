@@ -40,5 +40,5 @@ def importance_sampling_ratios(
   """
   log_pi_a = target_dist.log_prob(event)
   log_mu_a = sampling_dist.log_prob(event)
-  rho = jnp.exp(log_pi_a - log_mu_a)
+  rho = jnp.exp(log_pi_a - log_mu_a)  # pyrefly: ignore[unsupported-operation]
   return rho

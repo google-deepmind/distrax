@@ -78,6 +78,8 @@ class EquivalenceTest(parameterized.TestCase):
     super().setUp()
     self.tfp_cls = None
 
+  # pyrefly: ignore[invalid-annotation]
+
   def _init_distr_cls(self, distrax_cls: type(distribution.Distribution)):
     self.key = jax.random.PRNGKey(1234)
     self.distrax_cls = distrax_cls
@@ -92,6 +94,7 @@ class EquivalenceTest(parameterized.TestCase):
 
     return f
 
+  # pyrefly: ignore[invalid-annotation]
   def _get_tfp_cls(self) -> type(tfd.Distribution):
     if self.tfp_cls is None:
       raise ValueError('TFP class undefined. Run _init_distr_cls() first.')

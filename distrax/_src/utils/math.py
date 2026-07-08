@@ -155,6 +155,7 @@ def log_expbig_minus_expsmall(big: Array, small: Array) -> Array:
   Returns:
     The resulting `log(exp(big) - exp(small))`.
   """
+  # pyrefly: ignore[unsupported-operation]
   return big + jnp.log1p(-jnp.exp(small - big))
 
 

@@ -164,18 +164,21 @@ class HMM(jittable.Jittable):
       Tuple of `log(p(x_{1:T}|model))` and the array of forward joint
         probabilities `p(z_t,x_{1:t})` for each sample `x_t`.
     """
-    seq_len = len(obs_seq)
+    seq_len = len(obs_seq)  # pyrefly: ignore[bad-argument-type]
 
     if length is None:
-      length = seq_len
+      length = seq_len  # pyrefly: ignore[bad-assignment]
 
     def scan_fn(carry, t):
       (alpha_prev, log_ll_prev) = carry
       alpha_n = jnp.where(
           t < length,
-          (self._obs_dist.prob(obs_seq[t])
-           * (alpha_prev[:, None] * self._trans_dist.probs).sum(axis=0)),
-          jnp.zeros_like(alpha_prev))
+          (
+              self._obs_dist.prob(obs_seq[t])  # pyrefly: ignore[bad-index]
+              * (alpha_prev[:, None] * self._trans_dist.probs).sum(axis=0)
+          ),
+          jnp.zeros_like(alpha_prev),
+      )
 
       alpha_n, cn = _normalize(alpha_n)
       carry = (alpha_n, jnp.log(cn) + log_ll_prev)
@@ -184,7 +187,10 @@ class HMM(jittable.Jittable):
 
     # initial belief state
     alpha_0, c0 = _normalize(
-        self._init_dist.probs * self._obs_dist.prob(obs_seq[0]))
+        # pyrefly: ignore[bad-index]
+        self._init_dist.probs
+        * self._obs_dist.prob(obs_seq[0])
+    )
 
     # setup scan loop
     init_state = (alpha_0, jnp.log(c0))
@@ -210,10 +216,10 @@ class HMM(jittable.Jittable):
     Returns:
       Array of backward joint probabilities `p(x_{t+1:T}|z_t)`.
     """
-    seq_len = len(obs_seq)
+    seq_len = len(obs_seq)  # pyrefly: ignore[bad-argument-type]
 
     if length is None:
-      length = seq_len
+      length = seq_len  # pyrefly: ignore[bad-assignment]
 
     beta_t = jnp.ones((self._n_states,))
 
@@ -221,8 +227,15 @@ class HMM(jittable.Jittable):
       beta_t = jnp.where(
           t > length,
           jnp.zeros_like(beta_prev),
-          _normalize((beta_prev * self._obs_dist.prob(obs_seq[t-1])
-                      * self._trans_dist.probs).sum(axis=1))[0])
+          # pyrefly: ignore[bad-index]
+          _normalize(
+              (
+                  beta_prev
+                  * self._obs_dist.prob(obs_seq[t - 1])
+                  * self._trans_dist.probs
+              ).sum(axis=1)
+          )[0],
+      )
       return beta_t, beta_t
 
     ts = jnp.arange(seq_len, 1, -1)
@@ -258,13 +271,13 @@ class HMM(jittable.Jittable):
         * Marginal conditional probability of the observations.
         * The log-likelihood log(p(x_{1:T}|model)).
     """
-    seq_len = len(obs_seq)
+    seq_len = len(obs_seq)  # pyrefly: ignore[bad-argument-type]
 
     if length is None:
-      length = seq_len
+      length = seq_len  # pyrefly: ignore[bad-assignment]
 
     def gamma_t(t):
-      return alpha[t] * beta[t]
+      return alpha[t] * beta[t]  # pyrefly: ignore[bad-index]
 
     ll, alpha = self.forward(obs_seq, length)
 
@@ -290,9 +303,10 @@ class HMM(jittable.Jittable):
     trans_log_probs = jax.nn.log_softmax(self._trans_dist.logits)
     init_log_probs = jax.nn.log_softmax(self._init_dist.logits)
 
+    # pyrefly: ignore[bad-index]
     first_log_prob = init_log_probs + self._obs_dist.log_prob(obs_seq[0])
 
-    if len(obs_seq) == 1:
+    if len(obs_seq) == 1:  # pyrefly: ignore[bad-argument-type]
       return jnp.expand_dims(jnp.argmax(first_log_prob), axis=0)
 
     def viterbi_forward(prev_logp, obs):
@@ -303,7 +317,11 @@ class HMM(jittable.Jittable):
       return max_logp_given_successor, most_likely_given_successor
 
     final_log_prob, most_likely_sources = jax.lax.scan(
-        viterbi_forward, first_log_prob, obs_seq[1:])
+        # pyrefly: ignore[bad-index]
+        viterbi_forward,
+        first_log_prob,
+        obs_seq[1:],
+    )
 
     most_likely_initial_given_successor = jnp.argmax(
         trans_log_probs + first_log_prob, axis=-2)

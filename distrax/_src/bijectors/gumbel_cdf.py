@@ -36,9 +36,9 @@ class GumbelCDF(base.Bijector):
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
     """Computes y = f(x) and log|det J(f)(x)|."""
-    exp_neg_x = jnp.exp(-x)
+    exp_neg_x = jnp.exp(-x)  # pyrefly: ignore[unsupported-operation]
     y = jnp.exp(-exp_neg_x)
-    log_det = - x - exp_neg_x
+    log_det = -x - exp_neg_x  # pyrefly: ignore[unsupported-operation]
     return y, log_det
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:

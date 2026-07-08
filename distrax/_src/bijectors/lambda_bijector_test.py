@@ -82,8 +82,9 @@ class LambdaTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       lambda_bijector.Lambda(
           forward=lambda x: x,
-          forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
-          event_ndims_in=None)
+          forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),  # pyrefly: ignore[bad-index]
+          event_ndims_in=None,
+      )
 
   @parameterized.named_parameters(
       ('event_ndims_in', 0, None),
@@ -118,8 +119,9 @@ class LambdaTest(parameterized.TestCase):
     dist = transformed.Transformed(base, bijector)
     def sample_fn(seed, sample_shape):
       return dist.sample(seed=seed, sample_shape=sample_shape)
-    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(
-        self.seed, sample_shape)
+    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(  # pyrefly: ignore[missing-attribute]
+        self.seed, sample_shape
+    )
 
     tfp_bijector = tfb.Tanh()
     tfp_dist = tfd.TransformedDistribution(
@@ -142,7 +144,7 @@ class LambdaTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = lambda_bijector.Lambda(jnp.tanh)
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.log_prob)(value)
+    actual = self.variant(dist.log_prob)(value)  # pyrefly: ignore[missing-attribute]
 
     tfp_bijector = tfb.Tanh()
     tfp_dist = tfd.TransformedDistribution(
@@ -164,7 +166,7 @@ class LambdaTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = lambda_bijector.Lambda(jnp.tanh)
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.prob)(value)
+    actual = self.variant(dist.prob)(value)  # pyrefly: ignore[missing-attribute]
 
     tfp_bijector = tfb.Tanh()
     tfp_dist = tfd.TransformedDistribution(
@@ -194,9 +196,9 @@ class LambdaTest(parameterized.TestCase):
     dist = transformed.Transformed(base, bijector)
     def sample_and_log_prob_fn(seed, sample_shape):
       return dist.sample_and_log_prob(seed=seed, sample_shape=sample_shape)
-    samples, log_prob = self.variant(
-        sample_and_log_prob_fn, ignore_argnums=(1,), static_argnums=(1,))(
-            self.seed, sample_shape)
+    samples, log_prob = self.variant(  # pyrefly: ignore[missing-attribute]
+        sample_and_log_prob_fn, ignore_argnums=(1,), static_argnums=(1,)
+    )(self.seed, sample_shape)
     expected_samples = bijector.forward(
         base.sample(seed=self.seed, sample_shape=sample_shape))
 
@@ -226,8 +228,11 @@ class LambdaTest(parameterized.TestCase):
     tfp_dist = tfd.TransformedDistribution(
         conversion.to_tfp(base), tfp_bijector)
 
-    np.testing.assert_allclose(self.variant(getattr(dist, function_string))(),
-                               getattr(tfp_dist, function_string)(), rtol=RTOL)
+    np.testing.assert_allclose(
+        self.variant(getattr(dist, function_string))(),  # pyrefly: ignore[missing-attribute]
+        getattr(tfp_dist, function_string)(),
+        rtol=RTOL,
+    )
 
   @chex.all_variants(with_jit=False)  # no need to jit function transformations
   @parameterized.named_parameters(
@@ -245,12 +250,12 @@ class LambdaTest(parameterized.TestCase):
 
     x = np.array([0.05, 0.3, 0.45], dtype=np.float32)
     fldj = tfp_bijector.forward_log_det_jacobian(x, event_ndims=0)
-    fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)
+    fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(fldj_, fldj, rtol=RTOL)
 
     y = bijector.forward(x)  # pytype: disable=wrong-arg-types  # jax-ndarray
     ildj = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
-    ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)
+    ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(ildj_, ildj, rtol=RTOL)
 
   @chex.all_variants
@@ -277,11 +282,11 @@ class LambdaTest(parameterized.TestCase):
     y = np.array([0.05, 0.3, 0.95], dtype=np.float32)
 
     lp_y = tfp_dist.log_prob(y)
-    lp_y_ = self.variant(dist.log_prob)(y)
+    lp_y_ = self.variant(dist.log_prob)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(lp_y_, lp_y, rtol=RTOL)
 
     p_y = tfp_dist.prob(y)
-    p_y_ = self.variant(dist.prob)(y)
+    p_y_ = self.variant(dist.prob)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(p_y_, p_y, rtol=RTOL)
 
   @chex.all_variants
@@ -303,20 +308,21 @@ class LambdaTest(parameterized.TestCase):
     y = np.array([0.05, 0.3, 0.95], dtype=np.float32)
 
     lp_y = tfp_dist.log_prob(y)
-    lp_y_ = self.variant(dist.log_prob)(y)
+    lp_y_ = self.variant(dist.log_prob)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(lp_y_, lp_y, rtol=RTOL)
 
     p_y = tfp_dist.prob(y)
-    p_y_ = self.variant(dist.prob)(y)
+    p_y_ = self.variant(dist.prob)(y)  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(p_y_, p_y, rtol=RTOL)
 
   def test_raises_on_invalid_input_shape(self):
     bij = lambda_bijector.Lambda(
         forward=lambda x: x,
         inverse=lambda y: y,
-        forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
-        inverse_log_det_jacobian=lambda y: jnp.zeros_like(y[:-1]),
-        event_ndims_in=1)
+        forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),  # pyrefly: ignore[bad-index]
+        inverse_log_det_jacobian=lambda y: jnp.zeros_like(y[:-1]),  # pyrefly: ignore[bad-index]
+        event_ndims_in=1,
+    )
     for fn in [bij.forward, bij.inverse,
                bij.forward_log_det_jacobian, bij.inverse_log_det_jacobian,
                bij.forward_and_log_det, bij.inverse_and_log_det]:

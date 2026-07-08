@@ -105,8 +105,9 @@ class HMMTest(parameterized.TestCase):
         init_logits=logits, trans_logits=matrix, obs_dist_name=name,
         obs_params=params_fn(num_states), length=length)
 
-    states, obs = self.variant(functools.partial(model.sample, seq_len=length))(
-        seed=jax.random.PRNGKey(0))
+    states, obs = self.variant(functools.partial(model.sample, seq_len=length))(  # pyrefly: ignore[missing-attribute]
+        seed=jax.random.PRNGKey(0)
+    )
     tfp_obs = tfp_model.sample(seed=jax.random.PRNGKey(0))
 
     with self.subTest("states"):
@@ -134,8 +135,9 @@ class HMMTest(parameterized.TestCase):
         obs_params=params_fn(num_states), length=length)
 
     _, observations = model.sample(seed=jax.random.PRNGKey(42), seq_len=length)
-    alphas, betas, marginals, log_prob = self.variant(model.forward_backward)(
-        observations)
+    alphas, betas, marginals, log_prob = self.variant(model.forward_backward)(  # pyrefly: ignore[missing-attribute]
+        observations
+    )
     tfp_marginal_logits = tfp_model.posterior_marginals(observations).logits
     tfp_marginals = jax.nn.softmax(tfp_marginal_logits)
 
@@ -171,7 +173,7 @@ class HMMTest(parameterized.TestCase):
         obs_params=params_fn(num_states), length=length)
 
     _, observations = model.sample(seed=jax.random.PRNGKey(42), seq_len=length)
-    most_likely_states = self.variant(model.viterbi)(observations)
+    most_likely_states = self.variant(model.viterbi)(observations)  # pyrefly: ignore[missing-attribute]
     tfp_mode = tfp_model.posterior_mode(observations)
 
     with self.subTest("shape"):
@@ -197,7 +199,7 @@ class HMMTest(parameterized.TestCase):
         trans_dist=categorical.Categorical(probs=trans),
         obs_dist=normal.Normal(loc, scale))
 
-    inferred_states = self.variant(model.viterbi)(observations)
+    inferred_states = self.variant(model.viterbi)(observations)  # pyrefly: ignore[missing-attribute]
     expected_states = [0, 0, 0, 0, 1, 2, 3, 3, 3, 3]
     np.testing.assert_array_equal(inferred_states, expected_states)
 

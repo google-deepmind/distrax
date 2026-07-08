@@ -50,7 +50,7 @@ class BijectorTest(parameterized.TestCase):
   @parameterized.parameters('forward', 'inverse')
   def test_invalid_inputs(self, method_str):
     bij = DummyBijector(1, 1, True, True)
-    fn = self.variant(getattr(bij, method_str))
+    fn = self.variant(getattr(bij, method_str))  # pyrefly: ignore[missing-attribute]
     with self.assertRaises(ValueError):
       fn(jnp.zeros(()))
 

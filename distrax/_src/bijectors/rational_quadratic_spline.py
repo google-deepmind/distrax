@@ -46,8 +46,9 @@ def _normalize_knot_slopes(unnormalized_knot_slopes: Array,
   if min_knot_slope >= 1.:
     raise ValueError(f'The minimum knot slope must be less than 1; got'
                      f' {min_knot_slope}.')
-  min_knot_slope = jnp.array(
-      min_knot_slope, dtype=unnormalized_knot_slopes.dtype)
+  min_knot_slope = jnp.array(  # pyrefly: ignore[bad-assignment]
+      min_knot_slope, dtype=unnormalized_knot_slopes.dtype
+  )
   offset = jnp.log(jnp.exp(1. - min_knot_slope) - 1.)
   return jax.nn.softplus(unnormalized_knot_slopes + offset) + min_knot_slope
 
@@ -73,8 +74,9 @@ def _rational_quadratic_spline_fwd(x: Array,
   # Search to find the right bin. NOTE: The bins are sorted, so we could use
   # binary search, but this is more GPU/TPU friendly.
   # The following implementation avoids indexing for faster TPU computation.
-  below_range = x <= x_pos[0]
-  above_range = x >= x_pos[-1]
+  below_range = x <= x_pos[0]  # pyrefly: ignore[bad-index]
+  above_range = x >= x_pos[-1]  # pyrefly: ignore[bad-index]
+  # pyrefly: ignore[bad-index]
   correct_bin = jnp.logical_and(x >= x_pos[:-1], x < x_pos[1:])
   any_bin_in_range = jnp.any(correct_bin)
   first_bin = jnp.concatenate([jnp.array([1]),
@@ -123,9 +125,13 @@ def _rational_quadratic_spline_fwd(x: Array,
       knot_slopes_bin[0] * sq_1mz) - 2. * jnp.log(denominator)
 
   # If x is outside the spline range, we default to a linear transformation.
+  # pyrefly: ignore[bad-index]
   y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + y_pos[0], y)
+  # pyrefly: ignore[bad-index]
   y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + y_pos[-1], y)
+  # pyrefly: ignore[bad-index]
   logdet = jnp.where(below_range, jnp.log(knot_slopes[0]), logdet)
+  # pyrefly: ignore[bad-index]
   logdet = jnp.where(above_range, jnp.log(knot_slopes[-1]), logdet)
   return y, logdet
 
@@ -147,9 +153,9 @@ def _safe_quadratic_root(a: Array, b: Array, c: Array) -> Array:
   # See https://people.csail.mit.edu/bkph/articles/Quadratics.pdf (eq 7 and 8).
   # Solution when b >= 0
   numerator_1 = 2. * c
-  denominator_1 = -b - safe_sqrt
+  denominator_1 = -b - safe_sqrt  # pyrefly: ignore[unsupported-operation]
   # Solution when b < 0
-  numerator_2 = - b + safe_sqrt
+  numerator_2 = -b + safe_sqrt  # pyrefly: ignore[unsupported-operation]
   denominator_2 = 2 * a
   # Choose the numerically stable solution.
   numerator = jnp.where(b >= 0, numerator_1, numerator_2)
@@ -178,8 +184,9 @@ def _rational_quadratic_spline_inv(y: Array,
   # Search to find the right bin. NOTE: The bins are sorted, so we could use
   # binary search, but this is more GPU/TPU friendly.
   # The following implementation avoids indexing for faster TPU computation.
-  below_range = y <= y_pos[0]
-  above_range = y >= y_pos[-1]
+  below_range = y <= y_pos[0]  # pyrefly: ignore[bad-index]
+  above_range = y >= y_pos[-1]  # pyrefly: ignore[bad-index]
+  # pyrefly: ignore[bad-index]
   correct_bin = jnp.logical_and(y >= y_pos[:-1], y < y_pos[1:])
   any_bin_in_range = jnp.any(correct_bin)
   first_bin = jnp.concatenate([jnp.array([1]),
@@ -223,9 +230,13 @@ def _rational_quadratic_spline_inv(y: Array,
       knot_slopes_bin[0] * sq_1mz) + 2. * jnp.log(denominator)
 
   # If y is outside the spline range, we default to a linear transformation.
+  # pyrefly: ignore[bad-index]
   x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + x_pos[0], x)
+  # pyrefly: ignore[bad-index]
   x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + x_pos[-1], x)
+  # pyrefly: ignore[bad-index]
   logdet = jnp.where(below_range, - jnp.log(knot_slopes[0]), logdet)
+  # pyrefly: ignore[bad-index]
   logdet = jnp.where(above_range, - jnp.log(knot_slopes[-1]), logdet)
   return x, logdet
 
@@ -339,8 +350,11 @@ class RationalQuadraticSpline(base.Bijector):
     self._dtype = params.dtype
     self._num_bins = (params.shape[-1] - 1) // 3
     # Extract unnormalized parameters.
+    # pyrefly: ignore[bad-index]
     unnormalized_bin_widths = params[..., :self._num_bins]
+    # pyrefly: ignore[bad-index]
     unnormalized_bin_heights = params[..., self._num_bins : 2 * self._num_bins]
+    # pyrefly: ignore[bad-index]
     unnormalized_knot_slopes = params[..., 2 * self._num_bins:]
     # Normalize bin sizes and compute bin positions on the x and y axis.
     range_size = range_max - range_min
@@ -348,7 +362,9 @@ class RationalQuadraticSpline(base.Bijector):
                                       min_bin_size)
     bin_heights = _normalize_bin_sizes(unnormalized_bin_heights, range_size,
                                        min_bin_size)
+    # pyrefly: ignore[bad-index]
     x_pos = range_min + jnp.cumsum(bin_widths[..., :-1], axis=-1)
+    # pyrefly: ignore[bad-index]
     y_pos = range_min + jnp.cumsum(bin_heights[..., :-1], axis=-1)
     pad_shape = params.shape[:-1] + (1,)
     pad_below = jnp.full(pad_shape, range_min, dtype=self._dtype)
@@ -362,18 +378,26 @@ class RationalQuadraticSpline(base.Bijector):
       self._knot_slopes = knot_slopes
     elif boundary_slopes == 'lower_identity':
       ones = jnp.ones(pad_shape, self._dtype)
+      # pyrefly: ignore[bad-index]
       self._knot_slopes = jnp.concatenate([ones, knot_slopes[..., 1:]], axis=-1)
     elif boundary_slopes == 'upper_identity':
       ones = jnp.ones(pad_shape, self._dtype)
       self._knot_slopes = jnp.concatenate(
-          [knot_slopes[..., :-1], ones], axis=-1)
+          [knot_slopes[..., :-1], ones], axis=-1
+      )  # pyrefly: ignore[bad-index]
     elif boundary_slopes == 'identity':
       ones = jnp.ones(pad_shape, self._dtype)
       self._knot_slopes = jnp.concatenate(
-          [ones, knot_slopes[..., 1:-1], ones], axis=-1)
+          # pyrefly: ignore[bad-index]
+          [ones, knot_slopes[..., 1:-1], ones],
+          axis=-1,
+      )
     elif boundary_slopes == 'circular':
       self._knot_slopes = jnp.concatenate(
-          [knot_slopes[..., :-1], knot_slopes[..., :1]], axis=-1)
+          # pyrefly: ignore[bad-index]
+          [knot_slopes[..., :-1], knot_slopes[..., :1]],
+          axis=-1,
+      )
     else:
       raise ValueError(f'Unknown option for boundary slopes:'
                        f' `{boundary_slopes}`.')

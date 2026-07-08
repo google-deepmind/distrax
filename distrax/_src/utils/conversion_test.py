@@ -107,7 +107,7 @@ class AsDistributionTest(parameterized.TestCase):
     assert isinstance(wrapped_dist, tfd.Normal)
     assert isinstance(wrapped_dist, Distribution)
     # Access the `loc` attribute of a wrapped Normal.
-    np.testing.assert_almost_equal(wrapped_dist.loc, 0.)
+    np.testing.assert_almost_equal(wrapped_dist.loc, 0.0)  # pyrefly: ignore[missing-attribute]
 
 
 class ToTfpTest(parameterized.TestCase):

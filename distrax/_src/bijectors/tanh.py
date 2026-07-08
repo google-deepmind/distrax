@@ -61,6 +61,7 @@ class Tanh(base.Bijector):
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
     x = jnp.arctanh(y)
+    # pyrefly: ignore[unsupported-operation]
     return x, -self.forward_log_det_jacobian(x)
 
   def same_as(self, other: base.Bijector) -> bool:

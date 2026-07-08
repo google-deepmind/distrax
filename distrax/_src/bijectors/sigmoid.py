@@ -58,6 +58,7 @@ class Sigmoid(base.Bijector):
   def forward_log_det_jacobian(self, x: Array) -> Array:
     """Computes log|det J(f)(x)|."""
     # pylint:disable=invalid-unary-operand-type
+    # pyrefly: ignore[unsupported-operation]
     return -_more_stable_softplus(-x) - _more_stable_softplus(x)
 
   def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
@@ -66,7 +67,9 @@ class Sigmoid(base.Bijector):
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
     """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
+    # pyrefly: ignore[unsupported-operation]
     x = jnp.log(y) - jnp.log1p(-y)
+    # pyrefly: ignore[unsupported-operation]
     return x, -self.forward_log_det_jacobian(x)
 
   def same_as(self, other: base.Bijector) -> bool:

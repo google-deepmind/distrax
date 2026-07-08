@@ -67,7 +67,7 @@ class Shift(base.Bijector):
 
   def inverse(self, y: Array) -> Array:
     """Computes x = f^{-1}(y)."""
-    return y - self._shift
+    return y - self._shift  # pyrefly: ignore[unsupported-operation]
 
   def inverse_log_det_jacobian(self, y: Array) -> Array:
     """Computes log|det J(f^{-1})(y)|."""

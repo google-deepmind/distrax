@@ -97,8 +97,10 @@ def mc_estimate_kl(
   logp_proposal = jax.lax.stop_gradient(logp_proposal)
   logp_a = distribution_a.log_prob(samples)
   logp_b = distribution_b.log_prob(samples)
+  # pyrefly: ignore[unsupported-operation]
+
   importance_weight = jnp.exp(logp_a - logp_proposal)
-  log_ratio = logp_b - logp_a
+  log_ratio = logp_b - logp_a  # pyrefly: ignore[unsupported-operation]
   kl_estimator = -importance_weight * log_ratio
   return jnp.mean(kl_estimator, axis=0)
 
@@ -119,7 +121,7 @@ def mc_estimate_kl_with_reparameterized(
   samples, logp_a = distribution_a.sample_and_log_prob(
       seed=rng_key, sample_shape=[num_samples])
   logp_b = distribution_b.log_prob(samples)
-  log_ratio = logp_b - logp_a
+  log_ratio = logp_b - logp_a  # pyrefly: ignore[unsupported-operation]
   kl_estimator = -log_ratio
   return jnp.mean(kl_estimator, axis=0)
 
