@@ -92,6 +92,34 @@ class MultivariateNormalFromBijector(transformed.Transformed):
     self._dtype = dtype
 
   @property
+  def batch_shape(self):
+    """Returns the batch shape, correctly reflecting any extra leading dims.
+
+    When the distribution is created inside ``jax.vmap`` (or any other JAX
+    transformation that prepends a batch dimension), the stored ``_loc``
+    array acquires an extra leading dimension at run time that was not
+    present during tracing.  The statically computed ``_batch_shape`` tuple
+    would then be too short, causing ``jnp.broadcast_to`` in ``loc`` to
+    fail with::
+
+        ValueError: Cannot broadcast to shape with fewer dimensions
+
+    This property detects the extra dimensions by comparing the number of
+    leading dims in ``_loc`` against what ``_batch_shape`` and
+    ``_event_shape`` together predict, and prepends them if needed.
+
+    See https://github.com/google-deepmind/distrax/issues/276.
+    """
+    # Dimensions of _loc that should be accounted for by _batch_shape + _event_shape.
+    expected_ndim = len(self._batch_shape) + len(self._event_shape)
+    actual_ndim = len(self._loc.shape)
+    extra = actual_ndim - expected_ndim          # >0 when vmap added batch dims
+    if extra > 0:
+      # Return the extra leading dims prepended to the static batch_shape.
+      return self._loc.shape[:extra] + self._batch_shape
+    return self._batch_shape
+
+  @property
   def scale(self) -> linear.Linear:
     """The scale bijector."""
     return self._scale
