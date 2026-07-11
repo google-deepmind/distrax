@@ -59,7 +59,18 @@ class Tanh(base.Bijector):
     return jnp.tanh(x), self.forward_log_det_jacobian(x)
 
   def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
-    """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
+    """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|.
+
+    When `float32` is used, sampling from a Tanh-transformed distribution can
+    produce values numerically equal to ±1 due to limited precision, making
+    `arctanh` undefined and causing NaN in `log_prob`.  We clip `y` to the
+    open interval `(-1 + ε, 1 - ε)` where `ε = jnp.finfo(y.dtype).eps`, which
+    is the tightest safe bound for the given dtype.  This matches the workaround
+    documented in issue https://github.com/google-deepmind/distrax/issues/216
+    and makes `log_prob` finite for any sample produced by `sample()`.
+    """
+    eps = jnp.finfo(y.dtype).eps
+    y = jnp.clip(y, -1.0 + eps, 1.0 - eps)
     x = jnp.arctanh(y)
     # pyrefly: ignore[unsupported-operation]
     return x, -self.forward_log_det_jacobian(x)
