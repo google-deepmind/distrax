@@ -80,7 +80,7 @@ class ScalarAffine(base.Bijector):
     self._batch_shape = jax.lax.broadcast_shapes(
         # pyrefly: ignore[bad-argument-type]
         jnp.shape(self._shift),
-        jnp.shape(self._scale),
+        jnp.shape(self._scale),  # pyrefly: ignore[bad-argument-type]
     )
 
   @property

@@ -110,7 +110,8 @@ class DeterministicTest(equivalence.EquivalenceTest):
   def test_sample_dtype(self, dtype):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = self.distrax_cls(loc=jnp.zeros((), dtype=dtype))
-      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      samples = self.variant(dist.sample)(seed=self.key)
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 

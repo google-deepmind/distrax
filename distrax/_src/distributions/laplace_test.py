@@ -69,7 +69,8 @@ class LaplaceTest(equivalence.EquivalenceTest):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = self.distrax_cls(
           loc=jnp.zeros((), dtype), scale=jnp.ones((), dtype))
-      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      samples = self.variant(dist.sample)(seed=self.key)
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -233,7 +234,8 @@ class LaplaceTest(equivalence.EquivalenceTest):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(rtol=2e-2)(self.variant(dist.median)(), dist.mean())  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    self.assertion_fn(rtol=2e-2)(self.variant(dist.median)(), dist.mean())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

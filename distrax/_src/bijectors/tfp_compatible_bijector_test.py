@@ -257,8 +257,10 @@ class TFPCompatibleBijectorTest(parameterized.TestCase):
     dx_bij = Lambda(
         forward=lambda x: x.reshape(x.shape[:-1] + (2, 3)),
         inverse=lambda y: y.reshape(y.shape[:-2] + (6,)),
-        forward_log_det_jacobian=lambda _: 0,  # pyrefly: ignore[bad-argument-type]
-        inverse_log_det_jacobian=lambda _: 0,  # pyrefly: ignore[bad-argument-type]
+        # pyrefly: ignore[bad-argument-type]
+        forward_log_det_jacobian=lambda _: 0,
+        # pyrefly: ignore[bad-argument-type]
+        inverse_log_det_jacobian=lambda _: 0,
         is_constant_jacobian=True,
         event_ndims_in=1,
         event_ndims_out=2,

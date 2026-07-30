@@ -29,7 +29,6 @@ Array = base.Array
 def _get_small_matrix(u_matrix: Array, v_matrix: Array) -> Array:
   rank = u_matrix.shape[-1]
   # pyrefly: ignore[unsupported-operation]
-
   return jnp.eye(rank) + v_matrix.T @ u_matrix
 
 
@@ -205,7 +204,7 @@ class DiagPlusLowRankLinear(linear.Linear):
     super().__init__(
         # pyrefly: ignore[bad-argument-type]
         event_dims=diag.shape[-1],
-        batch_shape=batch_shape,
+        batch_shape=batch_shape,  # pyrefly: ignore[bad-argument-type]
         dtype=dtype,
     )
     self._diag = diag

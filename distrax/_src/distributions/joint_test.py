@@ -112,17 +112,20 @@ class JointTest(parameterized.TestCase):
     (subkey,) = jax.random.split(key, 1)
 
     with self.subTest('sample'):
-      actual = self.variant(joint.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.sample)(seed=key)
       expected = dist.sample(seed=subkey)
       np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint.log_prob)(x)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.log_prob)(x)
       expected = dist.log_prob(x)
       np.testing.assert_allclose(actual, expected, rtol=3e-5)
 
     with self.subTest('sample_and_log_prob'):
-      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
           seed=key
       )
       expected_sample, expected_log_prob = dist.sample_and_log_prob(seed=subkey)
@@ -142,20 +145,23 @@ class JointTest(parameterized.TestCase):
     subkeys = jax.random.split(key, 2)
 
     with self.subTest('sample'):
-      actuals = self.variant(joint.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actuals = self.variant(joint.sample)(seed=key)
       assert isinstance(actuals, tuple)
       for actual, dist, subkey in zip(actuals, distributions, subkeys):
         expected = dist.sample(seed=subkey)
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.log_prob)(inputs)
       log_probs = [dist.log_prob(x) for dist, x in zip(distributions, inputs)]
       expected = sum(log_probs)
       np.testing.assert_array_equal(actual, expected)
 
     with self.subTest('sample_and_log_prob'):
-      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
           seed=key
       )
       assert isinstance(actual_sample, tuple)
@@ -184,20 +190,23 @@ class JointTest(parameterized.TestCase):
     subkeys = jax.random.split(key, 2)
 
     with self.subTest('sample'):
-      actuals = self.variant(joint.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actuals = self.variant(joint.sample)(seed=key)
       assert isinstance(actuals, list)
       for actual, dist, subkey in zip(actuals, distributions, subkeys):
         expected = dist.sample(seed=subkey)
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.log_prob)(inputs)
       log_probs = [dist.log_prob(x) for dist, x in zip(distributions, inputs)]
       expected = sum(log_probs)
       np.testing.assert_array_equal(actual, expected)
 
     with self.subTest('sample_and_log_prob'):
-      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
           seed=key
       )
       assert isinstance(actual_sample, list)
@@ -230,7 +239,8 @@ class JointTest(parameterized.TestCase):
     subkeys = jax.random.split(key, 2)
 
     with self.subTest('sample'):
-      actuals = self.variant(joint.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actuals = self.variant(joint.sample)(seed=key)
       assert isinstance(actuals, list)
       assert actuals[0].shape == (2,)
       assert actuals[1].shape == (2, 5)
@@ -239,14 +249,16 @@ class JointTest(parameterized.TestCase):
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.log_prob)(inputs)
       assert actual.shape == (2,)
       log_probs = [dist.log_prob(x) for dist, x in zip(distributions, inputs)]
       expected = sum(log_probs)
       np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('sample_and_log_prob'):
-      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
           seed=key
       )
       assert isinstance(actual_sample, list)
@@ -273,7 +285,8 @@ class JointTest(parameterized.TestCase):
     subkeys = jax.random.split(key, 6)
 
     with self.subTest('sample'):
-      actuals = self.variant(joint.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actuals = self.variant(joint.sample)(seed=key)
       assert isinstance(actuals, dict)
       assert isinstance(actuals['categoricals'], list)
       assert isinstance(actuals['normals'], tuple)
@@ -286,7 +299,8 @@ class JointTest(parameterized.TestCase):
         np.testing.assert_allclose(actual, expected, rtol=1e-6)
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint.log_prob)(inputs)
       flat_dists = _leaves_up_to_distribution(distributions)
       flat_inputs = jax.tree.leaves(inputs)
       log_probs = [dist.log_prob(x) for dist, x in zip(flat_dists, flat_inputs)]
@@ -294,7 +308,8 @@ class JointTest(parameterized.TestCase):
       np.testing.assert_array_equal(actual, expected)
 
     with self.subTest('sample_and_log_prob'):
-      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_sample, actual_log_prob = self.variant(joint.sample_and_log_prob)(
           seed=key
       )
       assert isinstance(actual_sample, dict)
@@ -357,7 +372,8 @@ class JointTest(parameterized.TestCase):
 
     joint_a = Joint(dists_a)
     joint_b = Joint(dists_b)
-    actual = self.variant(joint_a.kl_divergence)(joint_b)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    actual = self.variant(joint_a.kl_divergence)(joint_b)
 
     kls = []
     for dist_a, dist_b in zip(
@@ -372,7 +388,8 @@ class JointTest(parameterized.TestCase):
   def test_log_cdf(self):
     distributions, inputs = _make_nested_distributions_and_inputs()
     joint = Joint(distributions)
-    actual = self.variant(joint.log_cdf)(inputs)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    actual = self.variant(joint.log_cdf)(inputs)
     flat_dists = _leaves_up_to_distribution(distributions)
     flat_inputs = jax.tree.leaves(inputs)
     expected = sum(dist.log_cdf(x) for dist, x in zip(flat_dists, flat_inputs))
@@ -440,7 +457,8 @@ class JointTest(parameterized.TestCase):
         assert dist[index].event_shape == indexed.event_shape
 
     with self.subTest('sample'):
-      all_samples = self.variant(joint_indexed.sample)(seed=key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      all_samples = self.variant(joint_indexed.sample)(seed=key)
       for dist, subkey, actual in zip(
           _leaves_up_to_distribution(distributions),
           subkeys,
@@ -450,7 +468,8 @@ class JointTest(parameterized.TestCase):
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     with self.subTest('sample_and_log_prob'):
-      actual_samples, actual_log_probs = self.variant(  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual_samples, actual_log_probs = self.variant(
           joint_indexed.sample_and_log_prob
       )(seed=key)
       expected_outputs = [
@@ -470,7 +489,8 @@ class JointTest(parameterized.TestCase):
       )
 
     with self.subTest('log_prob'):
-      actual = self.variant(joint_indexed.log_prob)(inputs)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      actual = self.variant(joint_indexed.log_prob)(inputs)
       expected = sum(
           dist[index].log_prob(x)
           for dist, x in zip(
@@ -501,7 +521,8 @@ class JointTest(parameterized.TestCase):
     joint_b = Joint(incompatible)
 
     with self.assertRaises(ValueError):
-      self.variant(joint_a.kl_divergence)(joint_b)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      self.variant(joint_a.kl_divergence)(joint_b)
 
 
 if __name__ == '__main__':

@@ -70,8 +70,8 @@ class TransformationsTest(parameterized.TestCase):
   def test_inversion(self, forward, inverse, x):
     x = jnp.array([x], dtype=jnp.float32)
     y = forward(x)
-
-    inverse_ = self.variant(transformations.inv(forward))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    inverse_ = self.variant(transformations.inv(forward))
     x_ = inverse_(y)
 
     np.testing.assert_allclose(x_, x, rtol=RTOL)
@@ -111,7 +111,8 @@ class TransformationsTest(parameterized.TestCase):
     y = forward(x)
 
     jitted_forward = jax.jit(forward)
-    inverse_ = self.variant(transformations.inv(jitted_forward))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    inverse_ = self.variant(transformations.inv(jitted_forward))
     x_ = inverse_(y)
 
     np.testing.assert_allclose(x_, x, rtol=RTOL)
@@ -147,8 +148,8 @@ class TransformationsTest(parameterized.TestCase):
   )
   def test_log_det_scalar(self, forward, tfb_bijector, x):
     x = np.array(x, dtype=np.float32)
-
-    log_det_fn = self.variant(transformations.log_det_scalar(forward))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    log_det_fn = self.variant(transformations.log_det_scalar(forward))
 
     actual = log_det_fn(x)
     expected = tfb_bijector().forward_log_det_jacobian(x, event_ndims=0)

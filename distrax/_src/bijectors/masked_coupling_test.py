@@ -74,11 +74,13 @@ class MaskedCouplingTest(parameterized.TestCase):
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _create_masked_coupling_bijector((4, 5), event_ndims)
     # Forward methods.
-    y, logdet = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet = self.variant(bijector.forward_and_log_det)(x)
     self.assertEqual(y.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, batch_shape)
     # Inverse methods.
-    x, logdet = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x, logdet = self.variant(bijector.inverse_and_log_det)(y)
     self.assertEqual(x.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, batch_shape)
 
@@ -122,7 +124,8 @@ class MaskedCouplingTest(parameterized.TestCase):
     # Test inverse
     z, ldj_z = bijector.inverse_and_log_det(y)
     np.testing.assert_allclose(z, x)
-    np.testing.assert_allclose(ldj_z, -ldj_y)  # pyrefly: ignore[unsupported-operation]
+    # pyrefly: ignore[unsupported-operation]
+    np.testing.assert_allclose(ldj_z, -ldj_y)
 
   @chex.all_variants
   def test_masking_works(self):
@@ -146,8 +149,10 @@ class MaskedCouplingTest(parameterized.TestCase):
     key = jax.random.PRNGKey(42)
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _create_masked_coupling_bijector((4, 5), event_ndims)
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x_rec, x, atol=1e-6)
     np.testing.assert_allclose(logdet_fwd, -logdet_inv, atol=1e-6)
 
@@ -166,15 +171,20 @@ class MaskedCouplingTest(parameterized.TestCase):
     # Forward methods.
     x = jax.random.normal(key, (2, 3, 4, 5))
     y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
     np.testing.assert_allclose(y1, y2, atol=1e-8)
     np.testing.assert_allclose(logdet1, logdet2, atol=5e-6)
     # Inverse methods.
     y = jax.random.normal(key, (2, 3, 4, 5))
-    x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x1 = self.variant(bijector.inverse)(y)
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x1, x2, atol=1e-8)
     np.testing.assert_allclose(logdet1, logdet2, atol=5e-6)
 
@@ -238,8 +248,10 @@ class MaskedCouplingTest(parameterized.TestCase):
     bijector = create_bijector(mask)
 
     x = jax.random.uniform(k2, input_batch_shape + (5, 6))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_arrays(
         mask[..., 0, 0], x[..., 0, 0])[0].shape
@@ -259,8 +271,10 @@ class MaskedCouplingTest(parameterized.TestCase):
 
     for i in range(np.prod(output_batch_shape)):
       bijector = create_bijector(mask[i])
-      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
-      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
+      # pyrefly: ignore[missing-attribute]
+      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-7)
       np.testing.assert_allclose(this_z, z[i], atol=1e-7)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-5)

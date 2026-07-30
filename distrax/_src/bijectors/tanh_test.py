@@ -52,8 +52,10 @@ class TanhTest(parameterized.TestCase):
     x = jnp.zeros(x_shape)
     bijector = tanh.Tanh()
     y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
     self.assertEqual(y1.shape, x_shape)
     self.assertEqual(y2.shape, x_shape)
     self.assertEqual(logdet1.shape, x_shape)
@@ -68,8 +70,10 @@ class TanhTest(parameterized.TestCase):
     y = jnp.zeros(y_shape)
     bijector = tanh.Tanh()
     x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     self.assertEqual(x1.shape, y_shape)
     self.assertEqual(x2.shape, y_shape)
     self.assertEqual(logdet1.shape, y_shape)
@@ -86,7 +90,8 @@ class TanhTest(parameterized.TestCase):
   def test_forward_log_det_jacobian(self):
     x = jax.random.normal(self.seed, (100,))
     bijector = tanh.Tanh()
-    fwd_logdet = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    fwd_logdet = self.variant(bijector.forward_log_det_jacobian)(x)
     actual = jnp.log(jax.vmap(jax.grad(bijector.forward))(x))
     np.testing.assert_allclose(fwd_logdet, actual, rtol=1e-2)
 
@@ -95,8 +100,10 @@ class TanhTest(parameterized.TestCase):
     x = jax.random.normal(self.seed, (100,))
     bijector = tanh.Tanh()
     y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
     np.testing.assert_allclose(y1, y2, rtol=RTOL)
     np.testing.assert_allclose(logdet1, logdet2, rtol=RTOL)
 
@@ -105,7 +112,8 @@ class TanhTest(parameterized.TestCase):
     x = jax.random.normal(self.seed, (100,))
     bijector = tanh.Tanh()
     y = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    x_rec = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x_rec = self.variant(bijector.inverse)(y)
     np.testing.assert_allclose(x_rec, x, rtol=1e-3)
 
   @chex.all_variants
@@ -113,8 +121,10 @@ class TanhTest(parameterized.TestCase):
     x = jax.random.normal(self.seed, (100,))
     bijector = tanh.Tanh()
     y = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    fwd_logdet = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    inv_logdet = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    fwd_logdet = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    inv_logdet = self.variant(bijector.inverse_log_det_jacobian)(y)
     np.testing.assert_allclose(inv_logdet, -fwd_logdet, rtol=1e-3)
 
   @chex.all_variants
@@ -122,8 +132,10 @@ class TanhTest(parameterized.TestCase):
     y = jax.random.normal(self.seed, (100,))
     bijector = tanh.Tanh()
     x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x1, x2, rtol=RTOL)
     np.testing.assert_allclose(logdet1, logdet2, rtol=RTOL)
 
@@ -134,12 +146,14 @@ class TanhTest(parameterized.TestCase):
 
     x = np.array([-10.0, -3.3, 0.0, 3.3, 10.0], dtype=np.float32)
     fldj = tfp_bijector.forward_log_det_jacobian(x, event_ndims=0)
-    fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)
     np.testing.assert_allclose(fldj_, fldj, rtol=RTOL)
 
     y = bijector.forward(x)  # pytype: disable=wrong-arg-types  # jax-ndarray
     ildj = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
-    ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)
     np.testing.assert_allclose(ildj_, ildj, rtol=RTOL)
 
   @chex.all_variants
@@ -150,7 +164,8 @@ class TanhTest(parameterized.TestCase):
   )
   def test_integer_inputs(self, inputs):
     bijector = tanh.Tanh()
-    output, log_det = self.variant(bijector.forward_and_log_det)(inputs)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    output, log_det = self.variant(bijector.forward_and_log_det)(inputs)
 
     expected_out = jnp.tanh(inputs).astype(jnp.float32)
     expected_log_det = jnp.zeros_like(inputs, dtype=jnp.float32)

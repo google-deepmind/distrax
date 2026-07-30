@@ -134,7 +134,8 @@ class VonMisesTest(equivalence.EquivalenceTest):
         loc=self.loc.astype(dtype),
         concentration=self.concentration.astype(dtype),
     )
-    samples = self.variant(getattr(dist, method))(seed=self.key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(getattr(dist, method))(seed=self.key)
     samples = samples[0] if method == 'sample_and_log_prob' else samples
     self.assertEqual(samples.dtype, dist.dtype)
     self.assertEqual(samples.dtype, dtype)

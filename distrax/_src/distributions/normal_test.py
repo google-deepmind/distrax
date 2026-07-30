@@ -139,7 +139,8 @@ class NormalTest(equivalence.EquivalenceTest):
     distr_params = (np.asarray(distr_params[0], dtype=np.float32),
                     np.asarray(distr_params[1], dtype=np.float32))
     dist = self.distrax_cls(*distr_params)
-    self.assertion_fn(rtol=1e-2)(self.variant(dist.median)(), dist.mean())  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    self.assertion_fn(rtol=1e-2)(self.variant(dist.median)(), dist.mean())
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

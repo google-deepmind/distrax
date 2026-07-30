@@ -148,7 +148,8 @@ class CategoricalUniformTest(parameterized.TestCase):
   def test_sample_shape(self, *, low, high, logits, target_sample_shape, **_):
     distribution = categorical_uniform.CategoricalUniform(
         low=low, high=high, logits=logits)
-    sample = self.variant(distribution.sample)(seed=jax.random.PRNGKey(42))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    sample = self.variant(distribution.sample)(seed=jax.random.PRNGKey(42))
     self.assertEqual(sample.shape, target_sample_shape)
 
   @chex.all_variants
@@ -159,7 +160,8 @@ class CategoricalUniformTest(parameterized.TestCase):
           low=params[0], high=params[1], logits=params[2])
       sample = distribution.sample(seed=jax.random.PRNGKey(42))
       return sample.sum()
-    grad_fn = self.variant(jax.grad(summed_samples_fn))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    grad_fn = self.variant(jax.grad(summed_samples_fn))
     grad_low, grad_high, grad_logits = grad_fn(
         (jnp.float32(low), jnp.float32(high), jnp.float32(logits)))
     self.assertTrue(np.all(grad_low))  # Assert gradient is non-zero.
@@ -172,7 +174,8 @@ class CategoricalUniformTest(parameterized.TestCase):
     distribution = categorical_uniform.CategoricalUniform(
         low=low, high=high, logits=logits)
     chex.assert_trees_all_close(
-        self.variant(distribution.entropy)(),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(distribution.entropy)(),
         target_entropy,
         atol=1e-4,
         rtol=1e-4,
@@ -184,7 +187,8 @@ class CategoricalUniformTest(parameterized.TestCase):
     distribution = categorical_uniform.CategoricalUniform(
         low=low, high=high, logits=logits)
     chex.assert_trees_all_close(
-        self.variant(distribution.mean)(), target_mean, atol=1e-4, rtol=1e-4)  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(distribution.mean)(), target_mean, atol=1e-4, rtol=1e-4)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(*_NAMED_PARAMETERS)
@@ -192,7 +196,8 @@ class CategoricalUniformTest(parameterized.TestCase):
     distribution = categorical_uniform.CategoricalUniform(
         low=low, high=high, logits=logits)
     chex.assert_trees_all_close(
-        self.variant(distribution.variance)(),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(distribution.variance)(),
         target_variance,
         atol=1e-4,
         rtol=1e-4,
@@ -204,7 +209,8 @@ class CategoricalUniformTest(parameterized.TestCase):
     distribution = categorical_uniform.CategoricalUniform(
         low=low, high=high, logits=logits)
     sample = jnp.full(target_sample_shape, 0.2, jnp.float32)
-    log_prob = self.variant(distribution.log_prob)(sample)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    log_prob = self.variant(distribution.log_prob)(sample)
     target_log_prob = jnp.zeros(target_sample_shape, jnp.float32)
     chex.assert_trees_all_close(log_prob, target_log_prob, atol=1e-4, rtol=1e-4)
 
@@ -251,7 +257,8 @@ class CategoricalUniformTest(parameterized.TestCase):
         dist_logits = distribution.logits
         chex.assert_trees_all_close(
             distribution[key].logits,
-            dist_logits[key] if name != 'ellipsis' else dist_logits[..., -1, :],  # pyrefly: ignore[bad-index]
+            # pyrefly: ignore[bad-index]
+            dist_logits[key] if name != 'ellipsis' else dist_logits[..., -1, :],
             atol=1e-4,
             rtol=1e-4,
         )
@@ -267,11 +274,13 @@ class CategoricalUniformTest(parameterized.TestCase):
         low=low, high=high, logits=logits)
     with self.subTest('lower'):
       sample = jnp.full(target_sample_shape, -1, jnp.float32)
-      log_prob = self.variant(distribution.log_prob)(sample)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      log_prob = self.variant(distribution.log_prob)(sample)
       self.assertEqual(log_prob, -np.inf)
     with self.subTest('upper'):
       sample = jnp.full(target_sample_shape, +2, jnp.float32)
-      log_prob = self.variant(distribution.log_prob)(sample)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      log_prob = self.variant(distribution.log_prob)(sample)
       self.assertEqual(log_prob, -np.inf)
 
   @parameterized.named_parameters(

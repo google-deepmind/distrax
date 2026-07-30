@@ -103,7 +103,8 @@ class ChainTest(parameterized.TestCase):
     dist = transformed.Transformed(base, bijector)
     def sample_fn(seed, sample_shape):
       return dist.sample(seed=seed, sample_shape=sample_shape)
-    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(sample_fn, ignore_argnums=(1,), static_argnums=1)(
         self.seed, sample_shape
     )
 
@@ -127,7 +128,8 @@ class ChainTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = chain.Chain([tfb.Scale(2), tfb.Shift(3), tfb.Tanh()])
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.log_prob)(value)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    actual = self.variant(dist.log_prob)(value)
 
     tfp_bijector = tfb.Chain([tfb.Scale(2), tfb.Shift(3), tfb.Tanh()])
     tfp_dist = tfd.TransformedDistribution(
@@ -148,7 +150,8 @@ class ChainTest(parameterized.TestCase):
     base = base_dist(mu, sigma)
     bijector = chain.Chain([tfb.Scale(2), tfb.Shift(3), tfb.Tanh()])
     dist = transformed.Transformed(base, bijector)
-    actual = self.variant(dist.prob)(value)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    actual = self.variant(dist.prob)(value)
 
     tfp_bijector = tfb.Chain([tfb.Scale(2), tfb.Shift(3), tfb.Tanh()])
     tfp_dist = tfd.TransformedDistribution(
@@ -210,7 +213,8 @@ class ChainTest(parameterized.TestCase):
         conversion.to_tfp(base), tfp_bijector)
 
     np.testing.assert_allclose(
-        self.variant(getattr(dist, function_string))(),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(getattr(dist, function_string))(),
         getattr(tfp_dist, function_string)(),
     )
 
@@ -232,8 +236,10 @@ class ChainTest(parameterized.TestCase):
     tfb_bij = tfb.Chain([outer_bij, inner_bij])
 
     x = jnp.zeros(input_shape)
-    dx_y = self.variant(dx_bij.forward)(x)  # pyrefly: ignore[missing-attribute]
-    tfb_y = self.variant(tfb_bij.forward)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    dx_y = self.variant(dx_bij.forward)(x)
+    # pyrefly: ignore[missing-attribute]
+    tfb_y = self.variant(tfb_bij.forward)(x)
 
     chex.assert_equal_shape([dx_y, tfb_y])
     np.testing.assert_allclose(dx_y, tfb_y, rtol=RTOL)
@@ -254,7 +260,8 @@ class ChainTest(parameterized.TestCase):
   )
   def test_integer_inputs(self, inputs):
     bijector = chain.Chain([scalar_affine.ScalarAffine(shift=1.0)])
-    output, log_det = self.variant(bijector.forward_and_log_det)(inputs)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    output, log_det = self.variant(bijector.forward_and_log_det)(inputs)
 
     expected_out = jnp.array(inputs, dtype=jnp.float32) + 1.0
     expected_log_det = jnp.zeros_like(inputs, dtype=jnp.float32)

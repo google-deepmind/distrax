@@ -140,7 +140,8 @@ class TFPLogitsCategoricalTFPMultivariateComponents(equivalence.EquivalenceTest
     dist = self.distrax_cls(
         mixture_distribution=self.mixture_dist,
         components_distribution=self.components_dist)
-    samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(dist.dtype, samples.dtype)
     self.assertEqual(dist.dtype, self.components_dist.dtype)
 

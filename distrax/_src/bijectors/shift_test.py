@@ -49,8 +49,10 @@ class ShiftTest(parameterized.TestCase):
     x = jax.random.normal(prng, batch_shape)
     output_shape = jnp.broadcast_shapes(batch_shape, param_shape)
     y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
     self.assertEqual(y1.shape, output_shape)
     self.assertEqual(y2.shape, output_shape)
     self.assertEqual(logdet1.shape, output_shape)
@@ -73,8 +75,10 @@ class ShiftTest(parameterized.TestCase):
     y = jax.random.normal(prng, batch_shape)
     output_shape = jnp.broadcast_shapes(batch_shape, param_shape)
     x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     self.assertEqual(x1.shape, output_shape)
     self.assertEqual(x2.shape, output_shape)
     self.assertEqual(logdet1.shape, output_shape)

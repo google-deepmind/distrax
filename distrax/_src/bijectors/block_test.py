@@ -70,11 +70,13 @@ class BlockTest(parameterized.TestCase):
     block = block_bijector.Block(tfp_bijector, ndims)
     np.testing.assert_allclose(
         tfp_bijector.forward_log_det_jacobian(x, fwd_event_ndims),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.forward_log_det_jacobian)(x),
         atol=2e-5,
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(
         tfp_bijector.inverse_log_det_jacobian(y, inv_event_ndims),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.inverse_log_det_jacobian)(y),
         atol=2e-5,
     )  # pyrefly: ignore[missing-attribute]
@@ -94,19 +96,23 @@ class BlockTest(parameterized.TestCase):
     block = block_bijector.Block(bijct, ndims)
     np.testing.assert_array_equal(
         self.variant(bijct.forward)(x),  # pyrefly: ignore[missing-attribute]
-        self.variant(block.forward)(x),
+        self.variant(block.forward)(x),  # pyrefly: ignore[missing-attribute]
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_array_equal(
         self.variant(bijct.inverse)(x),  # pyrefly: ignore[missing-attribute]
-        self.variant(block.inverse)(x),
+        self.variant(block.inverse)(x),  # pyrefly: ignore[missing-attribute]
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(
-        self.variant(bijct.forward_and_log_det)(x)[0],  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.forward_and_log_det)(x)[0],
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.forward_and_log_det)(x)[0],
         atol=2e-7,
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_array_equal(
-        self.variant(bijct.inverse_and_log_det)(x)[0],  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.inverse_and_log_det)(x)[0],
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.inverse_and_log_det)(x)[0],
     )  # pyrefly: ignore[missing-attribute]
 
@@ -125,22 +131,30 @@ class BlockTest(parameterized.TestCase):
     block = block_bijector.Block(bijct, ndims)
     axes = tuple(range(-ndims, 0))
     np.testing.assert_allclose(
-        self.variant(bijct.forward_log_det_jacobian)(x).sum(axes),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.forward_log_det_jacobian)(x).sum(axes),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.forward_log_det_jacobian)(x),
         rtol=RTOL,
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(
-        self.variant(bijct.inverse_log_det_jacobian)(x).sum(axes),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.inverse_log_det_jacobian)(x).sum(axes),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.inverse_log_det_jacobian)(x),
         rtol=RTOL,
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(
-        self.variant(bijct.forward_and_log_det)(x)[1].sum(axes),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.forward_and_log_det)(x)[1].sum(axes),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.forward_and_log_det)(x)[1],
         rtol=RTOL,
     )  # pyrefly: ignore[missing-attribute]
     np.testing.assert_allclose(
-        self.variant(bijct.inverse_and_log_det)(x)[1].sum(axes),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(bijct.inverse_and_log_det)(x)[1].sum(axes),
+        # pyrefly: ignore[missing-attribute]
         self.variant(block.inverse_and_log_det)(x)[1],
         rtol=RTOL,
     )  # pyrefly: ignore[missing-attribute]

@@ -182,7 +182,8 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist_params = {'logits': self.logits, 'dtype': dtype}
       dist = self.distrax_cls(**dist_params)
-      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      samples = self.variant(dist.sample)(seed=self.key)
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 
@@ -311,7 +312,8 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     value = np.array(value)
     dist = self.distrax_cls(**distr_params)
     self.assertion_fn(rtol=2e-3)(
-        self.variant(getattr(dist, function_string))(value), expected)  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(getattr(dist, function_string))(value), expected)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -350,7 +352,8 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     else:
       probs = scipy.special.softmax(distr_params['logits'], axis=-1)
     expected = np.sum(np.cumsum(probs, axis=-1) * values, axis=-1)
-    self.assertion_fn(rtol=2e-3)(self.variant(dist.cdf)(values), expected)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    self.assertion_fn(rtol=2e-3)(self.variant(dist.cdf)(values), expected)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
@@ -386,8 +389,10 @@ class OneHotCategoricalTest(equivalence.EquivalenceTest):
     dist2 = one_hot_categorical.OneHotCategorical(**dist2_params)
     tfp_dist2 = tfd.OneHotCategorical(**dist2_params)
 
-    distrax_fn_1 = self.variant(getattr(dist1, function_string))  # pyrefly: ignore[missing-attribute]
-    distrax_fn_2 = self.variant(getattr(dist2, function_string))  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    distrax_fn_1 = self.variant(getattr(dist1, function_string))
+    # pyrefly: ignore[missing-attribute]
+    distrax_fn_2 = self.variant(getattr(dist2, function_string))
 
     if mode_string == 'distrax_to_distrax':
       comp_dist1_dist2 = distrax_fn_1(dist2)

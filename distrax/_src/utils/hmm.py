@@ -189,7 +189,7 @@ class HMM(jittable.Jittable):
     alpha_0, c0 = _normalize(
         # pyrefly: ignore[bad-index]
         self._init_dist.probs
-        * self._obs_dist.prob(obs_seq[0])
+        * self._obs_dist.prob(obs_seq[0])  # pyrefly: ignore[bad-index]
     )
 
     # setup scan loop
@@ -231,6 +231,7 @@ class HMM(jittable.Jittable):
           _normalize(
               (
                   beta_prev
+                  # pyrefly: ignore[bad-index]
                   * self._obs_dist.prob(obs_seq[t - 1])
                   * self._trans_dist.probs
               ).sum(axis=1)
@@ -320,7 +321,7 @@ class HMM(jittable.Jittable):
         # pyrefly: ignore[bad-index]
         viterbi_forward,
         first_log_prob,
-        obs_seq[1:],
+        obs_seq[1:],  # pyrefly: ignore[bad-index]
     )
 
     most_likely_initial_given_successor = jnp.argmax(

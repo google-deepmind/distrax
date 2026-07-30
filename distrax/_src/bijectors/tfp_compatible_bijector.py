@@ -148,7 +148,7 @@ def tfp_compatible_bijector(
       extra_event_ndims = self._check_ndims(
           # pyrefly: ignore[bad-argument-type]
           "Forward",
-          event_ndims,
+          event_ndims,  # pyrefly: ignore[bad-argument-type]
           base_bijector.event_ndims_in,
       )
       fldj = base_bijector.forward_log_det_jacobian(x)
@@ -160,7 +160,7 @@ def tfp_compatible_bijector(
       extra_event_ndims = self._check_ndims(
           # pyrefly: ignore[bad-argument-type]
           "Inverse",
-          event_ndims,
+          event_ndims,  # pyrefly: ignore[bad-argument-type]
           base_bijector.event_ndims_out,
       )
       ildj = base_bijector.inverse_log_det_jacobian(y)

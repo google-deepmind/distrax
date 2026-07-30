@@ -61,7 +61,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
 
   @chex.all_variants
   def test_sample_dtype(self):
-    samples = self.variant(self.wrapped_dist.sample)(seed=self._key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(self.wrapped_dist.sample)(seed=self._key)
     self.assertEqual(self.wrapped_dist.dtype, samples.dtype)
     self.assertEqual(self.wrapped_dist.dtype, self.base_dist.dtype)
 
@@ -70,7 +71,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     def sample_fn(key):
       return self.wrapped_dist.sample(sample_shape=self._sample_shape, seed=key)
     self.assertion_fn(rtol=2e-4)(
-        self.variant(sample_fn)(self._key),  # pyrefly: ignore[missing-attribute]
+        # pyrefly: ignore[missing-attribute]
+        self.variant(sample_fn)(self._key),
         self.base_dist.sample(sample_shape=self._sample_shape, seed=self._key))
 
   @chex.all_variants(with_pmap=False)
@@ -83,7 +85,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       ('entropy', 'entropy'),
   )
   def test_method(self, method):
-    self.variant(lambda: None)  # To avoid variants usage error.  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    self.variant(lambda: None)  # To avoid variants usage error.
     try:
       expected_result = getattr(self.base_dist, method)()
     except NotImplementedError:
@@ -101,7 +104,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       ('cdf', 'cdf'),
   )
   def test_method_with_value(self, method):
-    self.variant(lambda: None)  # To avoid variants usage error.  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    self.variant(lambda: None)  # To avoid variants usage error.
 
     if (isinstance(self.base_dist, tfd.Categorical) and
         method in ('cdf', 'log_cdf')):
@@ -114,7 +118,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
       return
     except AttributeError:
       return
-    result = self.variant(getattr(self.wrapped_dist, method))(self.values)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    result = self.variant(getattr(self.wrapped_dist, method))(self.values)
     self.assertion_fn(rtol=2e-4)(result, expected_result)
 
   @chex.all_variants
@@ -126,7 +131,8 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     def sample_fn(key):
       return self.wrapped_dist.sample_and_log_prob(
           sample_shape=self._sample_shape, seed=key)
-    samples, log_prob = self.variant(sample_fn)(self._key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples, log_prob = self.variant(sample_fn)(self._key)
     self.assertion_fn(rtol=2e-4)(samples, base_samples)
     self.assertion_fn(rtol=2e-4)(log_prob, base_logprob)
 
@@ -148,20 +154,26 @@ class DistributionFromTfpNormal(parameterized.TestCase):
     """
     try:
       expected_result1 = self.variant(  # pyrefly: ignore[missing-attribute]
-          getattr(self.tfp_second_dist, method))(self.base_distribution)  # pyrefly: ignore[missing-attribute]
+          # pyrefly: ignore[missing-attribute]
+          getattr(self.tfp_second_dist, method))(self.base_distribution)
       expected_result2 = self.variant(  # pyrefly: ignore[missing-attribute]
-          getattr(self.base_distribution, method))(self.tfp_second_dist)  # pyrefly: ignore[missing-attribute]
+          # pyrefly: ignore[missing-attribute]
+          getattr(self.base_distribution, method))(self.tfp_second_dist)
     except NotImplementedError:
       return
     except AttributeError:
       return
-    distrax_result1 = self.variant(getattr(self.distrax_second_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    distrax_result1 = self.variant(getattr(self.distrax_second_dist, method))(
         self.wrapped_dist)
-    distrax_result2 = self.variant(getattr(self.wrapped_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    distrax_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.distrax_second_dist)
-    tfp_result1 = self.variant(getattr(self.tfp_second_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    tfp_result1 = self.variant(getattr(self.tfp_second_dist, method))(
         self.wrapped_dist)
-    tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.tfp_second_dist)
     self.assertion_fn(rtol=2e-4)(distrax_result1, expected_result1)
     self.assertion_fn(rtol=2e-4)(distrax_result2, expected_result2)
@@ -176,7 +188,8 @@ class DistributionFromTfpMvnNormal(DistributionFromTfpNormal):
     super().setUp()
     self.base_dist = tfd.MultivariateNormalDiag(loc=[0., 1.])
     self.values = jnp.array([1., -1.])
-    self.distrax_second_dist = MultivariateNormalDiag(  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.distrax_second_dist = MultivariateNormalDiag(
         loc=jnp.array([-1., 0.]), scale_diag=jnp.array([0.8, 1.2]))
     self.tfp_second_dist = tfd.MultivariateNormalDiag(
         loc=[-1., 0.], scale_diag=[0.8, 1.2])
@@ -202,7 +215,8 @@ class DistributionFromTfpCategorical(DistributionFromTfpNormal):
     super().setUp()
     self.base_dist = tfd.Categorical(logits=[0., -1., 1.])
     self.values = jnp.array([0, 1, 2])
-    self.distrax_second_dist = Categorical(probs=jnp.array([0.2, 0.2, 0.6]))  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.distrax_second_dist = Categorical(probs=jnp.array([0.2, 0.2, 0.6]))
     self.tfp_second_dist = tfd.Categorical(probs=[0.2, 0.2, 0.6])
 
   @parameterized.named_parameters(

@@ -75,7 +75,8 @@ class BijectorFromTFPTest(parameterized.TestCase):
     x = jax.random.uniform(key, batch_shape_in + event_shape_in)
 
     y = self.variant(bij.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet = self.variant(bij.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet = self.variant(bij.forward_log_det_jacobian)(x)
     y_tfp = tfp_bij.forward(x)
     logdet_tfp = tfp_bij.forward_log_det_jacobian(x, len(event_shape_in))
     logdet_tfp = jnp.broadcast_to(logdet_tfp, batch_shape_out)
@@ -112,7 +113,8 @@ class BijectorFromTFPTest(parameterized.TestCase):
     y = jax.random.uniform(key, batch_shape_out + event_shape_out)
 
     x = self.variant(bij.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet = self.variant(bij.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet = self.variant(bij.inverse_log_det_jacobian)(y)
     x_tfp = tfp_bij.inverse(y)
     logdet_tfp = tfp_bij.inverse_log_det_jacobian(y, len(event_shape_out))
     logdet_tfp = jnp.broadcast_to(logdet_tfp, batch_shape_in)
@@ -150,8 +152,10 @@ class BijectorFromTFPTest(parameterized.TestCase):
     # Forward methods.
     x = jax.random.uniform(key1, batch_shape_in + event_shape_in)
     y1 = self.variant(bij.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)
     self.assertEqual(y1.shape, y2.shape)
     self.assertEqual(logdet1.shape, logdet2.shape)
     np.testing.assert_allclose(y1, y2, atol=1e-8)
@@ -160,8 +164,10 @@ class BijectorFromTFPTest(parameterized.TestCase):
     # Inverse methods.
     y = jax.random.uniform(key2, batch_shape_out + event_shape_out)
     x1 = self.variant(bij.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)
     self.assertEqual(x1.shape, x2.shape)
     self.assertEqual(logdet1.shape, logdet2.shape)
     np.testing.assert_allclose(x1, x2, atol=1e-8)
@@ -196,8 +202,10 @@ class BijectorFromTFPTest(parameterized.TestCase):
     x = jax.random.uniform(key1, batch_shape_in + event_shape_in)
     y = self.variant(bij.forward)(x)  # pyrefly: ignore[missing-attribute]
     x1 = self.variant(bij.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)
     self.assertEqual(x1.shape, x2.shape)
     self.assertEqual(logdet1.shape, logdet2.shape)
     np.testing.assert_allclose(x1, x2, atol=1e-8)
@@ -207,8 +215,10 @@ class BijectorFromTFPTest(parameterized.TestCase):
     y = jax.random.uniform(key2, batch_shape_out + event_shape_out)
     x = self.variant(bij.inverse)(y)  # pyrefly: ignore[missing-attribute]
     y1 = self.variant(bij.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)
     self.assertEqual(y1.shape, y2.shape)
     self.assertEqual(logdet1.shape, logdet2.shape)
     np.testing.assert_allclose(y1, y2, atol=1e-8)

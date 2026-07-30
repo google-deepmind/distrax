@@ -110,11 +110,13 @@ class SplitCouplingTest(parameterized.TestCase):
     bijector = _create_split_coupling_bijector(
         split_index, split_axis, swap, event_ndims=2)
     # Forward methods.
-    y, logdet = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet = self.variant(bijector.forward_and_log_det)(x)
     self.assertEqual(y.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, (2, 3))
     # Inverse methods.
-    x, logdet = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x, logdet = self.variant(bijector.inverse_and_log_det)(y)
     self.assertEqual(x.shape, (2, 3, 4, 5))
     self.assertEqual(logdet.shape, (2, 3))
 
@@ -163,8 +165,10 @@ class SplitCouplingTest(parameterized.TestCase):
     x = jax.random.normal(key, (2, 3, 4, 5))
     bijector = _create_split_coupling_bijector(
         split_index, split_axis, swap, event_ndims=2)
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x_rec, x, atol=1e-6)
     np.testing.assert_allclose(logdet_fwd, -logdet_inv, atol=1e-6)
 
@@ -191,15 +195,19 @@ class SplitCouplingTest(parameterized.TestCase):
     # Forward methods.
     x = jax.random.normal(key, (2, 3, 4, 5))
     y1 = self.variant(bijector.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
     np.testing.assert_allclose(y1, y2, atol=1e-8)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-8)
     # Inverse methods.
     y = jax.random.normal(key, (2, 3, 4, 5))
     x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x1, x2, atol=1e-8)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-8)
 

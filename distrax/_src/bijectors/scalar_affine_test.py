@@ -50,11 +50,13 @@ class ScalarAffineTest(parameterized.TestCase):
     bij_with_log_scale = scalar_affine.ScalarAffine(shift, log_scale=log_scale)
     for bij in [bij_no_scale, bij_with_scale, bij_with_log_scale]:
       # Forward methods.
-      y, logdet = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      y, logdet = self.variant(bij.forward_and_log_det)(x)
       self.assertEqual(y.shape, (2, 3, 4, 5))
       self.assertEqual(logdet.shape, (2, 3, 4, 5))
       # Inverse methods.
-      x, logdet = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      x, logdet = self.variant(bij.inverse_and_log_det)(y)
       self.assertEqual(x.shape, (2, 3, 4, 5))
       self.assertEqual(logdet.shape, (2, 3, 4, 5))
 
@@ -66,7 +68,8 @@ class ScalarAffineTest(parameterized.TestCase):
     bij_with_scale = scalar_affine.ScalarAffine(shift=3., scale=1.)
     bij_with_log_scale = scalar_affine.ScalarAffine(shift=3., log_scale=0.)
     for bij in [bij_no_scale, bij_with_scale, bij_with_log_scale]:
-      y, logdet = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      y, logdet = self.variant(bij.forward_and_log_det)(x)
       np.testing.assert_allclose(y, x + 3., atol=1e-8)
       np.testing.assert_allclose(logdet, 0., atol=1e-8)
 
@@ -81,8 +84,10 @@ class ScalarAffineTest(parameterized.TestCase):
     bij_with_scale = scalar_affine.ScalarAffine(shift, scale=scale)
     bij_with_log_scale = scalar_affine.ScalarAffine(shift, log_scale=log_scale)
     for bij in [bij_no_scale, bij_with_scale, bij_with_log_scale]:
-      y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-      x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
+      # pyrefly: ignore[missing-attribute]
+      x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)
       np.testing.assert_allclose(x_rec, x, atol=1e-5)
       np.testing.assert_allclose(logdet_fwd, -logdet_inv, atol=3e-6)
 
@@ -95,15 +100,19 @@ class ScalarAffineTest(parameterized.TestCase):
     # Forward methods.
     x = jax.random.normal(k3, (2, 3, 4, 5))
     y1 = self.variant(bij.forward)(x)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)  # pyrefly: ignore[missing-attribute]
-    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.forward_log_det_jacobian)(x)
+    # pyrefly: ignore[missing-attribute]
+    y2, logdet2 = self.variant(bij.forward_and_log_det)(x)
     np.testing.assert_allclose(y1, y2, atol=1e-12)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-12)
     # Inverse methods.
     y = jax.random.normal(k4, (2, 3, 4, 5))
     x1 = self.variant(bij.inverse)(y)  # pyrefly: ignore[missing-attribute]
-    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)  # pyrefly: ignore[missing-attribute]
-    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    logdet1 = self.variant(bij.inverse_log_det_jacobian)(y)
+    # pyrefly: ignore[missing-attribute]
+    x2, logdet2 = self.variant(bij.inverse_and_log_det)(y)
     np.testing.assert_allclose(x1, x2, atol=1e-12)
     np.testing.assert_allclose(logdet1, logdet2, atol=1e-12)
 
@@ -125,8 +134,10 @@ class ScalarAffineTest(parameterized.TestCase):
     bijector = scalar_affine.ScalarAffine(shift, log_scale=log_scale)
 
     x = jax.random.normal(k3, input_batch_shape)
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_arrays(log_scale, shift, x)[0].shape
 
@@ -145,8 +156,10 @@ class ScalarAffineTest(parameterized.TestCase):
 
     for i in range(np.prod(output_batch_shape)):
       bijector = scalar_affine.ScalarAffine(shift[i], jnp.exp(log_scale[i]))
-      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
-      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
+      # pyrefly: ignore[missing-attribute]
+      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-7)
       np.testing.assert_allclose(this_z, z[i], atol=1e-5)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-4)

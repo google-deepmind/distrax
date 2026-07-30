@@ -109,7 +109,8 @@ class LogStddevNormalTest(parameterized.TestCase):
     with compat.enable_x64(dtype.dtype.itemsize == 8):
       dist = lsn.LogStddevNormal(
           loc=jnp.zeros((), dtype), log_scale=jnp.zeros((), dtype))
-      samples = self.variant(dist.sample)(seed=jax.random.PRNGKey(0))  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      samples = self.variant(dist.sample)(seed=jax.random.PRNGKey(0))
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 

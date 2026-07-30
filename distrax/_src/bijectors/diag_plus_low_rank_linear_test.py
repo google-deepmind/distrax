@@ -105,8 +105,10 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
 
     x = jax.random.normal(next(prng), input_batch_shape + (4,))
-    y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    z, logdet_inv = self.variant(bij.inverse_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    z, logdet_inv = self.variant(bij.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_shapes(
         diag_batch_shape, u_matrix_batch_shape, v_matrix_batch_shape,
@@ -128,10 +130,13 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     logdet_fwd = logdet_fwd.flatten()
     logdet_inv = logdet_inv.flatten()
 
-    for i in range(np.prod(output_batch_shape)):  # pyrefly: ignore[no-matching-overload]
+    # pyrefly: ignore[no-matching-overload]
+    for i in range(np.prod(output_batch_shape)):
       bij = DiagPlusLowRankLinear(diag[i], u_matrix[i], v_matrix[i])
-      this_y, this_logdet_fwd = self.variant(bij.forward_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
-      this_z, this_logdet_inv = self.variant(bij.inverse_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      this_y, this_logdet_fwd = self.variant(bij.forward_and_log_det)(x[i])
+      # pyrefly: ignore[missing-attribute]
+      this_z, this_logdet_inv = self.variant(bij.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-6)
       np.testing.assert_allclose(this_z, z[i], atol=1e-6)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-6)
@@ -151,12 +156,14 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     x = jax.random.normal(next(prng), batch_shape + (4,))
 
     # Forward methods.
-    y, logdet = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet = self.variant(bij.forward_and_log_det)(x)
     np.testing.assert_array_equal(y, x)
     np.testing.assert_array_equal(logdet, jnp.zeros(batch_shape))
 
     # Inverse methods.
-    x_rec, logdet = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet = self.variant(bij.inverse_and_log_det)(y)
     np.testing.assert_array_equal(x_rec, y)
     np.testing.assert_array_equal(logdet, jnp.zeros(batch_shape))
 
@@ -172,8 +179,10 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     v_matrix = jax.random.uniform(next(prng), param_shape + (4, 1))
     bij = DiagPlusLowRankLinear(diag, u_matrix, v_matrix)
     x = jax.random.normal(next(prng), batch_shape + (4,))
-    y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bij.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet_inv = self.variant(bij.inverse_and_log_det)(y)
     np.testing.assert_allclose(x_rec, x, atol=1e-6)
     np.testing.assert_allclose(logdet_fwd, -logdet_inv, atol=1e-6)
 
@@ -187,7 +196,8 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
 
     batched_x = jax.random.normal(next(prng), (10, 4))
     single_x = jax.random.normal(next(prng), (4,))
-    batched_logdet = self.variant(bij.forward_log_det_jacobian)(batched_x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    batched_logdet = self.variant(bij.forward_log_det_jacobian)(batched_x)
 
     jacobian_fn = jax.jacfwd(bij.forward)
     logdet_numerical = jnp.linalg.slogdet(jacobian_fn(single_x))[1]
@@ -204,7 +214,8 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
 
     batched_y = jax.random.normal(next(prng), (10, 4))
     single_y = jax.random.normal(next(prng), (4,))
-    batched_logdet = self.variant(bij.inverse_log_det_jacobian)(batched_y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    batched_logdet = self.variant(bij.inverse_log_det_jacobian)(batched_y)
 
     jacobian_fn = jax.jacfwd(bij.inverse)
     logdet_numerical = jnp.linalg.slogdet(jacobian_fn(single_y))[1]

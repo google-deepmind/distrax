@@ -79,7 +79,6 @@ class EquivalenceTest(parameterized.TestCase):
     self.tfp_cls = None
 
   # pyrefly: ignore[invalid-annotation]
-
   def _init_distr_cls(self, distrax_cls: type(distribution.Distribution)):
     self.key = jax.random.PRNGKey(1234)
     self.distrax_cls = distrax_cls

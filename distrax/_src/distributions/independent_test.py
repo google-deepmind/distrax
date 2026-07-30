@@ -230,7 +230,8 @@ class TFPMultivariateNormalTest(equivalence.EquivalenceTest):
   @chex.all_variants
   def test_sample_dtype(self):
     dist = self.distrax_cls(self.base_dist)
-    samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(dist.dtype, samples.dtype)
     self.assertEqual(dist.dtype, self.base_dist.dtype)
 

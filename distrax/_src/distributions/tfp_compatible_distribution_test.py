@@ -98,12 +98,14 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
   )
   def test_method(self, method):
     try:
-      expected_result = self.variant(getattr(self.base_dist, method))()  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      expected_result = self.variant(getattr(self.base_dist, method))()
     except NotImplementedError:
       return
     except AttributeError:
       return
-    result = self.variant(getattr(self.wrapped_dist, method))()  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    result = self.variant(getattr(self.wrapped_dist, method))()
     self.assertion_fn(rtol=1e-4)(result, expected_result)
 
   @chex.all_variants
@@ -121,7 +123,8 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
       return
     except AttributeError:
       return
-    result = self.variant(getattr(self.wrapped_dist, method))(self.values)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    result = self.variant(getattr(self.wrapped_dist, method))(self.values)
     self.assertion_fn(rtol=1e-4)(result, expected_result)
 
   @chex.all_variants
@@ -142,20 +145,26 @@ class TFPCompatibleDistributionNormal(parameterized.TestCase):
     """
     try:
       expected_result1 = self.variant(  # pyrefly: ignore[missing-attribute]
-          getattr(self.distrax_second_dist, method))(self.base_distribution)  # pyrefly: ignore[missing-attribute]
+          # pyrefly: ignore[missing-attribute]
+          getattr(self.distrax_second_dist, method))(self.base_distribution)
       expected_result2 = self.variant(  # pyrefly: ignore[missing-attribute]
-          getattr(self.base_distribution, method))(self.distrax_second_dist)  # pyrefly: ignore[missing-attribute]
+          # pyrefly: ignore[missing-attribute]
+          getattr(self.base_distribution, method))(self.distrax_second_dist)
     except NotImplementedError:
       return
     except AttributeError:
       return
-    distrax_result1 = self.variant(getattr(self.distrax_second_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    distrax_result1 = self.variant(getattr(self.distrax_second_dist, method))(
         self.wrapped_dist)
-    distrax_result2 = self.variant(getattr(self.wrapped_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    distrax_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.distrax_second_dist)
-    tfp_result1 = self.variant(getattr(self.tfp_second_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    tfp_result1 = self.variant(getattr(self.tfp_second_dist, method))(
         self.wrapped_dist)
-    tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    tfp_result2 = self.variant(getattr(self.wrapped_dist, method))(
         self.tfp_second_dist)
     self.assertion_fn(rtol=1e-4)(distrax_result1, expected_result1)
     self.assertion_fn(rtol=1e-4)(distrax_result2, expected_result2)
@@ -168,9 +177,11 @@ class TFPCompatibleDistributionMvnNormal(TFPCompatibleDistributionNormal):
 
   def setUp(self):
     super().setUp()
-    self.base_dist = MultivariateNormalDiag(loc=jnp.array([0., 1.]))  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.base_dist = MultivariateNormalDiag(loc=jnp.array([0., 1.]))
     self.values = jnp.array([1., -1.])
-    self.distrax_second_dist = MultivariateNormalDiag(  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.distrax_second_dist = MultivariateNormalDiag(
         loc=jnp.array([-1., 0.]), scale_diag=jnp.array([0.8, 1.2]))
     self.tfp_second_dist = tfd.MultivariateNormalDiag(
         loc=jnp.array([-1., 0.]), scale_diag=jnp.array([0.8, 1.2]))
@@ -181,9 +192,11 @@ class TFPCompatibleDistributionCategorical(TFPCompatibleDistributionNormal):
 
   def setUp(self):
     super().setUp()
-    self.base_dist = Categorical(logits=jnp.array([0., -1., 1.]))  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.base_dist = Categorical(logits=jnp.array([0., -1., 1.]))
     self.values = jnp.array([0, 1, 2])
-    self.distrax_second_dist = Categorical(probs=jnp.array([0.2, 0.2, 0.6]))  # pyrefly: ignore[bad-assignment]
+    # pyrefly: ignore[bad-assignment]
+    self.distrax_second_dist = Categorical(probs=jnp.array([0.2, 0.2, 0.6]))
     self.tfp_second_dist = tfd.Categorical(probs=jnp.array([0.2, 0.2, 0.6]))
 
 

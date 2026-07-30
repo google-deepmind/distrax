@@ -79,7 +79,8 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest):
   @chex.all_variants
   def test_sample_dtype(self):
     dist = self.distrax_cls(self.distrax_base_distribution)
-    samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    samples = self.variant(dist.sample)(seed=self.key)
     self.assertEqual(dist.dtype, samples.dtype)
     self.assertEqual(dist.dtype, self.distrax_base_distribution.dtype)
 
@@ -177,8 +178,10 @@ class QuantizedTFPUniform(equivalence.EquivalenceTest):
         'high': high,
     }
     dist = self.distrax_cls(**distr_params)
-    np.testing.assert_allclose(self.variant(dist.log_prob)(value), -np.inf)  # pyrefly: ignore[missing-attribute]
-    np.testing.assert_allclose(self.variant(dist.prob)(value), 0.)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    np.testing.assert_allclose(self.variant(dist.log_prob)(value), -np.inf)
+    # pyrefly: ignore[missing-attribute]
+    np.testing.assert_allclose(self.variant(dist.prob)(value), 0.)
 
   @parameterized.named_parameters(
       ('low with cutoffs', (10., 50.), 'low'),
@@ -435,7 +438,8 @@ class QuantizedSurvivalFunctionConsistencyTest(parameterized.TestCase):
     def _sum_exps(dist, x):
       return jnp.exp(dist.log_cdf(x)) + jnp.exp(dist.log_survival_function(x))
     dist = quantized.Quantized(self.base_distribution, *dist_params)
-    results = self.variant(_sum_exps)(dist, self.values)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    results = self.variant(_sum_exps)(dist, self.values)
     np.testing.assert_allclose(results, np.ones_like(self.values), rtol=1e-2)
 
 

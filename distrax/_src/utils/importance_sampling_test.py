@@ -57,7 +57,8 @@ class ImportanceSamplingTest(parameterized.TestCase):
     rhos = ratios_fn(pi, mu, events)
 
     expected_rhos = np.array(
-        [pi.probs[0][1] / mu.probs[0][1], pi.probs[1][0] / mu.probs[1][0]],  # pyrefly: ignore[bad-index]
+        # pyrefly: ignore[bad-index]
+        [pi.probs[0][1] / mu.probs[0][1], pi.probs[1][0] / mu.probs[1][0]],
         dtype=np.float32,
     )
     np.testing.assert_allclose(expected_rhos, rhos, atol=1e-4)

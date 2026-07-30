@@ -120,7 +120,8 @@ class MultivariateNormalTriTest(equivalence.EquivalenceTest):
           'loc': np.array([0., 0.], dtype),
           'scale_tri': np.array([[1., 0.], [0., 1.]], dtype)}
       dist = self.distrax_cls(**dist_params)
-      samples = self.variant(dist.sample)(seed=self.key)  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      samples = self.variant(dist.sample)(seed=self.key)
       self.assertEqual(samples.dtype, dist.dtype)
       chex.assert_type(samples, dtype)
 

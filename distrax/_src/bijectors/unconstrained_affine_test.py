@@ -69,8 +69,10 @@ class UnconstrainedAffineTest(parameterized.TestCase):
     bijector = UnconstrainedAffine(matrix, bias)
 
     x = jax.random.normal(next(prng), input_batch_shape + (4,))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    z, logdet_inv = self.variant(bijector.inverse_and_log_det)(x)
 
     output_batch_shape = jnp.broadcast_arrays(
         matrix[..., 0, 0], bias[..., 0], x[..., 0])[0].shape
@@ -91,8 +93,10 @@ class UnconstrainedAffineTest(parameterized.TestCase):
 
     for i in range(np.prod(output_batch_shape)):
       bijector = UnconstrainedAffine(matrix[i], bias[i])
-      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
-      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])  # pyrefly: ignore[missing-attribute]
+      # pyrefly: ignore[missing-attribute]
+      this_y, this_logdet_fwd = self.variant(bijector.forward_and_log_det)(x[i])
+      # pyrefly: ignore[missing-attribute]
+      this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=6e-3)
       np.testing.assert_allclose(this_z, z[i], atol=7e-6)
       np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-7)
@@ -112,12 +116,14 @@ class UnconstrainedAffineTest(parameterized.TestCase):
     x = jax.random.normal(next(prng), batch_shape + (4,))
 
     # Forward methods.
-    y, logdet = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet = self.variant(bijector.forward_and_log_det)(x)
     np.testing.assert_allclose(y, x, atol=8e-3)
     np.testing.assert_array_equal(logdet, jnp.zeros(batch_shape))
 
     # Inverse methods.
-    x_rec, logdet = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_array_equal(x_rec, y)
     np.testing.assert_array_equal(logdet, jnp.zeros(batch_shape))
 
@@ -133,8 +139,10 @@ class UnconstrainedAffineTest(parameterized.TestCase):
     bias = jax.random.normal(next(prng), param_shape + (4,))
     bijector = UnconstrainedAffine(matrix, bias)
     x = jax.random.normal(next(prng), batch_shape + (4,))
-    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)  # pyrefly: ignore[missing-attribute]
-    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    y, logdet_fwd = self.variant(bijector.forward_and_log_det)(x)
+    # pyrefly: ignore[missing-attribute]
+    x_rec, logdet_inv = self.variant(bijector.inverse_and_log_det)(y)
     np.testing.assert_allclose(x_rec, x, atol=8e-3)
     np.testing.assert_array_equal(logdet_fwd, -logdet_inv)
 
@@ -147,7 +155,8 @@ class UnconstrainedAffineTest(parameterized.TestCase):
 
     batched_x = jax.random.normal(next(prng), (10, 4))
     single_x = jax.random.normal(next(prng), (4,))
-    batched_logdet = self.variant(bijector.forward_log_det_jacobian)(batched_x)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    batched_logdet = self.variant(bijector.forward_log_det_jacobian)(batched_x)
 
     jacobian_fn = jax.jacfwd(bijector.forward)
     logdet_numerical = jnp.linalg.slogdet(jacobian_fn(single_x))[1]
@@ -163,7 +172,8 @@ class UnconstrainedAffineTest(parameterized.TestCase):
 
     batched_y = jax.random.normal(next(prng), (10, 4))
     single_y = jax.random.normal(next(prng), (4,))
-    batched_logdet = self.variant(bijector.inverse_log_det_jacobian)(batched_y)  # pyrefly: ignore[missing-attribute]
+    # pyrefly: ignore[missing-attribute]
+    batched_logdet = self.variant(bijector.inverse_log_det_jacobian)(batched_y)
 
     jacobian_fn = jax.jacfwd(bijector.inverse)
     logdet_numerical = jnp.linalg.slogdet(jacobian_fn(single_y))[1]
