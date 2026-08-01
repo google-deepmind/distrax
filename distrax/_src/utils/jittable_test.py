@@ -94,6 +94,17 @@ class JittableTest(parameterized.TestCase):
       add_one_to_params(DummyJittable(jnp.zeros((5,))))
       add_one_to_params(DummyJittable(jnp.ones((5,))))
 
+  def test_donatable_to_aot_compiled_function(self):
+    def get_params(obj):
+      return obj.data['params']
+
+    obj = DummyJittable(jnp.ones((5,)))
+    compiled = (
+        jax.jit(get_params, donate_argnums=0).trace(obj).lower().compile()
+    )
+
+    np.testing.assert_array_equal(compiled(obj), jnp.ones((5,)))
+
   def test_modifying_object_data_does_not_leak_tracers(self):
     @jax.jit
     def add_one_to_params(obj):
