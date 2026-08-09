@@ -40,6 +40,7 @@ from distrax._src.bijectors.unconstrained_affine import UnconstrainedAffine
 from distrax._src.distributions.bernoulli import Bernoulli
 from distrax._src.distributions.beta import Beta
 from distrax._src.distributions.categorical import Categorical
+from distrax._src.distributions.kumaraswamy import Kumaraswamy
 from distrax._src.distributions.categorical_uniform import CategoricalUniform
 from distrax._src.distributions.clipped import Clipped
 from distrax._src.distributions.clipped import ClippedLogistic
@@ -98,6 +99,7 @@ __all__ = (
     "BijectorLike",
     "Block",
     "Categorical",
+    "Kumaraswamy",
     "CategoricalUniform",
     "Chain",
     "Clipped",
