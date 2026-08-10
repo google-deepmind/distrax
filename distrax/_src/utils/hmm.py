@@ -226,7 +226,7 @@ class HMM(jittable.Jittable):
     def scan_fn(beta_prev, t):
       beta_t = jnp.where(
           t > length,
-          jnp.zeros_like(beta_prev),
+          beta_prev,
           # pyrefly: ignore[bad-index]
           _normalize(
               (
