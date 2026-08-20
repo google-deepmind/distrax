@@ -43,7 +43,11 @@ def multiply_no_nan(x: Array, y: Array) -> Array:
     ValueError if the shapes of `x` and `y` do not match.
   """
   dtype = jnp.result_type(x, y)
-  return jnp.where(y == 0, jnp.zeros((), dtype=dtype), x * y)
+  # Replace `x` with zero where `y` is zero before multiplying, so that `0 * y`
+  # is computed instead of `x * 0`. This avoids producing an intermediate NaN
+  # when `x` is infinite and `y` is zero, which would be detected by
+  # `checkify`'s NaN checks even though the result is correct.
+  return jnp.where(y == 0, jnp.zeros((), dtype=dtype), x) * y
 
 
 # TODO(dougalm): move helpers like these into JAX AD utils
