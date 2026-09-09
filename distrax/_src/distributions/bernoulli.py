@@ -209,7 +209,7 @@ def _kl_divergence_bernoulli_bernoulli(
   # KL[a || b] = Pa * Log[Pa / Pb] + (1 - Pa) * Log[(1 - Pa) / (1 - Pb)]
   # Multiply each factor individually to avoid Inf - Inf
   return (
-      math.multiply_no_nan(log_p1, p1) -
+      math.multiply_no_nan(log_p1, p1) -  # pyrefly: ignore[unsupported-operation]
       math.multiply_no_nan(log_p2, p1) +
       math.multiply_no_nan(log_one_minus_p1, one_minus_p1) -
       math.multiply_no_nan(log_one_minus_p2, one_minus_p1)

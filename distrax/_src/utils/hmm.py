@@ -200,7 +200,7 @@ class HMM(jittable.Jittable):
     # post-process
     alpha_hist = jnp.vstack([alpha_0.reshape(1, self._n_states), alpha_hist])
     (_, log_ll) = carry
-    return log_ll, alpha_hist
+    return log_ll, alpha_hist  # pyrefly: ignore[bad-return]
 
   def backward(self,
                obs_seq: chex.Array,

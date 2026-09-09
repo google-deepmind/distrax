@@ -160,7 +160,7 @@ class Multinomial(distribution.Distribution):
     logits = jnp.reshape(self.logits, (-1,) + self.event_shape)
     sample_fn = jax.vmap(
         self._sample_n_scalar, in_axes=(0, 0, None, 0, None), out_axes=1)
-    samples = sample_fn(keys, total_count, n, logits, self._dtype)  # [n, B, K]
+    samples = sample_fn(keys, total_count, n, logits, self._dtype)  # [n, B, K]  # pyrefly: ignore[bad-argument-type]
     return samples.reshape((n,) + self.batch_shape + self.event_shape)
 
   @staticmethod
