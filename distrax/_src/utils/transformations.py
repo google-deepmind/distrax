@@ -86,13 +86,22 @@ _inverse_registry = {
     # binary ops; tuple values represent the variable-left/variable-right side
     # case for non-commutatively invertible ops like div
     jax.lax.mul_p: (
-        jax.lax.div_p.bind,
+        lambda x, y, **_: jax.lax.div_p.bind(x, y),
         lambda x, y, **_: jax.lax.div_p.bind(y, x),
     ),
-    jax.lax.div_p: (jax.lax.mul_p.bind, jax.lax.div_p.bind),
-    jax.lax.add_p: (jax.lax.sub_p.bind, lambda x, y: jax.lax.sub_p.bind(y, x)),
-    jax.lax.sub_p: (jax.lax.add_p.bind, jax.lax.sub_p.bind),
-    jax.lax.pow_p: lambda x, y: jax.lax.pow_p.bind(x, 1.0 / y),
+    jax.lax.div_p: (
+        lambda x, y, **_: jax.lax.mul_p.bind(x, y),
+        lambda x, y, **_: jax.lax.div_p.bind(x, y),
+    ),
+    jax.lax.add_p: (
+        lambda x, y, **_: jax.lax.sub_p.bind(x, y),
+        lambda x, y, **_: jax.lax.sub_p.bind(y, x),
+    ),
+    jax.lax.sub_p: (
+        lambda x, y, **_: jax.lax.add_p.bind(x, y),
+        lambda x, y, **_: jax.lax.sub_p.bind(x, y),
+    ),
+    jax.lax.pow_p: lambda x, y, **_: jax.lax.pow_p.bind(x, 1.0 / y),
     jax.lax.integer_pow_p: lambda x, y: jax.lax.pow_p.bind(x, 1.0 / y),
 }
 
