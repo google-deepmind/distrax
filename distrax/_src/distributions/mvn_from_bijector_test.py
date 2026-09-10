@@ -297,6 +297,58 @@ class MultivariateNormalFromBijectorTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       dist1.kl_divergence(dist2)
 
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float32', jnp.float32),
+      ('float64', jnp.float64),
+  )
+  def test_divergences_cancellation_dtypes(self, dtype):
+    prng = hk.PRNGSequence(jax.random.PRNGKey(42))
+    eps = 1e-4  # Using 1e-4 perturbation
+    dim = 5
+
+    # Create two nearby distributions
+    loc1 = jax.random.normal(next(prng), (dim,), dtype=dtype)
+    loc2 = loc1 + eps * jax.random.normal(next(prng), (dim,), dtype=dtype)
+
+    scale_tril1 = jnp.tril(
+        jax.random.normal(next(prng), (dim, dim), dtype=dtype)
+    )
+    # Ensure it is well conditioned by adding to diagonal
+    scale_tril1 = scale_tril1 + 3.0 * jnp.eye(dim, dtype=dtype)
+
+    scale_tril2 = scale_tril1 + eps * jax.random.normal(
+        next(prng), (dim, dim), dtype=dtype
+    )
+    scale_tril2 = jnp.tril(scale_tril2)
+
+    dist1 = MultivariateNormalFromBijector(
+        loc=loc1,
+        scale=TriangularLinear(matrix=scale_tril1),
+    )
+    dist2 = MultivariateNormalFromBijector(
+        loc=loc2,
+        scale=TriangularLinear(matrix=scale_tril2),
+    )
+
+    # New methods calls
+    # pyrefly: ignore[missing-attribute]
+    sym_kl = self.variant(dist1.symmetrized_kl_divergence)(dist2)
+    # pyrefly: ignore[missing-attribute]
+    bhattacharyya = self.variant(dist1.bhattacharyya_distance)(dist2)
+    # pyrefly: ignore[missing-attribute]
+    gjsd = self.variant(dist1.geometric_jensen_shannon_divergence)(dist2)
+
+    # We expect these values to be > 0 and computed accurately.
+    self.assertTrue(jnp.all(sym_kl > 0.0))
+    self.assertTrue(jnp.all(bhattacharyya > 0.0))
+    self.assertTrue(jnp.all(gjsd > 0.0))
+
+    # At small perturbation (eps = 1e-4), D_B and G-JSD asymptotically approach
+    # 1/8 D_J (since sym_kl = KL(1||2) + KL(2||1) = 2 * D_sym_half).
+    np.testing.assert_allclose(bhattacharyya, 0.125 * sym_kl, rtol=0.01)
+    np.testing.assert_allclose(gjsd, 0.125 * sym_kl, rtol=0.01)
+
 
 if __name__ == '__main__':
   jax.config.update('jax_threefry_partitionable', False)
