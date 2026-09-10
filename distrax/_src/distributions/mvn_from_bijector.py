@@ -29,6 +29,7 @@ from distrax._src.distributions import transformed
 
 import jax
 import jax.numpy as jnp
+import jax.scipy as jsp
 
 from tensorflow_probability.substrates import jax as tfp
 
@@ -150,6 +151,56 @@ class MultivariateNormalFromBijector(transformed.Transformed):
       result = jnp.sqrt(self.variance())
     return jnp.broadcast_to(result, self.batch_shape + self.event_shape)
 
+  def symmetrized_kl_divergence(self, other: 'MultivariateNormalLike') -> Array:
+    """Computes KL(self || other) + KL(other || self) without subtractive cancellation."""
+    m, _ = _cholesky_cross_operator_from_dist(self, other)
+    cov_term = 0.5 * jnp.sum(jnp.square(m), axis=(-2, -1))
+
+    # pyrefly: ignore[bad-index,unsupported-operation]
+    delta_mu = (self.mean() - other.mean())[..., None]
+    v1 = _inv_scale_operator(self)(delta_mu)
+    v2 = _inv_scale_operator(other)(delta_mu)
+    mean_term = 0.5 * jnp.sum(jnp.square(v1) + jnp.square(v2), axis=(-2, -1))
+
+    return cov_term + mean_term
+
+  def bhattacharyya_distance(self, other: 'MultivariateNormalLike') -> Array:
+    """Computes the Bhattacharyya distance without subtractive cancellation."""
+    _, k = _cholesky_cross_operator_from_dist(self, other)
+    cov_term = 0.25 * _logdet_one_plus_k(k)
+
+    # pyrefly: ignore[bad-index,unsupported-operation]
+    delta_mu = (self.mean() - other.mean())[..., None]
+    sigma_avg = 0.5 * (self.covariance() + other.covariance())
+    l_avg = jnp.linalg.cholesky(sigma_avg)
+    v_avg = jsp.linalg.solve_triangular(l_avg, delta_mu, lower=True)
+    mean_term = 0.125 * jnp.sum(jnp.square(v_avg), axis=(-2, -1))
+
+    return cov_term + mean_term
+
+  def geometric_jensen_shannon_divergence(
+      self, other: 'MultivariateNormalLike'
+  ) -> Array:
+    """Computes the Geometric Jensen-Shannon Divergence without subtractive cancellation."""
+    _, k = _cholesky_cross_operator_from_dist(self, other)
+    cov_term = 0.25 * _trace_two_k_minus_log_one_plus_k(k)
+
+    # pyrefly: ignore[bad-index,unsupported-operation]
+    delta_mu = (self.mean() - other.mean())[..., None]
+    v1 = _inv_scale_operator(self)(delta_mu)
+    v2 = _inv_scale_operator(other)(delta_mu)
+
+    sigma_avg = 0.5 * (self.covariance() + other.covariance())
+    l_avg = jnp.linalg.cholesky(sigma_avg)
+    v_avg = jsp.linalg.solve_triangular(l_avg, delta_mu, lower=True)
+
+    mean_term = 0.125 * jnp.sum(
+        jnp.square(v1) + jnp.square(v2), axis=(-2, -1)
+    ) - 0.125 * jnp.sum(jnp.square(v_avg), axis=(-2, -1))
+    mean_term = jnp.maximum(mean_term, 0.0)
+
+    return cov_term + mean_term
+
 
 MultivariateNormalLike = Union[
     MultivariateNormalFromBijector, tfd.MultivariateNormalLinearOperator]
@@ -209,6 +260,73 @@ def _has_diagonal_scale(d: MultivariateNormalLike) -> bool:
          d.parameters['scale_perturb_factor'] is None)):
     return True
   return False
+
+
+def _cholesky_cross_operator_from_dist(dist1, dist2):
+  """Computes cross-operator M and normalized Gramian K directly from bijectors."""
+  x = _inv_scale_operator(dist2)(_scale_matrix(dist1))
+  y = _inv_scale_operator(dist1)(_scale_matrix(dist2))
+  m = x - jnp.swapaxes(y, -1, -2)
+  k = 0.25 * jnp.matmul(m, jnp.swapaxes(m, -1, -2))
+  # Ensure exact symmetry
+  k = 0.5 * (k + jnp.swapaxes(k, -1, -2))
+  return m, k
+
+
+def _derive_taylor_threshold(dtype: jnp.dtype, max_order: int = 4) -> float:
+  eps = float(jnp.finfo(dtype).eps)
+  return float((eps * (max_order + 1)) ** (1.0 / (max_order + 1)))
+
+
+def _logdet_one_plus_k(k: jax.Array) -> jax.Array:
+  """Computes ln det(I + K) for PSD K, stable for small ||K||."""
+  tr_k2 = jnp.sum(jnp.square(k), axis=(-2, -1))
+  norm_k = jnp.sqrt(tr_k2)
+  threshold = _derive_taylor_threshold(k.dtype)
+
+  # Since K and K^2 are symmetric, tr(K^3) = <K, K^2>_F and
+  # tr(K^4) = ||K^2||_F^2, requiring only a single matrix multiplication
+  # (K^2 = K @ K).
+  k2 = jnp.matmul(k, k)
+  tr_k = jnp.trace(k, axis1=-2, axis2=-1)
+  tr_k3 = jnp.sum(k * k2, axis=(-2, -1))
+  tr_k4 = jnp.sum(jnp.square(k2), axis=(-2, -1))
+  logdet_taylor = (
+      tr_k - 0.5 * tr_k2 + (1.0 / 3.0) * tr_k3 - 0.25 * tr_k4
+  )
+
+  # Large-norm Cholesky: 2 * sum(log(diag(chol(I + K))))
+  eye = jnp.eye(k.shape[-1], dtype=k.dtype)
+  l_k = jnp.linalg.cholesky(eye + k)
+  logdet_chol = 2.0 * jnp.sum(
+      jnp.log(jnp.diagonal(l_k, axis1=-2, axis2=-1)), axis=-1
+  )
+  return jnp.where(norm_k < threshold, logdet_taylor, logdet_chol)
+
+
+def _trace_two_k_minus_log_one_plus_k(k: jax.Array) -> jax.Array:
+  """Computes tr(2K - ln(I + K)) for PSD K without subtractive cancellation."""
+  tr_k2 = jnp.sum(jnp.square(k), axis=(-2, -1))
+  norm_k = jnp.sqrt(tr_k2)
+  threshold = _derive_taylor_threshold(k.dtype)
+  tr_k = jnp.trace(k, axis1=-2, axis2=-1)
+
+  # Small-norm Taylor expansion: tr(K + K^2/2 - K^3/3 + K^4/4)
+  k2 = jnp.matmul(k, k)
+  tr_k3 = jnp.sum(k * k2, axis=(-2, -1))
+  tr_k4 = jnp.sum(jnp.square(k2), axis=(-2, -1))
+  val_taylor = (
+      tr_k + 0.5 * tr_k2 - (1.0 / 3.0) * tr_k3 + 0.25 * tr_k4
+  )
+
+  # Large-norm Cholesky: 2 tr(K) - ln det(I + K)
+  eye = jnp.eye(k.shape[-1], dtype=k.dtype)
+  l_k = jnp.linalg.cholesky(eye + k)
+  logdet_chol = 2.0 * jnp.sum(
+      jnp.log(jnp.diagonal(l_k, axis1=-2, axis2=-1)), axis=-1
+  )
+  val_chol = jnp.maximum(2.0 * tr_k - logdet_chol, 0.0)
+  return jnp.where(norm_k < threshold, val_taylor, val_chol)
 
 
 def _kl_divergence_mvn_mvn(
