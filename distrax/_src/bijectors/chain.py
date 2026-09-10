@@ -28,8 +28,8 @@ class Chain(base.Bijector):
   """Composition of a sequence of bijectors into a single bijector.
 
   Bijectors are composable: if `f` and `g` are bijectors, then `g o f` is also
-  a bijector. Given a sequence of bijectors `[f1, ..., fN]`, this class
-  implements the bijector defined by `fN o ... o f1`.
+  a bijector. Given a sequence of bijectors `[f1, ..., fN]`, this class applies
+  `fN` first and `f1` last, implementing `f1 o ... o fN`.
 
   NOTE: the bijectors are applied in reverse order from the order they appear in
   the sequence. For example, consider the following code where `f` and `g` are
@@ -49,7 +49,8 @@ class Chain(base.Bijector):
     """Initializes a Chain bijector.
 
     Args:
-      bijectors: a sequence of bijectors to be composed into one. Each bijector
+      bijectors: a sequence of bijectors to be composed into one, listed from
+        outermost to innermost. The last element is applied first. Each bijector
         can be a distrax bijector, a TFP bijector, or a callable to be wrapped
         by `Lambda`. The sequence must contain at least one bijector.
     """
