@@ -162,6 +162,31 @@ class HMMTest(parameterized.TestCase):
       np.testing.assert_array_almost_equal(marginals, tfp_marginals, decimal=4)
 
   @chex.all_variants(without_device=False)
+  def test_forward_backward_ignores_padded_suffix(self):
+    model = hmm.HMM(
+        init_dist=categorical.Categorical(probs=jnp.array([0.6, 0.4])),
+        trans_dist=categorical.Categorical(
+            probs=jnp.array([[0.8, 0.2], [0.3, 0.7]])
+        ),
+        obs_dist=normal.Normal(
+            loc=jnp.array([0.0, 3.0]), scale=jnp.array([0.5, 0.5])
+        ),
+    )
+    observations = jnp.array([0.05, 2.9, 0.1, 99.0, 99.0])
+    valid_length = 3
+
+    padded = self.variant(model.forward_backward)(
+        observations, length=jnp.array(valid_length)
+    )
+    prefix = self.variant(model.forward_backward)(observations[:valid_length])
+
+    for padded_values, prefix_values in zip(padded[:3], prefix[:3]):
+      np.testing.assert_allclose(
+          padded_values[:valid_length], prefix_values, rtol=1e-6, atol=1e-6
+      )
+    np.testing.assert_allclose(padded[3], prefix[3], rtol=1e-6, atol=1e-6)
+
+  @chex.all_variants(without_device=False)
   @_test_cases
   def test_viterbi(self, length, num_states, obs_dist_name_and_params_fn):
     name, params_fn = obs_dist_name_and_params_fn
