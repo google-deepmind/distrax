@@ -197,7 +197,7 @@ class Multinomial(distribution.Distribution):
   @staticmethod
   def _entropy_scalar(
       total_count: int, probs: Array, log_of_probs: Array
-    ) -> Union[jnp.float32, jnp.float64]:
+    ) -> Union[jnp.float32, jnp.float64]:  # pyrefly: ignore[not-a-type]
     """Calculates the entropy for a Multinomial with integer `total_count`."""
     # Constant factors in the entropy.
     xi = jnp.arange(total_count + 1, dtype=probs.dtype)
@@ -230,7 +230,7 @@ class Multinomial(distribution.Distribution):
   @staticmethod
   def _entropy_scalar_with_lax(
       total_count: int, probs: Array, log_of_probs: Array
-    ) -> Union[jnp.float32, jnp.float64]:
+    ) -> Union[jnp.float32, jnp.float64]:  # pyrefly: ignore[not-a-type]
     """Like `_entropy_scalar`, but uses a lax while loop."""
 
     dtype = probs.dtype
