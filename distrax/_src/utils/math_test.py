@@ -39,6 +39,18 @@ class MathTest(absltest.TestCase):
         lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
     np.testing.assert_allclose(grad_fn((x, y)), (y, x), rtol=1e-3)
 
+  def test_multiply_no_nan_checkify(self):
+    """`multiply_no_nan` should not trigger checkify's NaN checks."""
+    from jax.experimental import checkify
+
+    def f(x, y):
+      return math.multiply_no_nan(x, y)
+
+    checked_f = checkify.checkify(f, errors=checkify.nan_checks)
+    err, out = checked_f(-jnp.inf, jnp.zeros(()))
+    err.throw()  # Raises if a NaN check was triggered.
+    self.assertEqual(out, 0.)
+
   def test_power_no_nan(self):
     zero = jnp.zeros(())
     nan = zero / zero
