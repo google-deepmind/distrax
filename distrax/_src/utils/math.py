@@ -84,6 +84,14 @@ def scale_maybe_symbolic(result_aval, tangent, scale):
     return tangent * scale
 
 
+def mask_tangent_maybe_symbolic(tangent, y):
+  """Zeros a tangent where `y` is zero, leaving symbolic zeros untouched."""
+  if isinstance(tangent, SymbolicZero):
+    return tangent
+  else:
+    return _zero_where_y_is_zero(tangent, y)
+
+
 @functools.partial(multiply_no_nan.defjvp, symbolic_zeros=True)
 def multiply_no_nan_jvp(
     primals: Tuple[Array, Array],
@@ -94,13 +102,18 @@ def multiply_no_nan_jvp(
   primal_out = multiply_no_nan(x, y)
   primal_aval = jax.typeof(primal_out)
   result_aval = primal_aval.at_least_vspace()
-  tangent_out_1 = scale_maybe_symbolic(result_aval, x_dot, y)
   # The derivative with respect to `y` is `x`, but it is taken to be zero where
-  # `y` is zero, matching the primal. Scaling by the raw `x` would evaluate
-  # `0 * inf` for a zero tangent for `y`, and that NaN is only hidden by the
-  # caller's `where`: `checkify`'s NaN checks would still report it.
-  tangent_out_2 = scale_maybe_symbolic(result_aval, y_dot,
-                                       _zero_where_y_is_zero(x, y))
+  # `y` is zero, matching the primal. The tangents are masked the same way,
+  # because an infinite tangent multiplied by the zero it contributes would
+  # otherwise evaluate `inf * 0`, and `checkify`'s NaN checks report that even
+  # though the term is discarded. Every mask depends on the primal `y` alone,
+  # which keeps the rule linear in the tangents, as reverse-mode transposition
+  # requires.
+  tangent_out_1 = scale_maybe_symbolic(result_aval,
+                                       mask_tangent_maybe_symbolic(x_dot, y), y)
+  tangent_out_2 = scale_maybe_symbolic(
+      result_aval, mask_tangent_maybe_symbolic(y_dot, y),
+      _zero_where_y_is_zero(x, y))
   return primal_out, add_maybe_symbolic(tangent_out_1, tangent_out_2)
 
 
