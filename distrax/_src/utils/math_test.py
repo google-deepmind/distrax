@@ -60,16 +60,18 @@ class MathTest(absltest.TestCase):
     def f(x, y):
       return math.multiply_no_nan(x, y)
 
-    def jvp(x):
-      # A concrete zero tangent for `y`, as when differentiating only with
-      # respect to `x`. This used to evaluate `0 * inf` and give a NaN tangent.
-      return jax.jvp(f, (x, jnp.zeros(())),
-                     (jnp.ones(()), jnp.zeros(())))[1]
+    def jvp(x, x_dot, y_dot):
+      return jax.jvp(f, (x, jnp.zeros(())), (x_dot, y_dot))[1]
 
+    # The primal is zero, so both tangent terms are products with zero. With a
+    # concrete tangent each of these used to evaluate `inf * 0` and give a NaN
+    # tangent: `(1., 0.)` is the differentiating-w.r.t.-`x` case, `(inf, 0.)`
+    # the mirror case, and `(0., inf)` an infinite tangent for `y`.
     checked_f = checkify.checkify(jvp, errors=checkify.nan_checks)
-    err, out = checked_f(-jnp.inf)
-    err.throw()  # Raises if a NaN check was triggered.
-    self.assertEqual(out, 0.)
+    for x_dot, y_dot in ((1., 0.), (jnp.inf, 0.), (0., jnp.inf)):
+      err, out = checked_f(-jnp.inf, x_dot, y_dot)
+      err.throw()  # Raises if a NaN check was triggered.
+      self.assertEqual(out, 0.)
 
   def test_power_no_nan(self):
     zero = jnp.zeros(())
