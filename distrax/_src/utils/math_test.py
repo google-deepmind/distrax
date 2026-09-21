@@ -37,7 +37,39 @@ class MathTest(absltest.TestCase):
     self.assertEqual(math.multiply_no_nan(x, y), 0.)
     grad_fn = jax.grad(
         lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
-    np.testing.assert_allclose(grad_fn((x, y)), (y, x), rtol=1e-3)
+    # The derivative with respect to `y` is zero where `y` is zero, rather than
+    # `x`, so that a zero tangent for `y` cannot evaluate `0 * inf`.
+    np.testing.assert_allclose(grad_fn((x, y)), (y, 0.), rtol=1e-3)
+
+  def test_multiply_no_nan_checkify(self):
+    """`multiply_no_nan` should not trigger checkify's NaN checks."""
+    from jax.experimental import checkify
+
+    def f(x, y):
+      return math.multiply_no_nan(x, y)
+
+    checked_f = checkify.checkify(f, errors=checkify.nan_checks)
+    err, out = checked_f(-jnp.inf, jnp.zeros(()))
+    err.throw()  # Raises if a NaN check was triggered.
+    self.assertEqual(out, 0.)
+
+  def test_multiply_no_nan_checkify_jvp(self):
+    """The JVP of `multiply_no_nan` should not trigger checkify's NaN checks."""
+    from jax.experimental import checkify
+
+    def f(x, y):
+      return math.multiply_no_nan(x, y)
+
+    def jvp(x):
+      # A concrete zero tangent for `y`, as when differentiating only with
+      # respect to `x`. This used to evaluate `0 * inf` and give a NaN tangent.
+      return jax.jvp(f, (x, jnp.zeros(())),
+                     (jnp.ones(()), jnp.zeros(())))[1]
+
+    checked_f = checkify.checkify(jvp, errors=checkify.nan_checks)
+    err, out = checked_f(-jnp.inf)
+    err.throw()  # Raises if a NaN check was triggered.
+    self.assertEqual(out, 0.)
 
   def test_power_no_nan(self):
     zero = jnp.zeros(())
