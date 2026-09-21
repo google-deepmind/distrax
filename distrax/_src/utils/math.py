@@ -25,6 +25,24 @@ import jax.numpy as jnp
 Array = chex.Array
 
 
+def _zero_where_y_is_zero(x: Array, y: Array) -> Array:
+  """Replaces the entries of `x` where `y` is zero by zeros.
+
+  Multiplying this by `y` evaluates `0 * y` rather than `x * 0`, so an infinite
+  `x` does not produce an intermediate NaN. The mask only depends on primals,
+  which keeps the JVP rule reusing it linear in the tangents, as reverse-mode
+  transposition requires.
+
+  Args:
+    x: The value to mask.
+    y: The value whose zeros select the entries to replace.
+
+  Returns:
+    `x` with zeros wherever `y` is zero.
+  """
+  return jnp.where(y == 0, jnp.zeros((), dtype=jnp.result_type(x, y)), x)
+
+
 @jax.custom_jvp
 def multiply_no_nan(x: Array, y: Array) -> Array:
   """Equivalent of TF `multiply_no_nan`.
@@ -42,12 +60,11 @@ def multiply_no_nan(x: Array, y: Array) -> Array:
   Raises:
     ValueError if the shapes of `x` and `y` do not match.
   """
-  dtype = jnp.result_type(x, y)
   # Replace `x` with zero where `y` is zero before multiplying, so that `0 * y`
   # is computed instead of `x * 0`. This avoids producing an intermediate NaN
   # when `x` is infinite and `y` is zero, which would be detected by
   # `checkify`'s NaN checks even though the result is correct.
-  return jnp.where(y == 0, jnp.zeros((), dtype=dtype), x) * y
+  return _zero_where_y_is_zero(x, y) * y
 
 
 # TODO(dougalm): move helpers like these into JAX AD utils
@@ -78,7 +95,12 @@ def multiply_no_nan_jvp(
   primal_aval = jax.typeof(primal_out)
   result_aval = primal_aval.at_least_vspace()
   tangent_out_1 = scale_maybe_symbolic(result_aval, x_dot, y)
-  tangent_out_2 = scale_maybe_symbolic(result_aval, y_dot, x)
+  # The derivative with respect to `y` is `x`, but it is taken to be zero where
+  # `y` is zero, matching the primal. Scaling by the raw `x` would evaluate
+  # `0 * inf` for a zero tangent for `y`, and that NaN is only hidden by the
+  # caller's `where`: `checkify`'s NaN checks would still report it.
+  tangent_out_2 = scale_maybe_symbolic(result_aval, y_dot,
+                                       _zero_where_y_is_zero(x, y))
   return primal_out, add_maybe_symbolic(tangent_out_1, tangent_out_2)
 
 
