@@ -51,8 +51,10 @@ python3 -m  flake8 `find distrax -name '*.py' | xargs` --count --select=E9,F63,F
 # Lint with pylint.
 # Fail on errors, warning, conventions and refactoring messages.
 PYLINT_ARGS="-efail -wfail -cfail -rfail"
-# Download Google OSS config.
+# Download Google OSS config and verify its contents before using it.
+readonly PYLINT_CONFIG_SHA256=6e7c72c556651e961fa3e393c231970acdeb73d9894c9587c5e0bc4a8c46b643
 wget -nd -v -t 3 -O .pylintrc https://google.github.io/styleguide/pylintrc
+python3 -c 'import hashlib, pathlib, sys; expected, path = sys.argv[1:]; actual = hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest(); sys.exit(0 if actual == expected else f"SHA-256 mismatch for {path}: expected {expected}, got {actual}")' "${PYLINT_CONFIG_SHA256}" .pylintrc
 # Append specific config lines.
 echo "disable=abstract-method,unnecessary-lambda-assignment,no-value-for-parameter,use-dict-literal" >> .pylintrc
 # Lint modules and tests separately.
