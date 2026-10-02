@@ -40,8 +40,7 @@ def _normalize(u: chex.Array,
   """
   u = jnp.where(u == 0, 0, jnp.where(u < eps, eps, u))
   c = u.sum(axis=axis)
-  c = jnp.where(c == 0, 1, c)
-  return u / c, c
+  return u / jnp.where(c == 0, 1, c), c
 
 
 class HMM(jittable.Jittable):
@@ -181,6 +180,8 @@ class HMM(jittable.Jittable):
       )
 
       alpha_n, cn = _normalize(alpha_n)
+      # Padding has no effect on the likelihood, even though its alpha is zero.
+      cn = jnp.where(t < length, cn, 1)
       carry = (alpha_n, jnp.log(cn) + log_ll_prev)
 
       return carry, alpha_n
