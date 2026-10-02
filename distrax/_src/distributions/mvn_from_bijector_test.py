@@ -51,6 +51,12 @@ class MockLinear(linear.Linear):
 
 class MultivariateNormalFromBijectorTest(parameterized.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    # Maintain high precision on GPU to avoid numerical discrepancies under
+    # the BF16 default flag flip.
+    self.enter_context(jax.default_matmul_precision('high'))
+
   @parameterized.named_parameters(
       ('loc is 0d', 4, np.zeros(shape=())),
       ('loc and scale dims not compatible', 3, np.zeros((4,))),

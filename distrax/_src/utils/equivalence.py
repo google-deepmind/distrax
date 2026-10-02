@@ -149,8 +149,12 @@ class EquivalenceTest(parameterized.TestCase):
       tfp_fn = getattr(tfp_dist, attribute_string)
       if hasattr(self, 'variant'):
         distrax_fn = self.variant(distrax_fn)
-      assertion_fn(distrax_fn(*call_args, **call_kwargs),
-                   tfp_fn(*call_args, **call_kwargs))
+      # Maintain high precision on GPU to avoid numerical discrepancies under
+      # the BF16 default flag flip.
+      with jax.default_matmul_precision('high'):
+        tfp_res = tfp_fn(*call_args, **call_kwargs)
+      distrax_res = distrax_fn(*call_args, **call_kwargs)
+      assertion_fn(distrax_res, tfp_res)
     else:
       assertion_fn(getattr(dist, attribute_string),
                    getattr(tfp_dist, attribute_string))

@@ -16,14 +16,12 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-
 import chex
-
 from distrax._src.distributions.mvn_diag import MultivariateNormalDiag
 from distrax._src.distributions.mvn_diag_plus_low_rank import MultivariateNormalDiagPlusLowRank
 from distrax._src.distributions.mvn_full_covariance import MultivariateNormalFullCovariance
 from distrax._src.distributions.mvn_tri import MultivariateNormalTri
-
+import jax
 import numpy as np
 
 
@@ -75,6 +73,12 @@ def _get_dist_params(dist, batch_shape, dim, rng):
 
 
 class MultivariateNormalKLTest(parameterized.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    # Maintain high precision on GPU to avoid numerical discrepancies under
+    # the BF16 default flag flip.
+    self.enter_context(jax.default_matmul_precision('high'))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
