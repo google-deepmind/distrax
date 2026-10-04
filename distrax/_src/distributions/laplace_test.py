@@ -21,6 +21,7 @@ import chex
 from distrax._src.distributions import laplace
 from distrax._src.utils import compat
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -284,6 +285,78 @@ class LaplaceTest(equivalence.EquivalenceTest):
     dist = self.distrax_cls(loc=loc, scale=scale)
     self.assertion_fn(rtol=2e-2)(dist[0].loc, loc)  # Not slicing loc.
     self.assertion_fn(rtol=2e-2)(dist[0].scale, scale[0])
+
+
+class LaplaceCdfNumericsTest(parameterized.TestCase):
+
+  @parameterized.product(dtype=(np.float32, np.float64), compiled=(False, True))
+  def test_representable_cdf_tails_and_broadcasting(self, dtype, compiled):
+    with compat.enable_x64(dtype == np.float64):
+      tail = 700.0 if dtype == np.float64 else 80.0
+      z = np.array(
+          [-tail, -40.0, -20.0, -0.25, 0.0, 0.25, 20.0, tail], dtype=dtype
+      )
+      loc = jnp.array([-1.0, 2.0], dtype=dtype)
+      scale = jnp.array([0.5, 2.0], dtype=dtype)
+      values = loc + scale * jnp.asarray(z[:, None])
+      dist = laplace.Laplace(loc, scale)
+      cdf = jax.jit(dist.cdf) if compiled else dist.cdf
+      actual = cdf(values)
+      # Evaluate the defining integrals in host double precision.
+      expected = np.array(
+          [
+              0.5 * np.exp(float(v)) if v < 0 else 1.0 - 0.5 * np.exp(-float(v))
+              for v in z
+          ]
+      )[:, None]
+      expected = np.broadcast_to(expected, values.shape).astype(dtype)
+      np.testing.assert_allclose(actual, expected, rtol=5e-6, atol=0.0)
+      self.assertEqual(actual.dtype, jnp.dtype(dtype))
+      self.assertEqual(actual.shape, values.shape)
+      self.assertTrue(np.all(np.asarray(actual[:3]) > 0.0))
+
+  @parameterized.product(dtype=(np.float32, np.float64), compiled=(False, True))
+  def test_cdf_derivatives_match_density_at_location_and_in_tails(
+      self, dtype, compiled
+  ):
+    with compat.enable_x64(dtype == np.float64):
+      loc = jnp.asarray(2.0, dtype=dtype)
+      scale = jnp.asarray(0.5, dtype=dtype)
+      z = jnp.asarray(
+          [-40.0, -20.0, -1.0, -0.0, 0.0, 1.0, 20.0, 40.0], dtype=dtype
+      )
+      values = loc + scale * z
+
+      def cdf(x, mu, sigma):
+        return laplace.Laplace(mu, sigma).cdf(x)
+
+      gradients = jax.vmap(jax.grad(cdf, argnums=(0, 1, 2)), (0, None, None))
+      if compiled:
+        gradients = jax.jit(gradients)
+      dx, dloc, dscale = gradients(values, loc, scale)
+      density = np.exp(-np.abs(np.asarray(z, dtype=np.float64))) / (
+          2.0 * float(scale)
+      )
+      np.testing.assert_allclose(dx, density, rtol=5e-6, atol=0.0)
+      np.testing.assert_allclose(dloc, -density, rtol=5e-6, atol=0.0)
+      np.testing.assert_allclose(
+          dscale, -np.asarray(z) * density, rtol=5e-6, atol=0.0
+      )
+      forward = jax.vmap(
+          lambda x: jax.jvp(
+              lambda v: cdf(v, loc, scale), (x,), (jnp.ones_like(x),)
+          )[1]
+      )
+      if compiled:
+        forward = jax.jit(forward)
+      np.testing.assert_allclose(forward(values), density, rtol=5e-6, atol=0.0)
+
+  @parameterized.parameters(False, True)
+  def test_cdf_infinite_limits_and_nan(self, compiled):
+    dist = laplace.Laplace(0.0, 1.0)
+    cdf = jax.jit(dist.cdf) if compiled else dist.cdf
+    actual = cdf(jnp.asarray([-jnp.inf, 0.0, jnp.inf, jnp.nan]))
+    np.testing.assert_allclose(actual, [0.0, 0.5, 1.0, np.nan], equal_nan=True)
 
 
 if __name__ == '__main__':
