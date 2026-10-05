@@ -37,9 +37,19 @@ class MathTest(absltest.TestCase):
     self.assertEqual(math.multiply_no_nan(x, y), 0.)
     grad_fn = jax.grad(
         lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
-    # The derivative with respect to `y` is zero where `y` is zero, rather than
-    # `x`, so that a zero tangent for `y` cannot evaluate `0 * inf`.
+    # An infinite `x` makes the derivative with respect to `y` ill-defined at
+    # `y == 0`, so it is taken to be zero rather than `x`; this is also what
+    # keeps a zero tangent for `y` from evaluating `0 * inf`.
     np.testing.assert_allclose(grad_fn((x, y)), (y, 0.), rtol=1e-3)
+
+  def test_multiply_no_nan_grads_finite_x(self):
+    """A finite `x` keeps the derivative `x` with respect to `y` at `y == 0`."""
+    x = 3.
+    y = 0.
+    self.assertEqual(math.multiply_no_nan(x, y), 0.)
+    grad_fn = jax.grad(
+        lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
+    np.testing.assert_allclose(grad_fn((x, y)), (y, x), rtol=1e-3)
 
   def test_multiply_no_nan_checkify(self):
     """`multiply_no_nan` should not trigger checkify's NaN checks."""
@@ -72,6 +82,11 @@ class MathTest(absltest.TestCase):
       err, out = checked_f(-jnp.inf, x_dot, y_dot)
       err.throw()  # Raises if a NaN check was triggered.
       self.assertEqual(out, 0.)
+    # A finite `x` is left unmasked, so the derivative with respect to `y` is
+    # still `x`; being finite, it is also checkify-safe.
+    err, out = checked_f(3., 0., 1.)
+    err.throw()
+    self.assertEqual(out, 3.)
 
   def test_power_no_nan(self):
     zero = jnp.zeros(())
