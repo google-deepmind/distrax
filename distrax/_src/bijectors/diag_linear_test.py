@@ -88,7 +88,6 @@ class DiagLinearTest(parameterized.TestCase):
     logdet_fwd = logdet_fwd.flatten()
     logdet_inv = logdet_inv.flatten()
 
-    # pyrefly: ignore[no-matching-overload]
     for i in range(np.prod(output_batch_shape)):
       bij = DiagLinear(diag=diag[i])
       # pyrefly: ignore[missing-attribute]

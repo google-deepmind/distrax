@@ -71,7 +71,7 @@ class Uniform(distribution.Distribution):
 
   @property
   def batch_shape(self) -> Tuple[int, ...]:
-    return self._batch_shape  # pyrefly: ignore[bad-return]
+    return self._batch_shape
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""

@@ -58,7 +58,6 @@ class Normal(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    # pyrefly: ignore[bad-return]
     return jax.lax.broadcast_shapes(self._loc.shape, self._scale.shape)
 
   @property

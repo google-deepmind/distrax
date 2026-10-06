@@ -94,7 +94,7 @@ def as_bijector(obj: BijectorLike) -> bijector.BijectorT:
   elif obj is jnp.tanh:
     return tanh.Tanh()  # pyrefly: ignore[bad-return]
   elif callable(obj):
-    # pyrefly: ignore[bad-argument-type, bad-return]
+    # pyrefly: ignore[bad-return]
     return lambda_bijector.Lambda(obj)
   else:
     raise TypeError(

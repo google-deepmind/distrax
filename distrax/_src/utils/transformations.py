@@ -55,13 +55,11 @@ import jax.extend as jex
 import jax.numpy as jnp
 
 # pylint: disable=g-import-not-at-top
-# pytype: disable=import-error
 try:
   # jax >= 0.4.16
   from jax.extend import linear_util as lu
 except ImportError:
-  from jax import linear_util as lu
-# pytype: enable=import-error
+  from jax import linear_util as lu  # pyrefly: ignore[missing-module-attribute]
 # pylint: enable=g-import-not-at-top
 
 

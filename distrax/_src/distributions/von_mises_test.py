@@ -239,7 +239,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
     concentrations_v = .2
     x = np.array([2., 3., 4., 5., 6., 7.])
     vm = self.distrax_cls(locs_v, concentrations_v)
-    expected_log_prob = sp_stats.vonmises.logpdf(  # pytype: disable=module-attr
+    expected_log_prob = sp_stats.vonmises.logpdf(
         x,
         concentrations_v,
         loc=locs_v
@@ -264,7 +264,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
     x = np.array([2., 3., 4., 5., 6., 7.])
     vm = self.distrax_cls(locs_v, concentrations_v)
     prob = vm.prob(x)
-    expected_prob = sp_stats.vonmises.pdf(  # pytype: disable=module-attr
+    expected_prob = sp_stats.vonmises.pdf(
         x, concentrations_v, loc=locs_v
     )
     np.testing.assert_allclose(expected_prob, prob, rtol=1e-04, atol=1e-04)
@@ -283,7 +283,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
     x = np.reshape(np.linspace(-np.pi, np.pi, 7), [1, 1, -1])
     vm = self.distrax_cls(locs_v, concentrations_v)
     cdf = vm.cdf(x)
-    expected_cdf = sp_stats.vonmises.cdf(  # pytype: disable=module-attr
+    expected_cdf = sp_stats.vonmises.cdf(
         x, concentrations_v, loc=locs_v
     )
     np.testing.assert_allclose(expected_cdf, cdf, atol=1e-4, rtol=1e-4)
@@ -476,7 +476,7 @@ class VonMisesTest(equivalence.EquivalenceTest):
       trials += 1
       p = sp_stats.kstest(
           s,
-          sp_stats.vonmises(concentration).cdf  # pytype: disable=not-callable
+          sp_stats.vonmises(concentration).cdf
       )[1]
       if p <= 0.05:
         fails += 1

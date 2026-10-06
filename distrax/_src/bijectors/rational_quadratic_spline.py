@@ -384,7 +384,7 @@ class RationalQuadraticSpline(base.Bijector):
       ones = jnp.ones(pad_shape, self._dtype)
       self._knot_slopes = jnp.concatenate(
           [knot_slopes[..., :-1], ones], axis=-1  # pyrefly: ignore[bad-index]
-      )  # pyrefly: ignore[bad-index]
+      )
     elif boundary_slopes == 'identity':
       ones = jnp.ones(pad_shape, self._dtype)
       self._knot_slopes = jnp.concatenate(

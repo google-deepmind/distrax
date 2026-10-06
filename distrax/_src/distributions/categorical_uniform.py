@@ -79,7 +79,7 @@ class CategoricalUniform(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return jax.lax.broadcast_shapes(  # pyrefly: ignore[bad-return]
+    return jax.lax.broadcast_shapes(
         self._low.shape, self._high.shape, self._logits.shape[:-1])
 
   def _sample_n(self, key: PRNGKey, n: int) -> Array:

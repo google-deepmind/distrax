@@ -174,7 +174,7 @@ class HMM(jittable.Jittable):
       alpha_n = jnp.where(
           t < length,
           (
-              self._obs_dist.prob(obs_seq[t])  # pyrefly: ignore[bad-index]
+              self._obs_dist.prob(obs_seq[t])
               * (alpha_prev[:, None] * self._trans_dist.probs).sum(axis=0)
           ),
           jnp.zeros_like(alpha_prev),
@@ -187,7 +187,6 @@ class HMM(jittable.Jittable):
 
     # initial belief state
     alpha_0, c0 = _normalize(
-        # pyrefly: ignore[bad-index]
         self._init_dist.probs
         * self._obs_dist.prob(obs_seq[0])  # pyrefly: ignore[bad-index]
     )
@@ -227,11 +226,9 @@ class HMM(jittable.Jittable):
       beta_t = jnp.where(
           t > length,
           jnp.zeros_like(beta_prev),
-          # pyrefly: ignore[bad-index]
           _normalize(
               (
                   beta_prev
-                  # pyrefly: ignore[bad-index]
                   * self._obs_dist.prob(obs_seq[t - 1])
                   * self._trans_dist.probs
               ).sum(axis=1)
@@ -278,7 +275,7 @@ class HMM(jittable.Jittable):
       length = seq_len  # pyrefly: ignore[bad-assignment]
 
     def gamma_t(t):
-      return alpha[t] * beta[t]  # pyrefly: ignore[bad-index]
+      return alpha[t] * beta[t]
 
     ll, alpha = self.forward(obs_seq, length)
 
@@ -318,7 +315,6 @@ class HMM(jittable.Jittable):
       return max_logp_given_successor, most_likely_given_successor
 
     final_log_prob, most_likely_sources = jax.lax.scan(
-        # pyrefly: ignore[bad-index]
         viterbi_forward,
         first_log_prob,
         obs_seq[1:],  # pyrefly: ignore[bad-index]

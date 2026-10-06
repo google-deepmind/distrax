@@ -82,7 +82,6 @@ class LambdaTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       lambda_bijector.Lambda(
           forward=lambda x: x,
-          # pyrefly: ignore[bad-index]
           forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
           event_ndims_in=None,
       )
@@ -259,7 +258,7 @@ class LambdaTest(parameterized.TestCase):
     fldj_ = self.variant(bijector.forward_log_det_jacobian)(x)
     np.testing.assert_allclose(fldj_, fldj, rtol=RTOL)
 
-    y = bijector.forward(x)  # pytype: disable=wrong-arg-types  # jax-ndarray
+    y = bijector.forward(x)
     ildj = tfp_bijector.inverse_log_det_jacobian(y, event_ndims=0)
     # pyrefly: ignore[missing-attribute]
     ildj_ = self.variant(bijector.inverse_log_det_jacobian)(y)
@@ -326,9 +325,7 @@ class LambdaTest(parameterized.TestCase):
     bij = lambda_bijector.Lambda(
         forward=lambda x: x,
         inverse=lambda y: y,
-        # pyrefly: ignore[bad-index]
         forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
-        # pyrefly: ignore[bad-index]
         inverse_log_det_jacobian=lambda y: jnp.zeros_like(y[:-1]),
         event_ndims_in=1,
     )

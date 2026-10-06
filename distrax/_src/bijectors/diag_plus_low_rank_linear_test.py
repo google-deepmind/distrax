@@ -130,7 +130,6 @@ class DiagPlusLowRankLinearTest(parameterized.TestCase):
     logdet_fwd = logdet_fwd.flatten()
     logdet_inv = logdet_inv.flatten()
 
-    # pyrefly: ignore[no-matching-overload]
     for i in range(np.prod(output_batch_shape)):
       bij = DiagPlusLowRankLinear(diag[i], u_matrix[i], v_matrix[i])
       # pyrefly: ignore[missing-attribute]

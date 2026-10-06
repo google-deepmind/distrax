@@ -202,9 +202,8 @@ class DiagPlusLowRankLinear(linear.Linear):
         diag.shape[:-1], u_matrix.shape[:-2], v_matrix.shape[:-2])
     dtype = jnp.result_type(diag, u_matrix, v_matrix)
     super().__init__(
-        # pyrefly: ignore[bad-argument-type]
         event_dims=diag.shape[-1],
-        batch_shape=batch_shape,  # pyrefly: ignore[bad-argument-type]
+        batch_shape=batch_shape,
         dtype=dtype,
     )
     self._diag = diag

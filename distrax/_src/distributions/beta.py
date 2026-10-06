@@ -71,7 +71,7 @@ class Beta(distribution.Distribution):
   @property
   def batch_shape(self) -> Tuple[int, ...]:
     """Shape of batch of distribution samples."""
-    return self._batch_shape  # pyrefly: ignore[bad-return]
+    return self._batch_shape
 
   @property
   def alpha(self) -> Array:

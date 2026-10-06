@@ -340,7 +340,7 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     c = jnp.array(c)
     x = jnp.array(x)
     sol_x, grad = self.variant(  # pyrefly: ignore[missing-attribute]
-        jax.value_and_grad(  # pyrefly: ignore[missing-attribute]
+        jax.value_and_grad(
             rational_quadratic_spline._safe_quadratic_root
         )
     )(a, b, c)

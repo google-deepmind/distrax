@@ -22,7 +22,7 @@ try:
   from jax.extend.core import valid_jaxtype  # pylint: disable=g-import-not-at-top
 except ImportError:
   # JAX v0.9.2 or older
-  from jax.core import valid_jaxtype  # pylint: disable=g-import-not-at-top  # pytype: disable=import-error
+  from jax.core import valid_jaxtype  # pylint: disable=g-import-not-at-top  # pyrefly: ignore[missing-module-attribute]
 
 
 class Jittable(metaclass=abc.ABCMeta):
