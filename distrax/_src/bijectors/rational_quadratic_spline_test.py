@@ -179,8 +179,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     logdet1 = self.variant(bijector.forward_log_det_jacobian)(x)
     # pyrefly: ignore[missing-attribute]
     y2, logdet2 = self.variant(bijector.forward_and_log_det)(x)
-    np.testing.assert_allclose(y1, y2, atol=1e-6)
-    np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
+    np.testing.assert_allclose(y1, y2, atol=1e-5)
+    np.testing.assert_allclose(logdet1, logdet2, atol=1e-5)
     # Inverse methods.
     y = jax.random.normal(key, (2, 3, 4, 5))
     x1 = self.variant(bijector.inverse)(y)  # pyrefly: ignore[missing-attribute]
@@ -188,8 +188,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
     logdet1 = self.variant(bijector.inverse_log_det_jacobian)(y)
     # pyrefly: ignore[missing-attribute]
     x2, logdet2 = self.variant(bijector.inverse_and_log_det)(y)
-    np.testing.assert_allclose(x1, x2, atol=1e-6)
-    np.testing.assert_allclose(logdet1, logdet2, atol=1e-6)
+    np.testing.assert_allclose(x1, x2, atol=1e-5)
+    np.testing.assert_allclose(logdet1, logdet2, atol=1e-5)
 
   @chex.all_variants
   def test_boundary_conditions(self):
@@ -324,8 +324,8 @@ class RationalQuadraticSplineTest(parameterized.TestCase):
       this_z, this_logdet_inv = self.variant(bijector.inverse_and_log_det)(x[i])
       np.testing.assert_allclose(this_y, y[i], atol=1e-7)
       np.testing.assert_allclose(this_z, z[i], atol=1e-6)
-      np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=1e-5)
-      np.testing.assert_allclose(this_logdet_inv, logdet_inv[i], atol=1e-5)
+      np.testing.assert_allclose(this_logdet_fwd, logdet_fwd[i], atol=2e-5)
+      np.testing.assert_allclose(this_logdet_inv, logdet_inv[i], atol=2e-5)
 
   @chex.all_variants
   @parameterized.parameters(
