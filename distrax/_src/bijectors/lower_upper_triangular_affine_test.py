@@ -30,6 +30,10 @@ import numpy as np
 
 class LowerUpperTriangularAffineTest(parameterized.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    self.enter_context(jax.default_matmul_precision('high'))
+
   def test_jacobian_is_constant_property(self):
     bijector = LowerUpperTriangularAffine(
         matrix=jnp.eye(4), bias=jnp.zeros((4,)))
