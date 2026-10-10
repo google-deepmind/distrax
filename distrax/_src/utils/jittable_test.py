@@ -17,6 +17,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
+from distrax._src.distributions import normal
 from distrax._src.utils import jittable
 import jax
 import jax.numpy as jnp
@@ -36,12 +37,52 @@ class JittableTest(parameterized.TestCase):
     @jax.jit
     def get_params(obj):
       return obj.data['params']
+
     obj = DummyJittable(jnp.ones((5,)))
     np.testing.assert_array_equal(get_params(obj), obj.data['params'])
+
+  def test_tree_map_preserves_structure_when_children_change_type(self):
+    obj = DummyJittable(jnp.arange(3.0))
+    mask = jax.tree_util.tree_map(lambda _: True, obj)
+
+    self.assertEqual(
+        jax.tree_util.tree_structure(obj),
+        jax.tree_util.tree_structure(mask),
+    )
+    self.assertEqual(mask.name, 'dummy')
+    self.assertTrue(mask.data['params'])
+    restored = jax.tree_util.tree_map(
+        lambda value, selected: value if selected else 0, obj, mask
+    )
+    np.testing.assert_array_equal(restored.data['params'], obj.data['params'])
+
+  def test_adding_a_field_after_mapping_updates_dynamic_children(self):
+    original = DummyJittable(jnp.array([1.0]))
+    mapped = jax.tree_util.tree_map(lambda value: value + 1.0, original)
+    mapped.extra = jnp.array([3.0])
+    leaves = jax.tree_util.tree_leaves(mapped)
+
+    self.assertLen(leaves, 2)
+    np.testing.assert_array_equal(leaves[0], jnp.array([2.0]))
+    np.testing.assert_array_equal(leaves[1], jnp.array([3.0]))
+
+  def test_tree_map_preserves_structure_for_normal_distribution(self):
+    distribution = normal.Normal(jnp.array(0.0), jnp.array(1.0))
+    mask = jax.tree_util.tree_map(lambda _: True, distribution)
+    self.assertEqual(
+        jax.tree_util.tree_structure(distribution),
+        jax.tree_util.tree_structure(mask),
+    )
+    result = jax.tree_util.tree_map(
+        lambda x, selected: x if selected else 0, distribution, mask
+    )
+    np.testing.assert_array_equal(result.loc, distribution.loc)
+    np.testing.assert_array_equal(result.scale, distribution.scale)
 
   def test_vmappable(self):
     def do_sum(obj):
       return obj.data['params'].sum()
+
     obj = DummyJittable(jnp.array([[1, 2, 3], [4, 5, 6]]))
 
     with self.subTest('no vmap'):
@@ -49,11 +90,13 @@ class JittableTest(parameterized.TestCase):
 
     with self.subTest('in_axes=0'):
       np.testing.assert_array_equal(
-          jax.vmap(do_sum, in_axes=0)(obj), obj.data['params'].sum(axis=1))
+          jax.vmap(do_sum, in_axes=0)(obj), obj.data['params'].sum(axis=1)
+      )
 
     with self.subTest('in_axes=1'):
       np.testing.assert_array_equal(
-          jax.vmap(do_sum, in_axes=1)(obj), obj.data['params'].sum(axis=0))
+          jax.vmap(do_sum, in_axes=1)(obj), obj.data['params'].sum(axis=0)
+      )
 
   def test_traceable(self):
     @jax.jit
