@@ -28,6 +28,10 @@ except ImportError:
 class Jittable(metaclass=abc.ABCMeta):
   """ABC that can be passed as an arg to a jitted fn, with readable state."""
 
+  # Keep the child/metadata split outside __dict__, which is itself serialized.
+  # Reconstructed PyTrees may contain booleans instead of the original arrays.
+  __slots__ = ('_tree_dynamic_layout',)
+
   def __new__(cls, *args, **kwargs):
     # Discard the parameters to this function because the constructor is not
     # called during serialization: its `__dict__` gets repopulated directly.
@@ -40,7 +44,14 @@ class Jittable(metaclass=abc.ABCMeta):
 
   def tree_flatten(self):
     leaves, treedef = jax.tree_util.tree_flatten(self.__dict__)
-    switch = list(map(_is_jax_data, leaves))
+    # Preserve which fields were JAX children when JAX reconstructs the object
+    # with mapped values such as bools. Otherwise a mask changes the treedef
+    # and cannot be combined with the original object by tree_map.
+    layout = getattr(self, '_tree_dynamic_layout', None)
+    if layout is not None and layout[0] == treedef:
+      switch = layout[1]
+    else:
+      switch = list(map(_is_jax_data, leaves))
     children = [leaf if s else None for leaf, s in zip(leaves, switch)]
     metadata = [None if s else leaf for leaf, s in zip(leaves, switch)]
     return children, (metadata, switch, treedef)
@@ -51,6 +62,7 @@ class Jittable(metaclass=abc.ABCMeta):
     leaves = [j if s else p for j, p, s in zip(children, metadata, switch)]
     obj = object.__new__(cls)
     obj.__dict__ = jax.tree_util.tree_unflatten(treedef, leaves)
+    obj._tree_dynamic_layout = (treedef, switch)
     return obj
 
 
