@@ -76,6 +76,7 @@ class EquivalenceTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
+    self.enter_context(jax.default_matmul_precision('high'))
     self.tfp_cls = None
 
   # pyrefly: ignore[invalid-annotation]
@@ -153,7 +154,7 @@ class EquivalenceTest(parameterized.TestCase):
       # the BF16 default flag flip.
       with jax.default_matmul_precision('high'):
         tfp_res = tfp_fn(*call_args, **call_kwargs)
-      distrax_res = distrax_fn(*call_args, **call_kwargs)
+        distrax_res = distrax_fn(*call_args, **call_kwargs)
       assertion_fn(distrax_res, tfp_res)
     else:
       assertion_fn(getattr(dist, attribute_string),

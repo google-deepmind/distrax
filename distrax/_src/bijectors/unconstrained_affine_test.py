@@ -30,6 +30,10 @@ import numpy as np
 
 class UnconstrainedAffineTest(parameterized.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    self.enter_context(jax.default_matmul_precision('high'))
+
   def test_properties(self):
     bijector = UnconstrainedAffine(matrix=jnp.eye(4), bias=jnp.zeros((4,)))
     self.assertTrue(bijector.is_constant_jacobian)
