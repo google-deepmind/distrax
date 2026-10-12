@@ -21,6 +21,7 @@ from distrax._src.distributions import distribution
 from distrax._src.utils import conversion
 import jax
 import jax.numpy as jnp
+from jax.scipy import special
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions
@@ -85,7 +86,7 @@ class Gamma(distribution.Distribution):
     """See `Distribution.log_prob`."""
     return (
         self._concentration * jnp.log(self._rate)
-        + (self._concentration - 1) * jnp.log(value)
+        + special.xlogy(self._concentration - 1, value)
         - self._rate * value
         - jax.lax.lgamma(self._concentration)
     )
