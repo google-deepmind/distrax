@@ -53,41 +53,21 @@ def _normalize_knot_slopes(unnormalized_knot_slopes: Array,
   return jax.nn.softplus(unnormalized_knot_slopes + offset) + min_knot_slope
 
 
-def _rational_quadratic_spline_fwd(x: Array,
-                                   x_pos: Array,
-                                   y_pos: Array,
-                                   knot_slopes: Array) -> Tuple[Array, Array]:
-  """Applies a rational-quadratic spline to a scalar.
-
-  Args:
-    x: a scalar (0-dimensional array). The scalar `x` can be any real number; it
-      will be transformed by the spline if it's in the closed interval
-      `[x_pos[0], x_pos[-1]]`, and it will be transformed linearly if it's
-      outside that interval.
-    x_pos: array of shape [num_bins + 1], the bin boundaries on the x axis.
-    y_pos: array of shape [num_bins + 1], the bin boundaries on the y axis.
-    knot_slopes: array of shape [num_bins + 1], the slopes at the knot points.
-  Returns:
-    A tuple of two scalars: the output of the transformation and the log of the
-    absolute first derivative at `x`.
-  """
-  # Search to find the right bin. NOTE: The bins are sorted, so we could use
-  # binary search, but this is more GPU/TPU friendly.
-  # The following implementation avoids indexing for faster TPU computation.
-  below_range = x <= x_pos[0]  # pyrefly: ignore[bad-index]
-  above_range = x >= x_pos[-1]  # pyrefly: ignore[bad-index]
-  # pyrefly: ignore[bad-index]
-  correct_bin = jnp.logical_and(x >= x_pos[:-1], x < x_pos[1:])
-  any_bin_in_range = jnp.any(correct_bin)
-  first_bin = jnp.concatenate([jnp.array([1]),
-                               jnp.zeros(len(correct_bin)-1)]).astype(bool)
-  # If y does not fall into any bin, we use the first spline in the following
-  # computations to avoid numerical issues.
-  correct_bin = jnp.where(any_bin_in_range, correct_bin, first_bin)
-  # Dot product of each parameter with the correct bin mask.
-  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
-  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
-  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+@jax.checkpoint
+def _eval_spline_fwd_elementwise(
+    x: Array,
+    x_pos_first: Array,
+    x_pos_last: Array,
+    y_pos_first: Array,
+    y_pos_last: Array,
+    knot_slope_first: Array,
+    knot_slope_last: Array,
+    params_bin_left: Array,
+    params_bin_right: Array,
+) -> Tuple[Array, Array]:
+  """Evaluates forward rational-quadratic spline from selected bin params."""
+  below_range = x <= x_pos_first
+  above_range = x >= x_pos_last
 
   x_pos_bin = (params_bin_left[0], params_bin_right[0])
   y_pos_bin = (params_bin_left[1], params_bin_right[1])
@@ -110,30 +90,70 @@ def _rational_quadratic_spline_fwd(x: Array,
   denominator = bin_slope + slopes_term * z1mz
   y = y_pos_bin[0] + numerator / denominator
 
-  # Compute log det Jacobian.
-  # The logdet is a sum of 3 logs. It is easy to see that the inputs of the
-  # first two logs are guaranteed to be positive because we ensured that z is in
-  # [0, 1]. This is also true of the log(denominator) because:
-  # denominator
-  # == bin_slope + (knot_slopes_bin[1] + knot_slopes_bin[0] - 2 * bin_slope) *
-  # z*(1-z)
-  # >= bin_slope - 2 * bin_slope * z * (1-z)
-  # >= bin_slope - 2 * bin_slope * (1/4)
-  # == bin_slope / 2
   logdet = 2. * jnp.log(bin_slope) + jnp.log(
       knot_slopes_bin[1] * sq_z + 2. * bin_slope * z1mz +
       knot_slopes_bin[0] * sq_1mz) - 2. * jnp.log(denominator)
 
   # If x is outside the spline range, we default to a linear transformation.
-  # pyrefly: ignore[bad-index]
-  y = jnp.where(below_range, (x - x_pos[0]) * knot_slopes[0] + y_pos[0], y)
-  # pyrefly: ignore[bad-index]
-  y = jnp.where(above_range, (x - x_pos[-1]) * knot_slopes[-1] + y_pos[-1], y)
-  # pyrefly: ignore[bad-index]
-  logdet = jnp.where(below_range, jnp.log(knot_slopes[0]), logdet)
-  # pyrefly: ignore[bad-index]
-  logdet = jnp.where(above_range, jnp.log(knot_slopes[-1]), logdet)
+  y = jnp.where(
+      below_range, (x - x_pos_first) * knot_slope_first + y_pos_first, y
+  )
+  y = jnp.where(
+      above_range, (x - x_pos_last) * knot_slope_last + y_pos_last, y
+  )
+  logdet = jnp.where(below_range, jnp.log(knot_slope_first), logdet)
+  logdet = jnp.where(above_range, jnp.log(knot_slope_last), logdet)
   return y, logdet
+
+
+def _rational_quadratic_spline_fwd(x: Array,
+                                   x_pos: Array,
+                                   y_pos: Array,
+                                   knot_slopes: Array) -> Tuple[Array, Array]:
+  """Applies a rational-quadratic spline to a scalar.
+
+  Args:
+    x: a scalar (0-dimensional array). The scalar `x` can be any real number; it
+      will be transformed by the spline if it's in the closed interval
+      `[x_pos[0], x_pos[-1]]`, and it will be transformed linearly if it's
+      outside that interval.
+    x_pos: array of shape [num_bins + 1], the bin boundaries on the x axis.
+    y_pos: array of shape [num_bins + 1], the bin boundaries on the y axis.
+    knot_slopes: array of shape [num_bins + 1], the slopes at the knot points.
+  Returns:
+    A tuple of two scalars: the output of the transformation and the log of the
+    absolute first derivative at `x`.
+  """
+  # Search to find the right bin. NOTE: The bins are sorted, so we could use
+  # binary search, but this is more GPU/TPU friendly.
+  # The following implementation avoids indexing for faster TPU computation.
+  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
+  dtype = params.dtype
+  # pyrefly: ignore[bad-index]
+  in_bin = jnp.logical_and(x >= x_pos[:-1], x < x_pos[1:]).astype(dtype)
+  any_bin_in_range = jnp.max(in_bin)
+  first_bin = jnp.concatenate(
+      [jnp.ones((1,), dtype=dtype), jnp.zeros((len(in_bin) - 1,), dtype=dtype)]
+  )
+  # If x does not fall into any bin, we use the first spline in the following
+  # computations to avoid numerical issues.
+  correct_bin = in_bin + (1.0 - any_bin_in_range) * first_bin
+  # Dot product of each parameter with the correct bin mask.
+  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
+  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+
+  # pyrefly: ignore[bad-index]
+  return _eval_spline_fwd_elementwise(
+      x,
+      x_pos[0],  # pyrefly: ignore[bad-index]
+      x_pos[-1],  # pyrefly: ignore[bad-index]
+      y_pos[0],  # pyrefly: ignore[bad-index]
+      y_pos[-1],  # pyrefly: ignore[bad-index]
+      knot_slopes[0],  # pyrefly: ignore[bad-index]
+      knot_slopes[-1],  # pyrefly: ignore[bad-index]
+      params_bin_left,
+      params_bin_right,
+  )
 
 
 def _safe_quadratic_root(a: Array, b: Array, c: Array) -> Array:
@@ -163,41 +183,21 @@ def _safe_quadratic_root(a: Array, b: Array, c: Array) -> Array:
   return numerator / denominator
 
 
-def _rational_quadratic_spline_inv(y: Array,
-                                   x_pos: Array,
-                                   y_pos: Array,
-                                   knot_slopes: Array) -> Tuple[Array, Array]:
-  """Applies the inverse of a rational-quadratic spline to a scalar.
-
-  Args:
-    y: a scalar (0-dimensional array). The scalar `y` can be any real number; it
-      will be transformed by the spline if it's in the closed interval
-      `[y_pos[0], y_pos[-1]]`, and it will be transformed linearly if it's
-      outside that interval.
-    x_pos: array of shape [num_bins + 1], the bin boundaries on the x axis.
-    y_pos: array of shape [num_bins + 1], the bin boundaries on the y axis.
-    knot_slopes: array of shape [num_bins + 1], the slopes at the knot points.
-  Returns:
-    A tuple of two scalars: the output of the inverse transformation and the log
-    of the absolute first derivative of the inverse at `y`.
-  """
-  # Search to find the right bin. NOTE: The bins are sorted, so we could use
-  # binary search, but this is more GPU/TPU friendly.
-  # The following implementation avoids indexing for faster TPU computation.
-  below_range = y <= y_pos[0]  # pyrefly: ignore[bad-index]
-  above_range = y >= y_pos[-1]  # pyrefly: ignore[bad-index]
-  # pyrefly: ignore[bad-index]
-  correct_bin = jnp.logical_and(y >= y_pos[:-1], y < y_pos[1:])
-  any_bin_in_range = jnp.any(correct_bin)
-  first_bin = jnp.concatenate([jnp.array([1]),
-                               jnp.zeros(len(correct_bin)-1)]).astype(bool)
-  # If y does not fall into any bin, we use the first spline in the following
-  # computations to avoid numerical issues.
-  correct_bin = jnp.where(any_bin_in_range, correct_bin, first_bin)
-  # Dot product of each parameter with the correct bin mask.
-  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
-  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
-  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+@jax.checkpoint
+def _eval_spline_inv_elementwise(
+    y: Array,
+    x_pos_first: Array,
+    x_pos_last: Array,
+    y_pos_first: Array,
+    y_pos_last: Array,
+    knot_slope_first: Array,
+    knot_slope_last: Array,
+    params_bin_left: Array,
+    params_bin_right: Array,
+) -> Tuple[Array, Array]:
+  """Evaluates inverse rational-quadratic spline from selected bin params."""
+  below_range = y <= y_pos_first
+  above_range = y >= y_pos_last
 
   # These are the parameters for the corresponding bin.
   x_pos_bin = (params_bin_left[0], params_bin_right[0])
@@ -230,15 +230,64 @@ def _rational_quadratic_spline_inv(y: Array,
       knot_slopes_bin[0] * sq_1mz) + 2. * jnp.log(denominator)
 
   # If y is outside the spline range, we default to a linear transformation.
-  # pyrefly: ignore[bad-index]
-  x = jnp.where(below_range, (y - y_pos[0]) / knot_slopes[0] + x_pos[0], x)
-  # pyrefly: ignore[bad-index]
-  x = jnp.where(above_range, (y - y_pos[-1]) / knot_slopes[-1] + x_pos[-1], x)
-  # pyrefly: ignore[bad-index]
-  logdet = jnp.where(below_range, - jnp.log(knot_slopes[0]), logdet)
-  # pyrefly: ignore[bad-index]
-  logdet = jnp.where(above_range, - jnp.log(knot_slopes[-1]), logdet)
+  x = jnp.where(
+      below_range, (y - y_pos_first) / knot_slope_first + x_pos_first, x
+  )
+  x = jnp.where(
+      above_range, (y - y_pos_last) / knot_slope_last + x_pos_last, x
+  )
+  logdet = jnp.where(below_range, - jnp.log(knot_slope_first), logdet)
+  logdet = jnp.where(above_range, - jnp.log(knot_slope_last), logdet)
   return x, logdet
+
+
+def _rational_quadratic_spline_inv(y: Array,
+                                   x_pos: Array,
+                                   y_pos: Array,
+                                   knot_slopes: Array) -> Tuple[Array, Array]:
+  """Applies the inverse of a rational-quadratic spline to a scalar.
+
+  Args:
+    y: a scalar (0-dimensional array). The scalar `y` can be any real number; it
+      will be transformed by the spline if it's in the closed interval
+      `[y_pos[0], y_pos[-1]]`, and it will be transformed linearly if it's
+      outside that interval.
+    x_pos: array of shape [num_bins + 1], the bin boundaries on the x axis.
+    y_pos: array of shape [num_bins + 1], the bin boundaries on the y axis.
+    knot_slopes: array of shape [num_bins + 1], the slopes at the knot points.
+  Returns:
+    A tuple of two scalars: the output of the inverse transformation and the log
+    of the absolute first derivative of the inverse at `y`.
+  """
+  # Search to find the right bin. NOTE: The bins are sorted, so we could use
+  # binary search, but this is more GPU/TPU friendly.
+  # The following implementation avoids indexing for faster TPU computation.
+  params = jnp.stack([x_pos, y_pos, knot_slopes], axis=1)
+  dtype = params.dtype
+  # pyrefly: ignore[bad-index]
+  in_bin = jnp.logical_and(y >= y_pos[:-1], y < y_pos[1:]).astype(dtype)
+  any_bin_in_range = jnp.max(in_bin)
+  first_bin = jnp.concatenate(
+      [jnp.ones((1,), dtype=dtype), jnp.zeros((len(in_bin) - 1,), dtype=dtype)]
+  )
+  # If y does not fall into any bin, we use the first spline in the following
+  # computations to avoid numerical issues.
+  correct_bin = in_bin + (1.0 - any_bin_in_range) * first_bin
+  # Dot product of each parameter with the correct bin mask.
+  params_bin_left = jnp.sum(correct_bin[:, None] * params[:-1], axis=0)
+  params_bin_right = jnp.sum(correct_bin[:, None] * params[1:], axis=0)
+
+  return _eval_spline_inv_elementwise(
+      y,
+      x_pos[0],  # pyrefly: ignore[bad-index]
+      x_pos[-1],  # pyrefly: ignore[bad-index]
+      y_pos[0],  # pyrefly: ignore[bad-index]
+      y_pos[-1],  # pyrefly: ignore[bad-index]
+      knot_slopes[0],  # pyrefly: ignore[bad-index]
+      knot_slopes[-1],  # pyrefly: ignore[bad-index]
+      params_bin_left,
+      params_bin_right,
+  )
 
 
 class RationalQuadraticSpline(base.Bijector):
@@ -435,3 +484,4 @@ class RationalQuadraticSpline(base.Bijector):
         _rational_quadratic_spline_inv, signature='(),(n),(n),(n)->(),()')
     x, logdet = fn(y, self._x_pos, self._y_pos, self._knot_slopes)
     return x, logdet
+
