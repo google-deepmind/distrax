@@ -86,6 +86,17 @@ class MixtureOfTwo(base_distribution.Distribution):
     logp2 = jnp.log(1 - self._prob_a) + self._component_b.log_prob(value)
     return jnp.logaddexp(logp1, logp2)
 
+  def cdf(self, value: EventT) -> Array:
+    """See Distribution.cdf."""
+    return (self._prob_a * self._component_a.cdf(value)
+            + (1. - self._prob_a) * self._component_b.cdf(value))
+
+  def log_cdf(self, value: EventT) -> Array:
+    """See Distribution.log_cdf."""
+    logp1 = jnp.log(self._prob_a) + self._component_a.log_cdf(value)
+    logp2 = jnp.log1p(-self._prob_a) + self._component_b.log_cdf(value)
+    return jnp.logaddexp(logp1, logp2)
+
   @property
   def event_shape(self) -> Tuple[int, ...]:
     return self._component_a.event_shape
