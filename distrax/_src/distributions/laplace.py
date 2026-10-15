@@ -107,7 +107,8 @@ class Laplace(distribution.Distribution):
   def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
     norm_value = self._standardize(value)
-    return 0.5 - 0.5 * jnp.sign(norm_value) * jnp.expm1(-jnp.abs(norm_value))
+    half_tail = 0.5 * jnp.exp(-jnp.abs(norm_value))
+    return jnp.where(norm_value < 0.0, half_tail, 1.0 - half_tail)
 
   def _standardize(self, value: Array) -> Array:
     # pyrefly: ignore[unsupported-operation]
