@@ -82,7 +82,7 @@ class LambdaTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       lambda_bijector.Lambda(
           forward=lambda x: x,
-          forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
+          forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),  # pyrefly: ignore[bad-index]
           event_ndims_in=None,
       )
 
@@ -325,8 +325,8 @@ class LambdaTest(parameterized.TestCase):
     bij = lambda_bijector.Lambda(
         forward=lambda x: x,
         inverse=lambda y: y,
-        forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),
-        inverse_log_det_jacobian=lambda y: jnp.zeros_like(y[:-1]),
+        forward_log_det_jacobian=lambda x: jnp.zeros_like(x[:-1]),  # pyrefly: ignore[bad-index]
+        inverse_log_det_jacobian=lambda y: jnp.zeros_like(y[:-1]),  # pyrefly: ignore[bad-index]
         event_ndims_in=1,
     )
     for fn in [bij.forward, bij.inverse,
