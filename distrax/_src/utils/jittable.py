@@ -56,8 +56,8 @@ class Jittable(metaclass=abc.ABCMeta):
 
 def _is_jax_data(x):
   """Check whether `x` is an instance of a JAX-compatible type."""
-  # If it's a tracer, then it's already been converted by JAX.
-  if isinstance(x, jax.core.Tracer):
+  # Tracers and AOT input descriptors have already been converted by JAX.
+  if isinstance(x, (jax.core.Tracer, jax.stages.ArgInfo)):
     return True
 
   # `jax.vmap` replaces vmappable leaves with `object()` during serialization.
