@@ -89,7 +89,7 @@ class Logistic(distribution.Distribution):
     """See `Distribution.log_prob`."""
     z = self._standardize(value)
     # pyrefly: ignore[unsupported-operation]
-    return -z - 2. * jax.nn.softplus(-z) - jnp.log(self._scale)
+    return -jax.nn.softplus(z) - jax.nn.softplus(-z) - jnp.log(self._scale)
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in Nats)."""
