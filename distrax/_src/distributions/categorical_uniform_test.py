@@ -352,5 +352,107 @@ class CategoricalUniformTest(parameterized.TestCase):
     chex.assert_trees_all_close(jitted_log_prob, log_prob, atol=1e-4, rtol=1e-4)
 
 
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('leading_zero', [-np.inf, 0.0]),
+      ('trailing_zero', [0.0, -np.inf]),
+      ('interior_zero', [np.log(0.25), -np.inf, np.log(0.75)]),
+      (
+          'multiple_zeros',
+          [-np.inf, np.log(0.25), -np.inf, np.log(0.75), -np.inf],
+      ),
+      ('leading_underflow', [-1000.0, 0.0]),
+      ('trailing_underflow', [0.0, -1000.0]),
+      ('interior_underflow', [np.log(0.25), -1000.0, np.log(0.75)]),
+      ('positive_control', [-0.5, 0.2, 0.9]),
+  )
+  def test_sample_zero_probability_bins(self, logits):
+    logits = np.asarray(logits)
+    probabilities = np.exp(logits - logits.max())
+    probabilities /= probabilities.sum()
+    key = jax.random.PRNGKey(73)
+    distribution = categorical_uniform.CategoricalUniform(
+        low=0.0, high=float(len(logits)), logits=logits
+    )
+    sample_fn = self.variant(
+        lambda k: distribution.sample_and_log_prob(seed=k, sample_shape=(3, 4))
+    )
+    samples, log_prob = sample_fn(key)
+    quantiles = np.asarray(jax.random.uniform(key, shape=(12,)))
+    cumulative = np.cumsum(probabilities)
+    indices = np.searchsorted(cumulative, quantiles, side='right')
+    previous = np.concatenate([[0.0], cumulative[:-1]])
+    expected = (
+        indices + (quantiles - previous[indices]) / probabilities[indices]
+    )
+    np.testing.assert_allclose(
+        samples, expected.reshape(3, 4), rtol=1e-6, atol=1e-6
+    )
+    np.testing.assert_allclose(
+        log_prob,
+        np.log(probabilities[indices]).reshape(3, 4),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('leading_zero', [-np.inf, 0.0]),
+      ('interior_zero', [np.log(0.25), -np.inf, np.log(0.75)]),
+      ('leading_underflow', [-1000.0, 0.0]),
+      ('interior_underflow', [np.log(0.25), -1000.0, np.log(0.75)]),
+  )
+  def test_zero_probability_sample_gradients(self, logits):
+    def total_samples(low, high, logits):
+      d = categorical_uniform.CategoricalUniform(
+          low=low, high=high, logits=logits
+      )
+      return d.sample(seed=jax.random.PRNGKey(73), sample_shape=16).sum()
+
+    gradient_fn = self.variant(jax.grad(total_samples, argnums=(0, 1, 2)))
+    gradients = gradient_fn(jnp.array(-2.0), jnp.array(4.0), jnp.array(logits))
+    for gradient in gradients:
+      self.assertTrue(np.isfinite(gradient).all())
+    inactive = np.asarray(logits) < -100
+    np.testing.assert_array_equal(np.asarray(gradients[2])[inactive], 0.0)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('leading', [-np.inf, 0.0], [0.0, 1.0], [1.0, 2.0]),
+      ('trailing', [0.0, -np.inf], [0.0, 1.0], [0.0, 2.0]),
+      (
+          'interior',
+          [np.log(0.25), -np.inf, np.log(0.75)],
+          [0.0, 0.25, 1.0],
+          [0.0, 2.0, 3.0],
+      ),
+  )
+  def test_zero_probability_plateau_ties(self, logits, quantiles, expected):
+    d = categorical_uniform.CategoricalUniform(
+        low=0.0, high=float(len(logits)), logits=np.asarray(logits)
+    )
+    actual = self.variant(d._inverse_cdf)(jnp.array(quantiles))
+    np.testing.assert_allclose(actual, expected)
+
+  @chex.all_variants(with_pmap=False)
+  def test_zero_probability_bins_broadcast(self):
+    low = jnp.array([[-2.0], [2.0]])
+    high = jnp.array([[2.0], [8.0]])
+    logits = jnp.array([[-np.inf, 0.0], [0.0, -np.inf]])
+    d = categorical_uniform.CategoricalUniform(
+        low=low, high=high, logits=logits
+    )
+    key = jax.random.PRNGKey(73)
+    samples = self.variant(lambda k: d.sample(seed=k, sample_shape=(3, 4)))(key)
+    quantiles = np.asarray(jax.random.uniform(key, shape=(12, 2, 2)))
+    # First column selects the upper bin; second column selects the lower bin.
+    left = np.asarray(low) + np.array([0.5, 0.0]) * np.asarray(high - low)
+    width = np.asarray(high - low) / 2.0
+    expected = left + width * quantiles
+    np.testing.assert_allclose(
+        samples, expected.reshape(3, 4, 2, 2), rtol=1e-6, atol=1e-6
+    )
+
+
 if __name__ == '__main__':
   absltest.main()
