@@ -54,6 +54,29 @@ def _with_base_dists(*all_named_parameters):
   return _with_additional_parameters(base_dists, all_named_parameters)
 
 
+def _jitted_bijector(bijector):
+  return lambda_bijector.Lambda(
+      jax.jit(bijector.forward),
+      forward_log_det_jacobian=bijector.forward_log_det_jacobian,
+      event_ndims_in=0, is_constant_jacobian=True)
+
+
+def _key_translation(key):
+  shift = lambda: jax.random.uniform(key, minval=-.5, maxval=.5)
+  return lambda_bijector.Lambda(
+      lambda x: x + shift(), inverse=lambda y: y - shift(),
+      forward_log_det_jacobian=jnp.zeros_like, event_ndims_in=0,
+      is_constant_jacobian=True)
+
+
+def _signbit_translation(constant):
+  shift = lambda x: jnp.signbit(constant).astype(x.dtype)
+  return lambda_bijector.Lambda(
+      lambda x: x + shift(x), inverse=lambda y: y - shift(y),
+      forward_log_det_jacobian=jnp.zeros_like, event_ndims_in=0,
+      is_constant_jacobian=True)
+
+
 class TransformedTest(parameterized.TestCase):
 
   def setUp(self):
@@ -438,6 +461,96 @@ class TransformedTest(parameterized.TestCase):
     result_inv = self.variant(distrax_dist2.kl_divergence)(distrax_dist1)
     np.testing.assert_allclose(result_fwd, expected_result_fwd, rtol=1e-2)
     np.testing.assert_allclose(result_inv, expected_result_inv, rtol=1e-2)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.product(parameter=['shift', 'scale'], nested=[False, True])
+  def test_kl_divergence_rejects_different_closed_constants(
+      self, parameter, nested):
+    values = [jnp.array([1., 2.]), jnp.array([3., 4.])]
+    bijectors = [scalar_affine.ScalarAffine(**{'shift': 0., parameter: v})
+                 for v in values]
+    if nested:
+      bijectors = [_jitted_bijector(b) for b in bijectors]
+    dists = [transformed.Transformed(normal.Normal(0., 1.), b)
+             for b in bijectors]
+    fn = self.variant(lambda _: dists[0].kl_divergence(dists[1]))
+    with self.assertRaises(NotImplementedError):
+      fn(jnp.zeros(()))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.product(parameter=['shift', 'scale'], nested=[False, True])
+  def test_kl_divergence_equal_closed_constants(self, parameter, nested):
+    # Distinct arrays with the same values still prove equal closed programs.
+    bij1 = scalar_affine.ScalarAffine(
+        **{'shift': 0., parameter: jnp.array([1., 2.])})
+    bij2 = scalar_affine.ScalarAffine(
+        **{'shift': 0., parameter: jnp.array([1., 2.])})
+    if nested:
+      bij1, bij2 = _jitted_bijector(bij1), _jitted_bijector(bij2)
+    dist1 = transformed.Transformed(normal.Normal(0., 1.), bij1)
+    dist2 = transformed.Transformed(normal.Normal(1., 2.), bij2)
+    expected = dist1.distribution.kl_divergence(dist2.distribution)
+    actual = self.variant(lambda _: dist1.kl_divergence(dist2))(jnp.zeros(()))
+    np.testing.assert_allclose(actual, expected, rtol=1e-6)
+
+  @chex.all_variants(with_pmap=False)
+  def test_kl_divergence_shared_traced_constant(self):
+    def kl(shift):
+      # Lambda bijectors exercise the fallback rather than same_as.
+      bij1 = lambda_bijector.Lambda(lambda x: x + shift)
+      bij2 = lambda_bijector.Lambda(lambda x: x + shift)
+      dist1 = transformed.Transformed(normal.Normal(0., 1.), bij1)
+      dist2 = transformed.Transformed(normal.Normal(1., 2.), bij2)
+      return dist1.kl_divergence(dist2)
+    actual = self.variant(kl)(jnp.array([1., 2.]))
+    expected = normal.Normal(0., 1.).kl_divergence(normal.Normal(1., 2.))
+    np.testing.assert_allclose(actual, expected, rtol=1e-6)
+
+  def test_kl_divergence_rejects_unproved_traced_constants(self):
+    def kl(shift1, shift2):
+      dist1 = transformed.Transformed(
+          normal.Normal(0., 1.), scalar_affine.ScalarAffine(shift1))
+      dist2 = transformed.Transformed(
+          normal.Normal(0., 1.), scalar_affine.ScalarAffine(shift2))
+      return dist1.kl_divergence(dist2)
+    # Even equal runtime values are not proof of equality during tracing.
+    with self.assertRaises(NotImplementedError):
+      jax.jit(kl)(jnp.array([1., 2.]), jnp.array([1., 2.]))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.product(same=[False, True], nested=[False, True],
+                         impl=['threefry2x32', 'rbg'])
+  def test_kl_divergence_typed_key_constants(self, same, nested, impl):
+    bij1 = _key_translation(jax.random.key(7, impl=impl))
+    bij2 = _key_translation(jax.random.key(7 if same else 8, impl=impl))
+    if nested:
+      bij1, bij2 = _jitted_bijector(bij1), _jitted_bijector(bij2)
+    dist1 = transformed.Transformed(normal.Normal(0., 1.), bij1)
+    dist2 = transformed.Transformed(normal.Normal(1., 2.), bij2)
+    fn = self.variant(lambda _: dist1.kl_divergence(dist2))
+    if same:
+      expected = dist1.distribution.kl_divergence(dist2.distribution)
+      np.testing.assert_allclose(fn(jnp.zeros(())), expected, rtol=1e-6)
+    else:
+      with self.assertRaises(NotImplementedError):
+        fn(jnp.zeros(()))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.product(same=[False, True], nested=[False, True])
+  def test_kl_divergence_signed_zero_constants(self, same, nested):
+    bij1 = _signbit_translation(jnp.array(0., dtype=jnp.float32))
+    bij2 = _signbit_translation(
+        jnp.array(0. if same else -0., dtype=jnp.float32))
+    if nested:
+      bij1, bij2 = _jitted_bijector(bij1), _jitted_bijector(bij2)
+    dist1 = transformed.Transformed(normal.Normal(0., 1.), bij1)
+    dist2 = transformed.Transformed(normal.Normal(0., 1.), bij2)
+    fn = self.variant(lambda _: dist1.kl_divergence(dist2))
+    if same:
+      np.testing.assert_array_equal(fn(jnp.zeros(())), 0.)
+    else:
+      with self.assertRaises(NotImplementedError):
+        fn(jnp.zeros(()))
 
   def test_kl_divergence_raises_on_event_shape(self):
     base_dist1 = tfd.MultivariateNormalDiag([0.1, 0.5, 0.9], [0.1, 1.1, 2.5])
