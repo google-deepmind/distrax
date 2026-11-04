@@ -52,6 +52,11 @@ def straight_through_wrapper(  # pylint: disable=invalid-name
     sample += padded_probs - jax.lax.stop_gradient(padded_probs)
     return sample
 
+  def _sample_n_and_log_prob(self, key, n):
+    # The inherited hook bypasses `sample` and its straight-through gradient.
+    samples = self.sample(seed=key, sample_shape=n)
+    return samples, self.log_prob(samples)
+
   def _pad(probs, shape):
     """Grow probs to have the same number of dimensions as shape."""
     while len(probs.shape) < len(shape):
@@ -61,4 +66,5 @@ def straight_through_wrapper(  # pylint: disable=invalid-name
   parent_name = Distribution.__name__
   # Return a new object, overriding sample.
   return type('StraighThrough' + parent_name, (Distribution,),
-              {'sample': sample})
+              {'sample': sample,
+               '_sample_n_and_log_prob': _sample_n_and_log_prob})

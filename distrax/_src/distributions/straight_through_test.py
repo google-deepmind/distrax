@@ -35,6 +35,33 @@ class StraightThroughTest(equivalence.EquivalenceTest):
         straight_through.straight_through_wrapper(
             one_hot_categorical.OneHotCategorical))
 
+  @parameterized.named_parameters(
+      ('scalar_eager', (), False), ('scalar_jit', (), True),
+      ('multiple_eager', (2, 3), False), ('multiple_jit', (2, 3), True))
+  def test_sample_and_log_prob_gradient(self, sample_shape, jit):
+    logits = jnp.array([[0.2, -0.3, 0.7], [-0.4, 0.1, 0.5]])
+    weights = jnp.array([1., -2., 4.])
+
+    def loss(logits):
+      dist = self.distrax_cls(logits=logits)
+      sample, log_prob = dist.sample_and_log_prob(
+          seed=self.key, sample_shape=sample_shape)
+      return jnp.sum(sample * weights), (sample, log_prob)
+
+    evaluate = jax.value_and_grad(loss, has_aux=True)
+    if jit:
+      evaluate = jax.jit(evaluate)
+    (_, (sample, log_prob)), gradient = evaluate(logits)
+    probs = jax.nn.softmax(logits)
+    n = np.prod(sample_shape, dtype=int)
+    expected = n * probs * (weights - jnp.sum(probs * weights, axis=-1,
+                                             keepdims=True))
+    np.testing.assert_allclose(gradient, expected, rtol=1e-6, atol=1e-6)
+    dist = self.distrax_cls(logits=logits)
+    np.testing.assert_array_equal(
+        sample, dist.sample(seed=self.key, sample_shape=sample_shape))
+    np.testing.assert_allclose(log_prob, dist.log_prob(sample))
+
   @chex.all_variants
   @parameterized.named_parameters(
       ('1d logits, no shape', {'logits': [0.0, 1.0, -0.5]}, ()),
