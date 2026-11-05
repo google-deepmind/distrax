@@ -18,6 +18,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
+import distrax
 from distrax._src.bijectors import bijector as base_bijector
 from distrax._src.bijectors import block
 from distrax._src.bijectors import split_coupling
@@ -236,6 +237,36 @@ class SplitCouplingTest(parameterized.TestCase):
                bij.forward_and_log_det, bij.inverse_and_log_det]:
       with self.assertRaises(ValueError):
         fn(jnp.zeros(event_shape))
+
+  @parameterized.parameters(False, True)
+  def test_batched_inner_parameters(self, swap):
+    shift = jnp.array([[-0.2], [0.1], [0.3]])
+    scale = jnp.array([[0.8], [1.1], [1.3]])
+    bij = distrax.SplitCoupling(
+        split_index=1, event_ndims=1, swap=swap,
+        conditioner=lambda x: 0.25 * x + shift,
+        bijector=lambda s: distrax.ScalarAffine(shift=s, scale=scale))
+    x = jnp.array([0.2, -0.4])
+    unchanged, changed = (x[1:], x[:1]) if swap else (x[:1], x[1:])
+    transformed = scale * changed + 0.25 * unchanged + shift
+    unchanged = jnp.broadcast_to(unchanged, transformed.shape)
+    expected = jnp.concatenate(
+        [transformed, unchanged] if swap else [unchanged, transformed], -1)
+    for apply in (lambda f: f, jax.jit):
+      y, logdet = apply(bij.forward_and_log_det)(x)
+      np.testing.assert_allclose(y, expected, atol=1e-6)
+      np.testing.assert_allclose(logdet, jnp.log(scale[:, 0]), atol=1e-6)
+      actual_x, inverse_logdet = apply(bij.inverse_and_log_det)(y)
+      np.testing.assert_allclose(actual_x, jnp.broadcast_to(x, (3, 2)),
+                                 atol=1e-6)
+      np.testing.assert_allclose(inverse_logdet, -logdet, atol=1e-6)
+    dist = distrax.Transformed(
+        distrax.MultivariateNormalDiag(jnp.zeros(2), jnp.ones(2)), bij)
+    self.assertEqual(dist.batch_shape, (3,))
+    samples, log_prob = dist.sample_and_log_prob(
+        seed=jax.random.PRNGKey(0), sample_shape=2)
+    self.assertEqual(samples.shape, (2, 3, 2))
+    np.testing.assert_allclose(log_prob, dist.log_prob(samples), atol=1e-5)
 
   def test_jittable(self):
     @jax.jit
