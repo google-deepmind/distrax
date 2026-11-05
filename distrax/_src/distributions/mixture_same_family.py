@@ -106,11 +106,13 @@ class MixtureSameFamily(distribution.Distribution):
                                                       seed=key_components)
 
     # Make mask broadcast with (potentially multivariate) samples.
+    mask = mask.astype(samples_all.dtype)
     mask = mask.reshape(mask.shape + (1,) * len(self.event_shape))
 
     # Need to sum over the component axis, which is the last one for scalar
     # components, the second-last one for 1-dim events, etc.
-    samples = jnp.sum(samples_all * mask, axis=-1 - len(self.event_shape))
+    samples = jnp.sum(samples_all * mask, axis=-1 - len(self.event_shape),
+                      dtype=samples_all.dtype)
     return samples
 
   def log_prob(self, value: EventT) -> Array:
