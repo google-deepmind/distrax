@@ -79,9 +79,13 @@ class Sigmoid(base.Bijector):
 
 def _more_stable_sigmoid(x: Array) -> Array:
   """Where extremely negatively saturated, approximate sigmoid with exp(x)."""
-  return jnp.where(x < -9, jnp.exp(x), jax.nn.sigmoid(x))
+  # Avoid overflow in the inactive branch, which would produce NaN gradients.
+  safe_x = jnp.where(x < -9, x, 0.)
+  return jnp.where(x < -9, jnp.exp(safe_x), jax.nn.sigmoid(x))
 
 
 def _more_stable_softplus(x: Array) -> Array:
   """Where extremely saturated, approximate softplus with log1p(exp(x))."""
-  return jnp.where(x < -9, jnp.log1p(jnp.exp(x)), jax.nn.softplus(x))
+  # Avoid overflow in the inactive branch, which would produce NaN gradients.
+  safe_x = jnp.where(x < -9, x, 0.)
+  return jnp.where(x < -9, jnp.log1p(jnp.exp(safe_x)), jax.nn.softplus(x))

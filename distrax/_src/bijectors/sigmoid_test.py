@@ -18,6 +18,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import chex
+import distrax
 from distrax._src.bijectors import sigmoid
 from distrax._src.bijectors import tanh
 import jax
@@ -166,6 +167,56 @@ class SigmoidTest(parameterized.TestCase):
     bijector = sigmoid.Sigmoid()
     x = np.zeros(())
     f(x, bijector)
+
+  @parameterized.product(
+      use_jit=[False, True], dtype=[jnp.float32, jnp.float64])
+  def test_forward_tail_gradients(self, use_jit, dtype):
+    with jax.enable_x64(dtype == jnp.float64):
+      x = jnp.array([-1000., -100., -80., -10., -9., 0., 10., 100., 1000.],
+                    dtype=dtype)
+      bijector = sigmoid.Sigmoid()
+      gradient = jax.vmap(jax.grad(bijector.forward))
+      if use_jit:
+        gradient = jax.jit(gradient)
+      expected = jnp.where(
+          x < -9, jnp.exp(jnp.minimum(x, 0)),
+          jax.vmap(jax.grad(jax.nn.sigmoid))(x))
+      np.testing.assert_allclose(gradient(x), expected, rtol=RTOL, atol=0.)
+
+  @parameterized.product(
+      use_jit=[False, True], dtype=[jnp.float32, jnp.float64])
+  def test_log_det_tail_gradients(self, use_jit, dtype):
+    with jax.enable_x64(dtype == jnp.float64):
+      x = jnp.array([-1000., -100., -80., -10., -9., 0., 9., 10., 80.,
+                     100., 1000.], dtype=dtype)
+      bijector = sigmoid.Sigmoid()
+      gradient = jax.vmap(jax.grad(bijector.forward_log_det_jacobian))
+      if use_jit:
+        gradient = jax.jit(gradient)
+      expected = -np.tanh(np.asarray(x) / 2)
+      np.testing.assert_allclose(gradient(x), expected, rtol=RTOL, atol=1e-7)
+
+  @parameterized.product(
+      use_jit=[False, True], dtype=[jnp.float32, jnp.float64])
+  def test_transformed_sample_log_prob_tail_gradients(self, use_jit, dtype):
+    with jax.enable_x64(dtype == jnp.float64):
+      loc = jnp.array([-1000., 1000.], dtype=dtype)
+
+      def sample_log_prob(loc):
+        distribution = distrax.Transformed(
+            distrax.Normal(loc, jnp.ones_like(loc)), sigmoid.Sigmoid())
+        samples, log_prob = distribution.sample_and_log_prob(
+            seed=self.seed, sample_shape=(2, 3))
+        return jnp.sum(jnp.mean(log_prob, axis=(0, 1))), samples
+
+      value_and_grad = jax.value_and_grad(sample_log_prob, has_aux=True)
+      if use_jit:
+        value_and_grad = jax.jit(value_and_grad)
+      (value, samples), gradient = value_and_grad(loc)
+      self.assertEqual(samples.shape, (2, 3, 2))
+      self.assertTrue(np.all(np.isfinite(samples)))
+      self.assertTrue(np.isfinite(value))
+      np.testing.assert_allclose(gradient, [-1., 1.], rtol=RTOL)
 
   def test_same_as(self):
     bijector = sigmoid.Sigmoid()
