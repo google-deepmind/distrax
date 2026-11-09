@@ -73,6 +73,46 @@ class MixtureOfTwoTest(equivalence.EquivalenceTest):
         self.tfp_mixture.log_prob(sample),
         mix.log_prob(sample), atol=1e-3)
 
+  @parameterized.named_parameters(
+      ('component_a_only', 1.),
+      ('component_b_only', 0.),
+      ('mixed', PROPORTION),
+  )
+  def test_cdf_and_log_cdf_match_component_mixture(self, proportion):
+    mix = self.distrax_cls(proportion, self.component_a, self.component_b)
+    # Exercise scalar and leading sample axes against a batch of components.
+    values = jnp.array([[-3., -1., 0., 1., 3.],
+                        [-2., -0.5, 0.5, 2., 4.]], dtype=jnp.float32)
+    expected_cdf = (
+        proportion * self.component_a.cdf(values)
+        + (1. - proportion) * self.component_b.cdf(values))
+    expected_log_cdf = jnp.logaddexp(
+        jnp.log(proportion) + self.component_a.log_cdf(values),
+        jnp.log1p(-proportion) + self.component_b.log_cdf(values))
+
+    np.testing.assert_allclose(mix.cdf(values), expected_cdf, atol=1e-6)
+    np.testing.assert_allclose(
+        mix.log_cdf(values), expected_log_cdf, atol=1e-6)
+    np.testing.assert_allclose(
+        jax.jit(mix.cdf)(values), expected_cdf, atol=1e-6)
+    np.testing.assert_allclose(
+        jax.jit(mix.log_cdf)(values), expected_log_cdf, atol=1e-6)
+
+  def test_log_cdf_remains_finite_in_extreme_lower_tail(self):
+    component_a = tfp.distributions.Normal(0., 1.)
+    component_b = tfp.distributions.Normal(2., .5)
+    mix = self.distrax_cls(.25, component_a, component_b)
+    values = jnp.array([-40., -20., -10.])
+    # Computing log(cdf) directly underflows in these tails.
+    log_cdf = mix.log_cdf(values)
+    self.assertTrue(jnp.all(jnp.isfinite(log_cdf)))
+    expected = jnp.logaddexp(
+        jnp.log(.25) + component_a.log_cdf(values),
+        jnp.log1p(-.25) + component_b.log_cdf(values))
+    np.testing.assert_allclose(log_cdf, expected, atol=2e-4)
+    np.testing.assert_allclose(
+        jax.jit(mix.log_cdf)(values), expected, atol=2e-4)
+
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
       ('empty shape', ()),
