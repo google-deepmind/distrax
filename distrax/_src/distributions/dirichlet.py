@@ -132,8 +132,24 @@ class Dirichlet(distribution.Distribution):
     """Calculates the variance."""
     sum_concentration = jnp.sum(self._concentration, axis=-1, keepdims=True)
     norm_concentration = self._concentration / sum_concentration
-    return norm_concentration * (1. - norm_concentration) / (
-        sum_concentration + 1.)
+    return self._variance(sum_concentration, norm_concentration)
+
+  def _variance(
+      self, sum_concentration: Array, norm_concentration: Array
+  ) -> Array:
+    """Calculates variance without cancelling a dominant component's mass."""
+    is_dominant = norm_concentration > 0.5
+    # At most one component has mass above 0.5. Sum its complement directly;
+    # subtracting it from either the total or one can lose the other components.
+    other_concentration = jnp.sum(
+        jnp.where(is_dominant, 0.0, self._concentration), axis=-1, keepdims=True
+    )
+    complement = jnp.where(
+        is_dominant,
+        other_concentration / sum_concentration,
+        1.0 - norm_concentration,
+    )
+    return norm_concentration * complement / (sum_concentration + 1.0)
 
   def covariance(self) -> Array:
     """Calculates the covariance.
@@ -147,8 +163,10 @@ class Dirichlet(distribution.Distribution):
     norm_over_sum = norm_concentration / (sum_concentration + 1.)
     cov = - jnp.expand_dims(norm_over_sum, axis=-1) * jnp.expand_dims(
         norm_concentration, axis=-2)
-    cov += jnp.vectorize(jnp.diag, signature='(k)->(k,k)')(norm_over_sum)
-    return cov
+    indices = jnp.arange(self.event_shape[0])
+    return cov.at[..., indices, indices].set(
+        self._variance(sum_concentration, norm_concentration)
+    )
 
   def __getitem__(self, index) -> 'Dirichlet':
     """See `Distribution.__getitem__`."""
