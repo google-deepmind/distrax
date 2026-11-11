@@ -119,7 +119,7 @@ class Logistic(distribution.Distribution):
 
   def variance(self) -> Array:
     """Calculates the variance."""
-    return jnp.square(self.scale * jnp.pi) / 3.
+    return jnp.square(self.stddev())
 
   def stddev(self) -> Array:
     """Calculates the standard deviation."""

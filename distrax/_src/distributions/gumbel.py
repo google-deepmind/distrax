@@ -118,7 +118,7 @@ class Gumbel(distribution.Distribution):
 
   def variance(self) -> Array:
     """Calculates the variance."""
-    return jnp.square(self._scale * jnp.ones_like(self._loc) * jnp.pi) / 6.
+    return jnp.square(self.stddev())
 
   def mode(self) -> Array:
     """Calculates the mode."""
