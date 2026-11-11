@@ -95,11 +95,23 @@ def _kl_logstddevnormal_logstddevnormal(
   """
   # KL[N(u_a, s_a^2) || N(u_b, s_b^2)] between two Gaussians:
   # (s_a^2 + (u_a - u_b)^2)/(2*s_b^2) + log(s_b) - log(s_a) - 1/2.
-  variance1 = jnp.square(dist1.scale)
-  variance2 = jnp.square(dist2.scale)
-  # pyrefly: ignore[unsupported-operation]
-  return ((variance1 + jnp.square(dist1.loc - dist2.loc)) / (2.0 * variance2) +
-          dist2.log_scale - dist1.log_scale - 0.5)
+  dtype = jnp.result_type(
+      dist1.loc, dist1.log_scale, dist2.loc, dist2.log_scale
+  )
+  # A finite float16 scale can have an inverse outside the float16 range.
+  compute_dtype = jnp.result_type(dtype, jnp.float32)
+  log_scale1 = dist1.log_scale.astype(compute_dtype)
+  log_scale2 = dist2.log_scale.astype(compute_dtype)
+  diff_log_scale = log_scale1 - log_scale2
+  standardized_mean = (
+      dist1.loc.astype(compute_dtype) - dist2.loc.astype(compute_dtype)
+  ) * jnp.exp(-log_scale2)
+  kl = (
+      0.5 * jnp.square(standardized_mean)
+      + 0.5 * jnp.expm1(2.0 * diff_log_scale)
+      - diff_log_scale
+  )
+  return kl.astype(dtype)
 
 
 # Register the KL function.

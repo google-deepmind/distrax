@@ -130,6 +130,109 @@ class LogStddevNormalTest(parameterized.TestCase):
     np.testing.assert_allclose(kl3, kl2)
     np.testing.assert_allclose(kl1, kl3)
 
+  @parameterized.named_parameters(
+      ('float32_small', jnp.float32, -50.0, None),
+      ('float32_large', jnp.float32, 50.0, None),
+      ('float32_control', jnp.float32, 0.0, None),
+      ('float16_small', jnp.float16, -10.0, None),
+      ('float16_large', jnp.float16, 10.0, None),
+      ('float16_control', jnp.float16, 0.0, None),
+      ('capped_small', jnp.float32, -50.0, 2.0),
+      ('capped_large', jnp.float32, 50.0, 2.0),
+      ('capped_control', jnp.float32, 0.0, 2.0),
+  )
+  def test_kl_values_and_gradients(self, dtype, log_scale, max_scale):
+    def effective_scale(raw):
+      if max_scale is None:
+        return raw, np.ones_like(raw)
+      log_max = np.log(max_scale)
+      return (
+          log_max - np.logaddexp(0.0, log_max - raw),
+          1.0 / (1.0 + np.exp(raw - log_max)),
+      )
+
+    log_scale1 = jnp.array(
+        [[log_scale - 0.5], [log_scale], [log_scale + 0.5]], dtype
+    )
+    log_scale2 = jnp.array(log_scale, dtype)
+    effective2, chain2 = effective_scale(np.asarray(log_scale2, np.float64))
+    loc1 = jnp.array(np.exp(effective2) * np.array([-0.5, 0.0, 0.5]), dtype)
+    loc2 = jnp.array(0.0, dtype)
+
+    # Independent float64 reference uses the actual rounded input parameters.
+    effective1, chain1 = effective_scale(np.asarray(log_scale1, np.float64))
+    delta = effective1 - effective2
+    z = (np.asarray(loc1, np.float64) - float(loc2)) * np.exp(-effective2)
+    expected = 0.5 * (np.square(z) + np.expm1(2.0 * delta)) - delta
+    expected_grads = (
+        3.0 * z,
+        3.0 * np.expm1(2.0 * delta) * chain1,
+        -3.0 * np.sum(z),
+        np.sum(-np.square(z) - np.exp(2.0 * delta) + 1.0) * chain2,
+    )
+
+    def kl(loc1, log_scale1, loc2, log_scale2):
+      dist1 = lsn.LogStddevNormal(loc1, log_scale1, max_scale=max_scale)
+      dist2 = lsn.LogStddevNormal(loc2, log_scale2, max_scale=max_scale)
+      return dist1.kl_divergence(dist2)
+
+    grad_fn = jax.grad(lambda *args: jnp.sum(kl(*args)), argnums=(0, 1, 2, 3))
+    tolerance = 2e-2 if dtype == jnp.float16 else 3e-5
+    for values_fn, gradients_fn in (
+        (kl, grad_fn),
+        (jax.jit(kl), jax.jit(grad_fn)),
+    ):
+      args = (loc1, log_scale1, loc2, log_scale2)
+      actual = values_fn(*args)
+      self.assertEqual(actual.dtype, dtype)
+      np.testing.assert_allclose(
+          actual, expected, rtol=tolerance, atol=tolerance
+      )
+      grads = gradients_fn(*args)
+      for i, (actual_grad, wanted_grad) in enumerate(
+          zip(grads, expected_grads)
+      ):
+        self.assertEqual(actual_grad.dtype, dtype)
+        # Compare mean derivatives in scale-relative units so both very small
+        # and very large finite gradients receive meaningful tolerances.
+        normalized_grad = np.asarray(actual_grad, np.float64)
+        if i in (0, 2):
+          normalized_grad *= np.exp(effective2)
+        np.testing.assert_allclose(
+            normalized_grad, wanted_grad, rtol=tolerance, atol=tolerance
+        )
+
+  @parameterized.named_parameters(
+      ('float32_small', jnp.float32, -50.0),
+      ('float32_control', jnp.float32, 0.0),
+      ('float32_large', jnp.float32, 50.0),
+      ('float16_subnormal_scale', jnp.float16, -12.0),
+      ('float16_small', jnp.float16, -10.0),
+      ('float16_control', jnp.float16, 0.0),
+      ('float16_large', jnp.float16, 10.0),
+  )
+  def test_kl_identical_log_scales(self, dtype, log_scale):
+    def kl(loc1, log_scale1, loc2, log_scale2):
+      dist1 = lsn.LogStddevNormal(loc1, log_scale1)
+      dist2 = lsn.LogStddevNormal(loc2, log_scale2)
+      return dist1.kl_divergence(dist2)
+
+    args = (
+        jnp.array(0.0, dtype),
+        jnp.array(log_scale, dtype),
+        jnp.array(0.0, dtype),
+        jnp.array(log_scale, dtype),
+    )
+    grad_fn = jax.value_and_grad(kl, argnums=(0, 1, 2, 3))
+    for value_and_grad in (
+        grad_fn,
+        jax.jit(grad_fn),
+    ):
+      value, grads = value_and_grad(*args)
+      for actual in (value, *grads):
+        self.assertEqual(actual.dtype, dtype)
+        np.testing.assert_array_equal(actual, 0.0)
+
   # pylint:disable=protected-access
   def test_custom_kl_registered(self):
     # Check that our custom KL is registered inside the TFP dispatch table.
