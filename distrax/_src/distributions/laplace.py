@@ -168,9 +168,12 @@ def _kl_divergence_laplace_laplace(
   # pyrefly: ignore[unsupported-operation]
   distance = jnp.abs(dist1.loc - dist2.loc)
   diff_log_scale = jnp.log(dist1.scale) - jnp.log(dist2.scale)
-  return (- diff_log_scale +
-          distance / dist2.scale - 1. +
-          jnp.exp(-distance / dist1.scale + diff_log_scale))
+  # Avoid subtracting one from exp when the distributions are close.
+  return (
+      -diff_log_scale
+      + distance / dist2.scale
+      + jnp.expm1(-distance / dist1.scale + diff_log_scale)
+  )
 
 
 # Register the KL functions with TFP.
