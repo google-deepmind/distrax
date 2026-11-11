@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import bernoulli
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 from scipy import special as sp_special
@@ -245,6 +246,45 @@ class BernoulliTest(equivalence.EquivalenceTest):
             'probs': jnp.asarray([[0.1, 0.5, 0.4], [0.2, 0.4, 0.8]])},
         dist2_kwargs={'logits': jnp.asarray([0.0, -0.1, 0.1]),},
         assertion_fn=self.assertion_fn(rtol=1e-2))
+
+  @chex.all_variants(with_pmap=False)
+  def test_entropy_preserves_small_probabilities(self):
+    probs = jnp.asarray([1e-8, 1e-12, 1e-20], dtype=jnp.float32)
+    probs64 = np.asarray(probs, dtype=np.float64)
+    expected = -(probs64 * np.log(probs64) +
+                 (1. - probs64) * np.log1p(-probs64))
+    entropy = self.variant(lambda p: self.distrax_cls(probs=p).entropy())
+    np.testing.assert_allclose(entropy(probs), expected, rtol=1e-6, atol=0.)
+
+    grad = self.variant(jax.grad(
+        lambda p: jnp.sum(self.distrax_cls(probs=p).entropy())))
+    np.testing.assert_allclose(
+        grad(probs), np.log1p(-probs64) - np.log(probs64), rtol=1e-6)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('distrax_to_distrax', False, False),
+      ('distrax_to_tfp', False, True),
+      ('tfp_to_distrax', True, False),
+  )
+  def test_kl_preserves_small_probabilities(self, first_tfp, second_tfp):
+    first_cls = self.tfp_cls if first_tfp else self.distrax_cls
+    second_cls = self.tfp_cls if second_tfp else self.distrax_cls
+    kl = self.variant(lambda p, q: first_cls(probs=p).kl_divergence(
+        second_cls(probs=q)))
+
+    probs = jnp.asarray([0., 1e-8, 1e-12, 0.5, 1.], dtype=jnp.float32)
+    np.testing.assert_array_equal(
+        kl(probs, jnp.zeros_like(probs)), [0., np.inf, np.inf, np.inf, np.inf])
+
+    probs = jnp.asarray([1e-8, 1e-12, 1e-20], dtype=jnp.float32)
+    other_probs = 2. * probs
+    p = np.asarray(probs, dtype=np.float64)
+    q = np.asarray(other_probs, dtype=np.float64)
+    expected = (p * (np.log(p) - np.log(q)) +
+                (1. - p) * (np.log1p(-p) - np.log1p(-q)))
+    np.testing.assert_allclose(kl(probs, other_probs), expected,
+                               rtol=1e-5, atol=0.)
 
   def test_jittable(self):
     super()._test_jittable(

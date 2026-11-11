@@ -178,7 +178,7 @@ def _probs_and_log_probs(
   # pylint: disable=protected-access
   if dist._logits is None:
     probs0 = 1. - dist._probs  # pyrefly: ignore[unsupported-operation]
-    probs1 = 1. - probs0
+    probs1 = dist._probs
     # pyrefly: ignore[unsupported-operation]
     log_probs0 = jnp.log1p(-1. * dist._probs)
     log_probs1 = jnp.log(dist._probs)  # pyrefly: ignore[bad-argument-type]
