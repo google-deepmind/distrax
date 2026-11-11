@@ -95,6 +95,82 @@ class UniformTest(equivalence.EquivalenceTest):
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
+      ('float16_value', jnp.float16),
+      ('float32_value', jnp.float32),
+  )
+  def test_log_prob_tiny_range(self, value_dtype):
+    high = jnp.array([1e-5, 2e-5], dtype=jnp.float16)
+    dist = uniform.Uniform(jnp.zeros((1, 2), dtype=jnp.float16), high)
+    values = jnp.stack(
+        (-high, jnp.zeros_like(high), high / 2.0, high, 2.0 * high)
+    ).astype(value_dtype)
+    actual = self.variant(dist.log_prob)(values)
+    expected = np.broadcast_to(
+        -np.log(np.asarray(high, dtype=np.float64)), values.shape
+    ).copy()
+    expected[[0, -1]] = -np.inf
+    expected = expected.astype(value_dtype)
+    self.assertEqual(actual.dtype, jnp.result_type(high, values))
+    np.testing.assert_allclose(
+        actual, expected, rtol=1e-3 if value_dtype == jnp.float16 else 1e-6
+    )
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float16', jnp.float16, 1e4),
+      ('float32', jnp.float32, 1e20),
+  )
+  def test_log_prob_wide_range_gradient(self, dtype, width):
+    low = jnp.array(0.0, dtype=dtype)
+    high = jnp.array(width, dtype=dtype)
+    value = high / 2.0
+    log_prob = lambda lo, hi: uniform.Uniform(lo, hi).log_prob(value)
+    actual = self.variant(jax.grad(log_prob, argnums=(0, 1)))(low, high)
+    expected = np.array([1.0, -1.0]) / float(high)
+    np.testing.assert_allclose(actual, expected, rtol=2e-3, atol=0.0)
+
+  @chex.all_variants(with_pmap=False)
+  def test_sample_and_log_prob_tiny_range(self):
+    high = jnp.array([1e-5, 2e-5], dtype=jnp.float16)
+    dist = uniform.Uniform(jnp.zeros_like(high), high)
+    sample_fn = self.variant(
+        lambda key: dist.sample_and_log_prob(seed=key, sample_shape=(8,))
+    )
+    samples, log_prob = sample_fn(jax.random.PRNGKey(20261019))
+    self.assertTrue(np.all(np.isfinite(log_prob)))
+    np.testing.assert_allclose(
+        self.variant(dist.log_prob)(samples), log_prob, rtol=1e-3
+    )
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(('below', -1.0), ('above', 3.0))
+  def test_log_prob_outside_range_gradient(self, value):
+    log_prob = lambda lo, hi: uniform.Uniform(lo, hi).log_prob(value)
+    actual, gradients = self.variant(
+        jax.value_and_grad(log_prob, argnums=(0, 1))
+    )(0.0, 2.0)
+    self.assertEqual(actual, -np.inf)
+    np.testing.assert_array_equal(gradients, np.zeros(2))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float16_parameters', jnp.float16, jnp.float32),
+      ('float32_parameters', jnp.float32, jnp.float16),
+  )
+  def test_log_prob_empty_shape_and_dtype(self, parameter_dtype, value_dtype):
+    dist = uniform.Uniform(
+        jnp.zeros((1, 2), dtype=parameter_dtype),
+        jnp.ones(2, dtype=parameter_dtype),
+    )
+    values = jnp.empty((0, 2), dtype=value_dtype)
+    actual = self.variant(dist.log_prob)(values)
+    self.assertEqual(actual.shape, values.shape)
+    self.assertEqual(
+        actual.dtype, jnp.result_type(parameter_dtype, value_dtype)
+    )
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
       ('entropy', (0., 1.), 'entropy'),
       ('mean', (0, 1), 'mean'),
       ('variance', (0, 1), 'variance'),

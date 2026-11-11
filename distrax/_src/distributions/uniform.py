@@ -91,7 +91,12 @@ class Uniform(distribution.Distribution):
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
-    return jnp.log(self.prob(value))
+    # Preserve the promotion from prob without forming its reciprocal.
+    dtype = jnp.result_type(value, self.range)
+    log_prob = -jnp.log(self.range.astype(dtype))
+    return jnp.where(
+        jnp.logical_or(value < self.low, value > self.high), -jnp.inf, log_prob
+    )
 
   def prob(self, value: EventT) -> Array:
     """See `Distribution.prob`."""
