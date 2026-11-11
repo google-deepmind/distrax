@@ -21,6 +21,7 @@ import chex
 from distrax._src.distributions import gamma
 from distrax._src.utils import compat
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -142,6 +143,55 @@ class GammaTest(equivalence.EquivalenceTest):
             attribute_string=method,
             dist_args=distr_params,
             assertion_fn=self.assertion_fn(rtol=2e-2))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float16_large_rate', jnp.float16, 100., 300., 5e-3),
+      ('float16_large_parameters', jnp.float16, 300., 300., 5e-3),
+      ('bfloat16_large_rate', jnp.bfloat16, 1e20, 1e20, 2e-2),
+      ('bfloat16_small_rate', jnp.bfloat16, 1e-30, 1e-20, 2e-2),
+      ('float32_large_rate', jnp.float32, 1e20, 1e20, 2e-6),
+      ('float32_small_rate', jnp.float32, 1e-30, 1e-20, 2e-6),
+      ('float64_large_rate', jnp.float64, 1e200, 1e200, 2e-6),
+      ('float64_small_rate', jnp.float64, 1e-300, 1e-200, 2e-6),
+  )
+  def test_variance_extreme_parameters(
+      self, dtype, concentration, rate, rtol):
+    with compat.enable_x64(dtype.dtype.itemsize == 8):
+      # Broadcast both parameters and use the represented inputs in the oracle.
+      concentration = jnp.asarray([[concentration], [concentration / 2]], dtype)
+      rate = jnp.asarray([rate, rate / 2], dtype)
+      expected = (np.asarray(concentration, np.float64)
+                  / np.asarray(rate, np.float64) / np.asarray(rate, np.float64))
+      variance = self.variant(lambda a, b: gamma.Gamma(a, b).variance())(
+          concentration, rate)
+      self.assertEqual(variance.dtype, dtype)
+      self.assertEqual(variance.shape, (2, 2))
+      np.testing.assert_allclose(variance, expected, rtol=rtol, atol=0.)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('ordinary_float32', jnp.float32, 3., 2., 2e-6),
+      ('large_float16', jnp.float16, 300., 300., 1e-2),
+      ('small_float32', jnp.float32, 1e-30, 1e-20, 2e-6),
+  )
+  def test_variance_rate_gradient(self, dtype, concentration, rate, rtol):
+    concentration = jnp.asarray(concentration, dtype)
+    rate = jnp.asarray(rate, dtype)
+    expected = (-2 * np.asarray(concentration, np.float64)
+                / np.asarray(rate, np.float64) ** 3)
+    grad = self.variant(jax.grad(lambda b: gamma.Gamma(
+        concentration, b).variance()))(rate)
+    np.testing.assert_allclose(grad, expected, rtol=rtol, atol=0.)
+
+  @chex.all_variants(with_pmap=False)
+  def test_variance_concentration_gradient(self):
+    concentration = jnp.asarray([0.5, 3., 10.])
+    rate = jnp.asarray([0.25, 2., 4.])
+    grad = self.variant(jax.grad(lambda a: jnp.sum(gamma.Gamma(
+        a, rate).variance())))(concentration)
+    np.testing.assert_allclose(grad, 1 / np.asarray(rate) ** 2,
+                               rtol=2e-6, atol=0.)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

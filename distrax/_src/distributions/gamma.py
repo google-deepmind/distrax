@@ -118,7 +118,11 @@ class Gamma(distribution.Distribution):
 
   def variance(self) -> Array:
     """Calculates the variance."""
-    return self._concentration / jnp.square(self._rate)
+    # Avoid squaring the rate, which can overflow or underflow even when the
+    # variance is representable. Splitting the division also avoids squaring
+    # the full rate in the derivatives of the division operations.
+    sqrt_rate = jnp.sqrt(self._rate)
+    return jnp.square((jnp.sqrt(self._concentration) / sqrt_rate) / sqrt_rate)
 
   def mode(self) -> Array:
     """Calculates the mode."""
