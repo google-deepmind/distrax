@@ -75,13 +75,15 @@ class Joint(distribution.Distribution):
     self._distributions_leaves = _leaves_up_to_distribution(self._distributions)
 
     batch_shape = None
+    first_path = ''
     for path, dist in jax.tree.leaves_with_path(
         self._distributions,
         is_leaf=_is_leaf_distribution,
         is_leaf_takes_path=False,
     ):
-      batch_shape = batch_shape or dist.batch_shape
-      first_path = '.'.join(map(str, path))
+      if batch_shape is None:
+        batch_shape = dist.batch_shape
+        first_path = '.'.join(map(str, path))
       if dist.batch_shape != batch_shape:
         path = '.'.join(map(str, path))
         raise ValueError(

@@ -508,6 +508,33 @@ class JointTest(parameterized.TestCase):
     with self.assertRaises(ValueError):
       Joint(distributions)
 
+  @parameterized.named_parameters(
+      ('scalar_first', ((), (2,))),
+      ('scalar_last', ((2,), ())),
+      ('scalar_prefix', ((), (), (2,))),
+      ('different_nonempty', ((2,), (3,))),
+  )
+  def test_rejects_mismatched_batch_shapes_in_sequence(self, batch_shapes):
+    distributions = [
+        Normal(np.zeros(shape), np.ones(shape)) for shape in batch_shapes
+    ]
+
+    with self.assertRaisesRegex(ValueError, 'must have the same batch shape'):
+      Joint(distributions)
+
+  def test_rejects_mismatched_nested_batch_shapes(self):
+    distributions = dict(
+        first=[Normal(0.0, 1.0)],
+        last=(Normal(np.zeros(2), np.ones(2)),),
+    )
+
+    with self.assertRaisesRegex(
+        ValueError,
+        r"location \['last'\].\[0\].*batch shape \(2,\).*"
+        r"batch shape \(\) of the distribution at location \['first'\].\[0\]",
+    ):
+      Joint(distributions)
+
   @chex.all_variants
   def test_raise_on_incompatible_distributions_kl(self):
     distributions, _ = _make_nested_distributions_and_inputs()
