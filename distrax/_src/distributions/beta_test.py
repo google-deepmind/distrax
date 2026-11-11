@@ -20,8 +20,10 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import beta as base_beta
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
+import scipy.special
 
 
 class BetaTest(equivalence.EquivalenceTest):
@@ -150,6 +152,51 @@ class BetaTest(equivalence.EquivalenceTest):
             dist_args=distr_params,
             call_args=(value,),
             assertion_fn=self.assertion_fn(rtol=1e-2))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float16', jnp.float16, [1000.0, 2000.0], [0.001, 0.0005], 4e-3),
+      ('float32', jnp.float32, [1e6, 1e8], [1e-6, 1e-8], 2e-5),
+  )
+  def test_log_prob_asymmetric_concentrations(self, dtype, beta, value, atol):
+    alpha = jnp.asarray([[0.5], [1.0], [2.0]], dtype)
+    beta = jnp.asarray(beta, dtype)
+    value = jnp.asarray(value, dtype)
+    # Compute the reference in float64 using the actual rounded input values.
+    a, b, x = [np.asarray(v, np.float64) for v in (alpha, beta, value)]
+    expected = (
+        (a - 1.0) * np.log(x)
+        + (b - 1.0) * np.log1p(-x)
+        - scipy.special.betaln(a, b)
+    )
+    log_prob = self.variant(  # pyrefly: ignore[missing-attribute]
+        lambda a, b, x: base_beta.Beta(a, b).log_prob(x)
+    )
+    result = log_prob(alpha, beta, value)
+    self.assertEqual(result.shape, (3, 2))
+    self.assertEqual(result.dtype, dtype)
+    np.testing.assert_allclose(result, expected, rtol=0.0, atol=atol)
+
+  @chex.all_variants(with_pmap=False)
+  def test_log_prob_gradients(self):
+    alpha, beta, value = 1.5, 2.5, 0.3
+    expected = (
+        np.log(value)
+        - scipy.special.digamma(alpha)
+        + scipy.special.digamma(alpha + beta),
+        np.log1p(-value)
+        - scipy.special.digamma(beta)
+        + scipy.special.digamma(alpha + beta),
+        (alpha - 1.0) / value - (beta - 1.0) / (1.0 - value),
+    )
+    grad_fn = self.variant(
+        jax.grad(  # pyrefly: ignore[missing-attribute]
+            lambda a, b, x: base_beta.Beta(a, b).log_prob(x), argnums=(0, 1, 2)
+        )
+    )
+    np.testing.assert_allclose(
+        grad_fn(alpha, beta, value), expected, rtol=1e-5, atol=1e-6
+    )
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

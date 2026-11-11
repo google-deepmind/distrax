@@ -90,6 +90,26 @@ class MathTest(absltest.TestCase):
     expected_result = scipy.special.betaln(a, b)
     np.testing.assert_allclose(math.log_beta(a, b), expected_result, atol=2e-4)
 
+  def test_log_beta_asymmetric_inputs(self):
+    for dtype, large, atol in [
+        (jnp.float16, [1000.0, 2000.0], 1e-2),
+        (jnp.float32, [1e6, 1e8], 2e-5),
+    ]:
+      a = jnp.asarray([[0.5], [1.0], [2.0]], dtype)
+      b = jnp.asarray(large, dtype)
+      expected = scipy.special.betaln(
+          np.asarray(a, np.float64), np.asarray(b, np.float64)
+      )
+      for fn in (math.log_beta, jax.jit(math.log_beta)):
+        for x, y in ((a, b), (b, a)):
+          with self.subTest(
+              dtype=dtype, function=fn, shapes=(x.shape, y.shape)
+          ):
+            result = fn(x, y)
+            self.assertEqual(result.shape, (3, 2))
+            self.assertEqual(result.dtype, dtype)
+            np.testing.assert_allclose(result, expected, rtol=0.0, atol=atol)
+
   def test_log_beta_bivariate(self):
     a = jnp.abs(jax.random.normal(jax.random.PRNGKey(42), (4, 3, 2)))
     expected_result = scipy.special.betaln(a[..., 0], a[..., 1])
