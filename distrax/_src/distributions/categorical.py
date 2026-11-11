@@ -133,12 +133,15 @@ class Categorical(distribution.Distribution):
     """See `Distribution.cdf`."""
     # For value < 0 the output should be zero because support = {0, ..., K-1}.
     should_be_zero = value < 0
+    # Preserve the existing zero output for NaN queries.
+    should_be_zero = jnp.logical_or(should_be_zero, jnp.isnan(value))
     # For value >= K-1 the output should be one. Explicitly accounting for this
     # case addresses potential numerical issues that may arise when evaluating
     # derived methods (mainly, `log_survival_function`) for `value >= K-1`.
     should_be_one = value >= self.num_categories - 1
-    # Will use value as an index below, so clip it to {0, ..., K-1}.
-    value = jnp.clip(value, 0, self.num_categories - 1)
+    # Clip before rounding down to select the cumulative probability at the
+    # largest support point not greater than the real-valued threshold.
+    value = jnp.clip(value, 0, self.num_categories - 1).astype(jnp.int32)
     value_one_hot = jax.nn.one_hot(
         value, self.num_categories, dtype=self.probs.dtype)
     cdf = jnp.sum(math.multiply_no_nan(

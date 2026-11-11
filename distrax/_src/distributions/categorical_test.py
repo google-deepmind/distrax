@@ -239,6 +239,81 @@ class CategoricalTest(equivalence.EquivalenceTest):
           # pyrefly: ignore[missing-attribute]
           self.variant(dist.log_survival_function)(value), log_sf)
 
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('probs', True, False),
+      ('logits', False, False),
+      ('batched_probs', True, True),
+      ('batched_logits', False, True),
+  )
+  def test_cdf_real_thresholds(self, from_probs, batched):
+    probs = np.asarray([[0.2, 0.3, 0.5], [0.4, 0.1, 0.5]], dtype=np.float32)
+    if not batched:
+      probs = probs[0]
+    params = {'probs': probs} if from_probs else {'logits': np.log(probs)}
+    dist = self.distrax_cls(**params)
+    values = np.asarray(
+        [-np.inf, -0.25, 0.0, 0.25, 0.75, 1.0, 1.25, 1.75, 2.0, np.inf],
+        dtype=np.float32,
+    )
+    # Retain the existing zero CDF for NaN queries as a compatibility control.
+    values = np.append(values, np.float32(np.nan))
+    interior_values = np.asarray([0.25, 0.75, 1.25, 1.75], dtype=np.float32)
+    if batched:
+      values = values[:, None]
+      interior_values = interior_values[:, None]
+
+    def finite_support_cdf(value):
+      return np.sum(
+          np.where(np.arange(3) <= value[..., None], probs, 0.0), axis=-1
+      )
+
+    # Check the reference only on finite nonnegative interior thresholds.
+    # Its float-to-integer conversion precedes its negative-boundary check.
+    reference = self.distrax_cls.equiv_tfp_cls(**params)
+    np.testing.assert_allclose(
+        reference.cdf(interior_values),
+        finite_support_cdf(interior_values),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+    def cumulative_scores(value):
+      return (
+          dist.cdf(value),
+          dist.log_cdf(value),
+          dist.survival_function(value),
+          dist.log_survival_function(value),
+      )
+
+    expected_cdf = finite_support_cdf(values)
+    with np.errstate(divide='ignore'):
+      expected = (
+          expected_cdf,
+          np.log(expected_cdf),
+          1.0 - expected_cdf,
+          np.log1p(-expected_cdf),
+      )
+    actual = self.variant(cumulative_scores)(values)
+    for actual_score, expected_score in zip(actual, expected):
+      np.testing.assert_allclose(
+          actual_score, expected_score, rtol=1e-6, atol=1e-6
+      )
+      self.assertEqual(actual_score.shape, expected_cdf.shape)
+      self.assertEqual(actual_score.dtype, probs.dtype)
+
+  @chex.all_variants(with_pmap=False)
+  def test_cdf_real_threshold_logits_gradient(self):
+    probs = np.asarray([0.2, 0.3, 0.5], dtype=np.float32)
+    logits = jnp.log(probs)
+
+    def score(logits):
+      return self.distrax_cls(logits=logits).cdf(jnp.asarray(0.5))
+
+    expected = probs * (np.asarray([1.0, 0.0, 0.0]) - probs[0])
+    actual = self.variant(jax.grad(score))(logits)
+    np.testing.assert_allclose(actual, expected, rtol=1e-6, atol=1e-6)
+
   @chex.all_variants
   def test_method_with_input_unnormalized_probs(self):
     # We test this case separately because the result of `cdf` and `log_cdf`
