@@ -118,7 +118,9 @@ class Gamma(distribution.Distribution):
 
   def variance(self) -> Array:
     """Calculates the variance."""
-    return self._concentration / jnp.square(self._rate)
+    # Avoid overflowing or underflowing the squared rate when the variance is
+    # representable in the input dtype.
+    return jnp.square(self.stddev())
 
   def mode(self) -> Array:
     """Calculates the mode."""

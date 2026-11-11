@@ -21,6 +21,7 @@ import chex
 from distrax._src.distributions import gamma
 from distrax._src.utils import compat
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -145,12 +146,60 @@ class GammaTest(equivalence.EquivalenceTest):
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(
+      ('float16 large rate', np.float16, 100.0, 300.0),
+      ('float16 small rate', np.float16, 1e-4, 1e-4),
+      ('float32 large rate', np.float32, 1e20, 1e20),
+      ('float32 small rate', np.float32, 1e-30, 1e-20),
+  )
+  def test_variance_extreme_rate(self, dtype, concentration, rate):
+    for batched in [False, True]:
+      with self.subTest(batched=batched):
+        if batched:
+          concentration_array = np.array(
+              [[concentration], [2 * concentration]], dtype=dtype
+          )
+          rate_array = np.array([rate, 2 * rate], dtype=dtype)
+        else:
+          concentration_array = np.array(concentration, dtype=dtype)
+          rate_array = np.array(rate, dtype=dtype)
+        # Use the rounded input values, but square in float64 to avoid the
+        # overflow/underflow that the native dtype would introduce.
+        expected = concentration_array.astype(np.float64) / np.square(
+            rate_array.astype(np.float64)
+        )
+        actual = self.variant(lambda a, r: gamma.Gamma(a, r).variance())(
+            concentration_array, rate_array
+        )
+        self.assertEqual(actual.dtype, dtype)
+        self.assertEqual(actual.shape, expected.shape)
+        np.testing.assert_allclose(actual, expected, rtol=2e-3, atol=0.0)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float32', np.float32),
+      ('float64', np.float64),
+  )
+  def test_variance_gradients(self, dtype):
+    with compat.enable_x64(dtype == np.float64):
+      concentration = np.array([[0.5], [2.0]], dtype=dtype)
+      rate = np.array([0.25, 2.0, 5.0], dtype=dtype)
+      grad_fn = jax.grad(
+          lambda a, r: gamma.Gamma(a, r).variance().sum(), argnums=(0, 1)
+      )
+      actual_a, actual_r = self.variant(grad_fn)(concentration, rate)
+      expected_a = np.full_like(concentration, np.sum(1.0 / np.square(rate)))
+      expected_r = -2.0 * np.sum(concentration) / np.power(rate, 3)
+      np.testing.assert_allclose(actual_a, expected_a, rtol=1e-6)
+      np.testing.assert_allclose(actual_r, expected_r, rtol=1e-6)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
       ('kl distrax_to_distrax', 'kl_divergence', 'distrax_to_distrax'),
       ('kl distrax_to_tfp', 'kl_divergence', 'distrax_to_tfp'),
       ('kl tfp_to_distrax', 'kl_divergence', 'tfp_to_distrax'),
       ('cross-ent distrax_to_distrax', 'cross_entropy', 'distrax_to_distrax'),
       ('cross-ent distrax_to_tfp', 'cross_entropy', 'distrax_to_tfp'),
-      ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax')
+      ('cross-ent tfp_to_distrax', 'cross_entropy', 'tfp_to_distrax'),
   )
   def test_with_two_distributions(self, function_string, mode_string):
     rtol = 1e-3
