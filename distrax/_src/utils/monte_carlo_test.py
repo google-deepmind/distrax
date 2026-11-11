@@ -15,8 +15,11 @@
 """Tests for `monte_carlo.py`."""
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 import chex
+from distrax._src.distributions import categorical
+from distrax._src.distributions import joint
 from distrax._src.distributions import mvn_diag
 from distrax._src.distributions import normal
 from distrax._src.utils import monte_carlo
@@ -79,6 +82,57 @@ class McTest(absltest.TestCase):
       # are taken and most of the mass in a high-dimensional gaussian is NOT
       # at 0!
       self.assertLess(10 * mean_mode_estimate, mean_mv_mode_estimate)
+
+
+class McEstimateModeNestedTest(parameterized.TestCase):
+
+  @parameterized.product(
+      batch_shape=((), (3,), (2, 3)),
+      use_jit=(False, True),
+  )
+  def test_estimate_mode_nested_events(self, batch_shape, use_jit):
+    distribution = joint.Joint(
+        {
+            'continuous': (
+                normal.Normal(np.zeros(batch_shape), np.ones(batch_shape)),
+                mvn_diag.MultivariateNormalDiag(
+                    loc=np.broadcast_to([1.0, -2.0], batch_shape + (2,)),
+                    scale_diag=np.broadcast_to(
+                        [0.75, 1.25], batch_shape + (2,)
+                    ),
+                ),
+            ),
+            'discrete': categorical.Categorical(
+                logits=np.broadcast_to([-0.6, 0.1, 0.9], batch_shape + (3,))
+            ),
+        }
+    )
+    key = jax.random.PRNGKey(17)
+    num_samples = 23
+    samples, log_probs = distribution.sample_and_log_prob(
+        seed=key, sample_shape=num_samples
+    )
+    best_samples = np.argmax(np.asarray(log_probs), axis=0)
+
+    estimate = lambda: monte_carlo.mc_estimate_mode(
+        distribution, key, num_samples
+    )
+    if use_jit:
+      estimate = jax.jit(estimate)
+    actual = estimate()
+
+    self.assertEqual(jax.tree.structure(actual), jax.tree.structure(samples))
+    for sample_leaf, actual_leaf in zip(
+        jax.tree.leaves(samples), jax.tree.leaves(actual)
+    ):
+      sample_leaf = np.asarray(sample_leaf)
+      expected = np.empty(sample_leaf.shape[1:], dtype=sample_leaf.dtype)
+      for batch_index in np.ndindex(batch_shape):
+        sample_index = int(best_samples[batch_index])
+        expected[batch_index] = sample_leaf[(sample_index,) + batch_index]
+      self.assertEqual(actual_leaf.shape, expected.shape)
+      self.assertEqual(actual_leaf.dtype, expected.dtype)
+      np.testing.assert_array_equal(actual_leaf, expected)
 
 
 def _check_kl_estimator(estimator_fn, distribution_fn, num_samples=10000,

@@ -137,7 +137,14 @@ def mc_estimate_mode(
       seed=rng_key, sample_shape=[num_samples])
   # Do argmax over the sample_shape.
   index = jnp.expand_dims(jnp.argmax(log_probs, axis=0), axis=0)
-  # Broadcast index to include event_shape of the sample.
-  index = index.reshape(index.shape + (1,) * (samples.ndim - index.ndim))
-  mode = jnp.squeeze(jnp.take_along_axis(samples, index, axis=0), axis=0)
-  return mode
+
+  def select_sample(sample):
+    # Broadcast the shared joint-sample index to each leaf's event shape.
+    sample_index = index.reshape(
+        index.shape + (1,) * (sample.ndim - index.ndim)
+    )
+    return jnp.squeeze(
+        jnp.take_along_axis(sample, sample_index, axis=0), axis=0
+    )
+
+  return jax.tree.map(select_sample, samples)
