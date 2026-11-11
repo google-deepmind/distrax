@@ -14,6 +14,8 @@
 # ==============================================================================
 """Tests for `log_stddev_normal.py`."""
 
+from unittest import mock
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -23,7 +25,6 @@ from distrax._src.distributions import normal
 from distrax._src.utils import compat
 import jax
 import jax.numpy as jnp
-import mock
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
