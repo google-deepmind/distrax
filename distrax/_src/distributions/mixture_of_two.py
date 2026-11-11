@@ -74,10 +74,12 @@ class MixtureOfTwo(base_distribution.Distribution):
   def _sample_n(self, key: PRNGKey, n: int) -> Array:
     """See `Distribution._sample_n`."""
     key, key_a, key_b, mask_key = jax.random.split(key, num=4)
-    mask_from_a = jax.random.bernoulli(mask_key, p=self._prob_a, shape=[n])
+    mask_from_a = jax.random.bernoulli(
+        mask_key, p=self._prob_a, shape=(n,) + self.batch_shape)
     sample_a = self._component_a.sample(seed=key_a, sample_shape=n)
     sample_b = self._component_b.sample(seed=key_b, sample_shape=n)
-    mask_from_a = jnp.expand_dims(mask_from_a, tuple(range(1, sample_a.ndim)))
+    mask_from_a = jnp.reshape(
+        mask_from_a, mask_from_a.shape + (1,) * len(self.event_shape))
     return jnp.where(mask_from_a, sample_a, sample_b)
 
   def log_prob(self, value: EventT) -> Array:
