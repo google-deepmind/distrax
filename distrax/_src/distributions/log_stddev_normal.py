@@ -75,10 +75,11 @@ class LogStddevNormal(normal.Normal):
   def __getitem__(self, index) -> 'LogStddevNormal':
     """See `Distribution.__getitem__`."""
     index = distribution.to_batch_shape_index(self.batch_shape, index)
+    # The log scale is already thresholded; do not apply max_scale again.
     return LogStddevNormal(
         loc=self.loc[index],  # pyrefly: ignore[bad-index]
         log_scale=self.log_scale[index],  # pyrefly: ignore[bad-index]
-        max_scale=self._max_scale)
+    )
 
 
 def _kl_logstddevnormal_logstddevnormal(

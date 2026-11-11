@@ -182,5 +182,77 @@ class LogStddevNormalTest(parameterized.TestCase):
         dist[0].mean(), loc, rtol=1e-3)  # Not slicing loc.
     np.testing.assert_allclose(dist[0].log_scale, log_scale[0], rtol=1e-3)
 
+  @parameterized.product(
+      index=(2, slice(1, None), (slice(None), slice(1, None)), (Ellipsis, -1)),
+      broadcast=('none', 'loc', 'log_scale'),
+      max_scale=(None, 2.0))
+  def test_slice_preserves_distribution(self, index, broadcast, max_scale):
+    loc = jnp.linspace(-1., 1., 60).reshape(3, 4, 5)
+    log_scale = jnp.linspace(-2., 2., 60).reshape(3, 4, 5)
+    if broadcast == 'loc':
+      loc = loc[0]
+    elif broadcast == 'log_scale':
+      log_scale = log_scale[0, 0]
+    dist = lsn.LogStddevNormal(loc, log_scale, max_scale=max_scale)
+    sliced = dist[index]
+    self.assertIsInstance(sliced, lsn.LogStddevNormal)
+    np.testing.assert_allclose(sliced.log_scale, dist.log_scale[index])
+    np.testing.assert_allclose(sliced.mean(), dist.mean()[index])
+    np.testing.assert_allclose(sliced.scale, dist.scale[index])
+    np.testing.assert_allclose(sliced.variance(), dist.variance()[index])
+    np.testing.assert_allclose(sliced.entropy(), dist.entropy()[index])
+
+    reference = normal.Normal(dist.loc[index], dist.scale[index])
+    key = jax.random.PRNGKey(123)
+    samples, log_probs = sliced.sample_and_log_prob(seed=key, sample_shape=5)
+    expected_samples, expected_log_probs = reference.sample_and_log_prob(
+        seed=key, sample_shape=5
+    )
+    np.testing.assert_allclose(samples, expected_samples)
+    np.testing.assert_allclose(log_probs, expected_log_probs, rtol=1e-6)
+
+  @parameterized.product(max_scale=(0.5, 2.0), jit=(False, True))
+  def test_slice_preserves_scoring_gradients(self, max_scale, jit):
+    loc = jnp.linspace(-1.0, 1.0, 12).reshape(3, 4)
+    log_scale = jnp.linspace(-2.0, 2.0, 12).reshape(3, 4)
+    values = jnp.linspace(-0.5, 1.5, 12).reshape(3, 4)
+    index = (slice(1, None), slice(None, None, 2))
+
+    def scores(loc, log_scale, slice_distribution):
+      dist = lsn.LogStddevNormal(loc, log_scale, max_scale=max_scale)
+      if slice_distribution:
+        log_prob = dist[index].log_prob(values[index])
+        entropy = dist[index].entropy()
+      else:
+        log_prob = dist.log_prob(values)[index]
+        entropy = dist.entropy()[index]
+      return jnp.stack((jnp.sum(log_prob), jnp.sum(entropy)))
+
+    def actual(x, y):
+      return scores(x, y, True)
+
+    def expected(x, y):
+      return scores(x, y, False)
+
+    if jit:
+      actual, expected = jax.jit(actual), jax.jit(expected)
+    chex.assert_trees_all_close(
+        actual(loc, log_scale), expected(loc, log_scale), rtol=1e-6
+    )
+    chex.assert_trees_all_close(
+        jax.jacrev(actual, argnums=(0, 1))(loc, log_scale),
+        jax.jacrev(expected, argnums=(0, 1))(loc, log_scale),
+        rtol=1e-6,
+    )
+
+  @parameterized.parameters(None, 0.5, 2.0)
+  def test_repeated_slices_preserve_scale(self, max_scale):
+    dist = lsn.LogStddevNormal(
+        loc=jnp.zeros((3, 4)), log_scale=0.0, max_scale=max_scale
+    )
+    np.testing.assert_allclose(dist[1:][0].log_scale, dist[1].log_scale)
+    np.testing.assert_allclose(dist[1:][0].scale, dist[1].scale)
+
+
 if __name__ == '__main__':
   absltest.main()
