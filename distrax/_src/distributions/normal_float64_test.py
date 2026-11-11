@@ -22,6 +22,7 @@ from distrax._src.distributions import normal
 import jax
 from jax import config as jax_config
 import jax.numpy as jnp
+import numpy as np
 
 
 def setUpModule():
@@ -57,6 +58,23 @@ class NormalFloat64Test(chex.TestCase):
     self.assertEqual(dtype, dist.loc.dtype)
     self.assertEqual(dtype, dist.scale.dtype)
     self.assertEqual(dtype, dist.dtype)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('self', 1e200, 1e200, 1e-120, 0.0),
+      ('close', 1e16, 1e16 + 2.0, 3.0, 2.0 / 9.0),
+      ('opposite', 1e308, -1e308, 1e308, 2.0),
+  )
+  def test_kl_location_numerical_range(self, loc1, loc2, scale, expected):
+    loc1, loc2, scale = [
+        jnp.asarray(x, jnp.float64) for x in (loc1, loc2, scale)
+    ]
+    kl = self.variant(
+        lambda a, b, s: normal.Normal(a, s).kl_divergence(normal.Normal(b, s))
+    )
+    actual = kl(loc1, loc2, scale)
+    self.assertEqual(actual.dtype, jnp.float64)
+    np.testing.assert_allclose(actual, expected, rtol=1e-14, atol=0.0)
 
   @chex.all_variants
   @parameterized.named_parameters(

@@ -164,6 +164,74 @@ class NormalTest(equivalence.EquivalenceTest):
         },
         assertion_fn=self.assertion_fn(rtol=3e-2))
 
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float16_self', jnp.float16, 10000.0, 10000.0, 0.1),
+      ('float32_self', jnp.float32, 1e30, 1e30, 1e-10),
+      ('float32_tiny_scale_self', jnp.float32, 1e20, 1e20, 1e-20),
+      ('float16_close', jnp.float16, 10000.0, 10008.0, 3.0),
+      ('float32_close', jnp.float32, 1e8, 1e8 + 8.0, 3.0),
+      ('float16_opposite', jnp.float16, 60000.0, -60000.0, 60000.0),
+      ('float32_opposite', jnp.float32, 2e38, -2e38, 2e38),
+  )
+  def test_kl_location_numerical_range(self, dtype, loc1, loc2, scale):
+    loc1, loc2, scale = [jnp.asarray(x, dtype) for x in (loc1, loc2, scale)]
+    # Subtract in host float64 to avoid the implementation's intermediates.
+    expected = 0.5 * ((float(loc1) - float(loc2)) / float(scale)) ** 2
+    kl = self.variant(
+        lambda a, b, s: normal.Normal(a, s).kl_divergence(normal.Normal(b, s))
+    )
+    actual = kl(loc1, loc2, scale)
+    self.assertEqual(actual.dtype, dtype)
+    np.testing.assert_allclose(actual, expected, rtol=2e-3, atol=0.0)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.parameters('distrax', 'distrax_to_tfp', 'tfp_to_distrax')
+  def test_kl_location_broadcast_and_dispatch(self, mode):
+    loc1 = jnp.asarray([[1e8], [-1e8]], jnp.float32)
+    loc2 = loc1 + jnp.asarray([0.0, 8.0, -8.0], jnp.float32)
+    scale1 = jnp.asarray([[2.0], [4.0]], jnp.float32)
+    scale2 = jnp.asarray([3.0, 6.0, 2.0], jnp.float32)
+    cls1 = normal.tfd.Normal if mode == 'tfp_to_distrax' else normal.Normal
+    cls2 = normal.tfd.Normal if mode == 'distrax_to_tfp' else normal.Normal
+    kl = self.variant(lambda a, s, b, t: cls1(a, s).kl_divergence(cls2(b, t)))
+    actual = kl(loc1, scale1, loc2, scale2)
+    a, s, b, t = [
+        np.asarray(x, np.float64) for x in (loc1, scale1, loc2, scale2)
+    ]
+    expected = np.log(t / s) + 0.5 * ((s / t) ** 2 + ((a - b) / t) ** 2 - 1.0)
+    self.assertEqual(actual.shape, (2, 3))
+    self.assertEqual(actual.dtype, jnp.float32)
+    np.testing.assert_allclose(actual, expected, rtol=2e-6, atol=1e-7)
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('close_locations', 1e8, 2.0, 1e8 + 8.0, 3.0),
+      ('large_self', 1e30, 1e-10, 1e30, 1e-10),
+      ('ordinary', 1.0, 2.0, -3.0, 4.0),
+  )
+  def test_kl_location_gradients(self, loc1, scale1, loc2, scale2):
+    params = jnp.asarray([loc1, scale1, loc2, scale2], jnp.float32)
+
+    def kl(x):
+      return normal.Normal(x[0], x[1]).kl_divergence(normal.Normal(x[2], x[3]))
+
+    actual = self.variant(jax.grad(kl))(params)
+    a, s, b, t = np.asarray(params, np.float64)
+    delta = a - b
+    expected = np.asarray(
+        [
+            delta / t**2,
+            s / t**2 - 1.0 / s,
+            -delta / t**2,
+            1.0 / t - (s**2 + delta**2) / t**3,
+        ]
+    )
+    # The equal-distribution derivatives are exactly zero analytically.
+    if loc1 == loc2 and scale1 == scale2:
+      expected = np.zeros(4)
+    np.testing.assert_allclose(actual, expected, rtol=2e-6, atol=1e-7)
+
   def test_jittable(self):
     super()._test_jittable((np.zeros((3,)), np.ones((3,))))
 

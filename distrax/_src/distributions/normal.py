@@ -164,8 +164,17 @@ def _kl_divergence_normal_normal(
     Batchwise `KL(dist1 || dist2)`.
   """
   diff_log_scale = jnp.log(dist1.scale) - jnp.log(dist2.scale)
+  # Subtract before dividing to retain close locations and avoid inf - inf.
+  # For opposite large locations, the subtraction itself may overflow; use
+  # separately scaled locations only in that case. Mask the inactive inputs
+  # before division so that their overflows cannot contaminate gradients.
+  diff_loc = dist1.loc - dist2.loc
+  finite_diff = jnp.isfinite(diff_loc)
+  loc1 = jnp.where(finite_diff, diff_loc, dist1.loc)
+  loc2 = jnp.where(finite_diff, 0., dist2.loc)
+  diff_loc = loc1 / dist2.scale - loc2 / dist2.scale
   return (
-      0.5 * jnp.square(dist1.loc / dist2.scale - dist2.loc / dist2.scale) +
+      0.5 * jnp.square(diff_loc) +
       0.5 * jnp.expm1(2. * diff_log_scale) -
       diff_log_scale)
 
