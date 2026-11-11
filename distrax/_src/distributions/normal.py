@@ -91,7 +91,9 @@ class Normal(distribution.Distribution):
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
-    log_unnormalized = -0.5 * jnp.square(self._standardize(value))
+    standardized = self._standardize(value)
+    # Scale first to avoid overflow in a representable quadratic term.
+    log_unnormalized = (-0.5 * standardized) * standardized
     log_normalization = _half_log2pi + jnp.log(self._scale)
     return log_unnormalized - log_normalization
 
