@@ -25,6 +25,38 @@ import jax.numpy as jnp
 Array = chex.Array
 
 
+def _zero_where(x: Array, mask: Array) -> Array:
+  """Replaces the entries of `x` selected by the boolean `mask` by zeros.
+
+  The mask depends only on primals, which keeps any JVP rule that uses this
+  linear in the tangents, as reverse-mode transposition requires.
+
+  Args:
+    x: The value to mask.
+    mask: A boolean array; entries where it is true are replaced by zero.
+
+  Returns:
+    `x` with zeros wherever `mask` is true.
+  """
+  return jnp.where(mask, jnp.zeros((), dtype=jnp.result_type(x, mask)), x)
+
+
+def _zero_where_y_is_zero(x: Array, y: Array) -> Array:
+  """Replaces the entries of `x` where `y` is zero by zeros.
+
+  Multiplying this by `y` evaluates `0 * y` rather than `x * 0`, so an infinite
+  `x` does not produce an intermediate NaN.
+
+  Args:
+    x: The value to mask.
+    y: The value whose zeros select the entries to replace.
+
+  Returns:
+    `x` with zeros wherever `y` is zero.
+  """
+  return _zero_where(x, y == 0)
+
+
 @jax.custom_jvp
 def multiply_no_nan(x: Array, y: Array) -> Array:
   """Equivalent of TF `multiply_no_nan`.
@@ -42,8 +74,11 @@ def multiply_no_nan(x: Array, y: Array) -> Array:
   Raises:
     ValueError if the shapes of `x` and `y` do not match.
   """
-  dtype = jnp.result_type(x, y)
-  return jnp.where(y == 0, jnp.zeros((), dtype=dtype), x * y)
+  # Replace `x` with zero where `y` is zero before multiplying, so that `0 * y`
+  # is computed instead of `x * 0`. This avoids producing an intermediate NaN
+  # when `x` is infinite and `y` is zero, which would be detected by
+  # `checkify`'s NaN checks even though the result is correct.
+  return _zero_where_y_is_zero(x, y) * y
 
 
 # TODO(dougalm): move helpers like these into JAX AD utils
@@ -63,6 +98,14 @@ def scale_maybe_symbolic(result_aval, tangent, scale):
     return tangent * scale
 
 
+def mask_tangent_maybe_symbolic(tangent, mask):
+  """Zeros a tangent where the boolean `mask` is true, keeping symbolic zero."""
+  if isinstance(tangent, SymbolicZero):
+    return tangent
+  else:
+    return _zero_where(tangent, mask)
+
+
 @functools.partial(multiply_no_nan.defjvp, symbolic_zeros=True)
 def multiply_no_nan_jvp(
     primals: Tuple[Array, Array],
@@ -73,8 +116,23 @@ def multiply_no_nan_jvp(
   primal_out = multiply_no_nan(x, y)
   primal_aval = jax.typeof(primal_out)
   result_aval = primal_aval.at_least_vspace()
-  tangent_out_1 = scale_maybe_symbolic(result_aval, x_dot, y)
-  tangent_out_2 = scale_maybe_symbolic(result_aval, y_dot, x)
+  # The derivative with respect to `x` is `y`, which is zero wherever `y` is
+  # zero. Zeroing the tangent there is exact, and it keeps a non-finite `x_dot`
+  # from evaluating `inf * 0`, which `checkify`'s NaN checks would report even
+  # though the term is discarded.
+  tangent_out_1 = scale_maybe_symbolic(
+      result_aval, mask_tangent_maybe_symbolic(x_dot, y == 0), y)
+  # The derivative with respect to `y` is `x`. It is taken to be zero only where
+  # `y` is zero and `x` is non-finite, the entries where the product is
+  # ill-defined; a finite `x` keeps the usual derivative `x` at `y == 0`. Both
+  # operands are masked by the same condition, so neither a zero nor an infinite
+  # tangent can evaluate `inf * 0`. The condition depends on the primals alone,
+  # which keeps the rule linear in the tangents, as reverse-mode transposition
+  # requires.
+  nonfinite_x_at_zero_y = (y == 0) & ~jnp.isfinite(x)
+  tangent_out_2 = scale_maybe_symbolic(
+      result_aval, mask_tangent_maybe_symbolic(y_dot, nonfinite_x_at_zero_y),
+      _zero_where(x, nonfinite_x_at_zero_y))
   return primal_out, add_maybe_symbolic(tangent_out_1, tangent_out_2)
 
 

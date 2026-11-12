@@ -37,7 +37,56 @@ class MathTest(absltest.TestCase):
     self.assertEqual(math.multiply_no_nan(x, y), 0.)
     grad_fn = jax.grad(
         lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
+    # An infinite `x` makes the derivative with respect to `y` ill-defined at
+    # `y == 0`, so it is taken to be zero rather than `x`; this is also what
+    # keeps a zero tangent for `y` from evaluating `0 * inf`.
+    np.testing.assert_allclose(grad_fn((x, y)), (y, 0.), rtol=1e-3)
+
+  def test_multiply_no_nan_grads_finite_x(self):
+    """A finite `x` keeps the derivative `x` with respect to `y` at `y == 0`."""
+    x = 3.
+    y = 0.
+    self.assertEqual(math.multiply_no_nan(x, y), 0.)
+    grad_fn = jax.grad(
+        lambda inputs: math.multiply_no_nan(inputs[0], inputs[1]))
     np.testing.assert_allclose(grad_fn((x, y)), (y, x), rtol=1e-3)
+
+  def test_multiply_no_nan_checkify(self):
+    """`multiply_no_nan` should not trigger checkify's NaN checks."""
+    from jax.experimental import checkify
+
+    def f(x, y):
+      return math.multiply_no_nan(x, y)
+
+    checked_f = checkify.checkify(f, errors=checkify.nan_checks)
+    err, out = checked_f(-jnp.inf, jnp.zeros(()))
+    err.throw()  # Raises if a NaN check was triggered.
+    self.assertEqual(out, 0.)
+
+  def test_multiply_no_nan_checkify_jvp(self):
+    """The JVP of `multiply_no_nan` should not trigger checkify's NaN checks."""
+    from jax.experimental import checkify
+
+    def f(x, y):
+      return math.multiply_no_nan(x, y)
+
+    def jvp(x, x_dot, y_dot):
+      return jax.jvp(f, (x, jnp.zeros(())), (x_dot, y_dot))[1]
+
+    # The primal is zero, so both tangent terms are products with zero. With a
+    # concrete tangent each of these used to evaluate `inf * 0` and give a NaN
+    # tangent: `(1., 0.)` is the differentiating-w.r.t.-`x` case, `(inf, 0.)`
+    # the mirror case, and `(0., inf)` an infinite tangent for `y`.
+    checked_f = checkify.checkify(jvp, errors=checkify.nan_checks)
+    for x_dot, y_dot in ((1., 0.), (jnp.inf, 0.), (0., jnp.inf)):
+      err, out = checked_f(-jnp.inf, x_dot, y_dot)
+      err.throw()  # Raises if a NaN check was triggered.
+      self.assertEqual(out, 0.)
+    # A finite `x` is left unmasked, so the derivative with respect to `y` is
+    # still `x`; being finite, it is also checkify-safe.
+    err, out = checked_f(3., 0., 1.)
+    err.throw()
+    self.assertEqual(out, 3.)
 
   def test_power_no_nan(self):
     zero = jnp.zeros(())
