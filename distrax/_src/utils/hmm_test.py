@@ -162,6 +162,33 @@ class HMMTest(parameterized.TestCase):
       np.testing.assert_array_almost_equal(marginals, tfp_marginals, decimal=4)
 
   @chex.all_variants(without_device=False)
+  @parameterized.named_parameters(
+      ("impossible_initial", [1.0, 0.0], [1], None, -np.inf),
+      ("impossible_transition", [0.25, 0.75], [0, 1], None, -np.inf),
+      ("impossible_padded_prefix", [0.25, 0.75], [0, 1, 0], 2, -np.inf),
+      ("possible", [0.25, 0.75], [0, 0], None, np.log(0.25)),
+      ("ignored_impossible_padding", [0.25, 0.75], [0, 1, 1], 1, np.log(0.25)),
+  )
+  def test_forward_zero_probability(
+      self, initial, observations, length, expected_log_prob
+  ):
+    model = hmm.HMM(
+        init_dist=categorical.Categorical(probs=jnp.array(initial)),
+        trans_dist=categorical.Categorical(probs=jnp.eye(2)),
+        obs_dist=categorical.Categorical(probs=jnp.eye(2)),
+    )
+
+    # Each state can only emit its own index and cannot transition to another
+    # state, so any change of observation has exactly zero probability.
+    # pyrefly: ignore[missing-attribute]
+    log_prob, alphas = self.variant(model.forward)(
+        jnp.array(observations), length
+    )
+
+    np.testing.assert_allclose(log_prob, expected_log_prob)
+    self.assertTrue(np.all(np.isfinite(alphas)))
+
+  @chex.all_variants(without_device=False)
   @_test_cases
   def test_viterbi(self, length, num_states, obs_dist_name_and_params_fn):
     name, params_fn = obs_dist_name_and_params_fn
