@@ -93,8 +93,9 @@ class Beta(distribution.Distribution):
 
   def log_prob(self, value: EventT) -> Array:
     """See `Distribution.log_prob`."""
+    # Subtract from zero to promote integer values before taking log1p.
     result = ((self._alpha - 1.) * jnp.log(value)
-              + (self._beta - 1.) * jnp.log(1. - value)
+              + (self._beta - 1.) * jnp.log1p(0. - value)
               - self._log_normalization_constant)
     return jnp.where(
         jnp.logical_or(jnp.logical_and(self._alpha == 1., value == 0.),

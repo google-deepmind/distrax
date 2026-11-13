@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import chex
 from distrax._src.distributions import beta as base_beta
 from distrax._src.utils import equivalence
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -150,6 +151,46 @@ class BetaTest(equivalence.EquivalenceTest):
             dist_args=distr_params,
             call_args=(value,),
             assertion_fn=self.assertion_fn(rtol=1e-2))
+
+  @parameterized.parameters((jnp.float16, 1000.), (jnp.float32, 1e7))
+  def test_log_prob_unbalanced_parameters(self, dtype, large):
+    beta = jnp.array([large, large / 2.], dtype=dtype)
+    value = jnp.array([[1. / large], [2. / large]], dtype=dtype)
+    # Evaluate the exact Beta(1, b) identity at the represented inputs.
+    b64, x64 = np.asarray(beta, np.float64), np.asarray(value, np.float64)
+    expected = np.log(b64) + (b64 - 1.) * np.log1p(-x64)
+    log_prob = lambda b, x: base_beta.Beta(jnp.array(1., dtype), b).log_prob(x)
+    for fn in [log_prob, jax.jit(log_prob)]:
+      actual = fn(beta, value)
+      self.assertEqual(actual.dtype, dtype)
+      np.testing.assert_allclose(actual, expected, rtol=1e-3, atol=2e-5)
+
+  def test_log_prob_support_boundaries(self):
+    alpha = jnp.array([1., 1., 2., 0.5, 2., 1., 1.])
+    beta = jnp.array([1., 2., 1., 2., 0.5, 1., 1.])
+    value = jnp.array([0., 0., 0., 0., 1., 1., -0.1])
+    expected = np.array([0., np.log(2.), -np.inf, np.inf, np.inf, 0., np.nan])
+    log_prob = lambda a, b, x: base_beta.Beta(a, b).log_prob(x)
+    for fn in [log_prob, jax.jit(log_prob)]:
+      np.testing.assert_allclose(fn(alpha, beta, value), expected, atol=2e-6)
+
+  @parameterized.parameters(jnp.uint8, jnp.uint32, jnp.bool_)
+  def test_log_prob_nonfloating_values(self, dtype):
+    value = jnp.array([0, 1], dtype=dtype)
+    log_prob = lambda x: base_beta.Beta(2., 2.).log_prob(x)
+    for fn in [log_prob, jax.jit(log_prob)]:
+      np.testing.assert_array_equal(fn(value), [-np.inf, -np.inf])
+
+  def test_log_prob_interior_gradients(self):
+    alpha, beta, value = 2., 3., 0.25
+    log_prob = lambda a, b, x: base_beta.Beta(a, b).log_prob(x)
+    # Integer-shape digamma differences give exact harmonic sums.
+    expected = (np.log(value) + 1. / 2. + 1. / 3. + 1. / 4.,
+                np.log1p(-value) + 1. / 3. + 1. / 4.,
+                (alpha - 1.) / value - (beta - 1.) / (1. - value))
+    grad_fn = jax.grad(log_prob, argnums=(0, 1, 2))
+    for fn in [grad_fn, jax.jit(grad_fn)]:
+      np.testing.assert_allclose(fn(alpha, beta, value), expected, atol=2e-6)
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

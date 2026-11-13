@@ -168,10 +168,10 @@ def log_beta(a: Array, b: Array) -> Array:
 
   Returns:
     The value `log B(a, b) = log Gamma(a) + log Gamma(b) - log Gamma(a + b)`,
-    where `Gamma` is the Gamma function, obtained through stable computation of
-    `log Gamma`.
+    where `Gamma` is the Gamma function. The computation avoids cancellation
+    between large `log Gamma` values for unbalanced inputs.
   """
-  return jax.lax.lgamma(a) + jax.lax.lgamma(b) - jax.lax.lgamma(a + b)
+  return jax.scipy.special.betaln(a, b)
 
 
 def log_beta_multivariate(a: Array) -> Array:

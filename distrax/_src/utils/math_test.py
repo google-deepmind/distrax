@@ -90,6 +90,19 @@ class MathTest(absltest.TestCase):
     expected_result = scipy.special.betaln(a, b)
     np.testing.assert_allclose(math.log_beta(a, b), expected_result, atol=2e-4)
 
+  def test_log_beta_unbalanced_parameters(self):
+    # B(1, b) = 1 / b, including when lgamma(b + 1) rounds to lgamma(b).
+    for dtype, large in [(jnp.float16, 1000.), (jnp.float32, 1e7)]:
+      a = jnp.array([[1.], [2.]], dtype=dtype)
+      b = jnp.array([large, large / 2.], dtype=dtype)
+      expected = scipy.special.betaln(np.asarray(a, np.float64),
+                                      np.asarray(b, np.float64))
+      for fn in [math.log_beta, jax.jit(math.log_beta)]:
+        for first, second in [(a, b), (b, a)]:
+          actual = fn(first, second)
+          self.assertEqual(actual.dtype, dtype)
+          np.testing.assert_allclose(actual, expected, rtol=1e-3, atol=2e-5)
+
   def test_log_beta_bivariate(self):
     a = jnp.abs(jax.random.normal(jax.random.PRNGKey(42), (4, 3, 2)))
     expected_result = scipy.special.betaln(a[..., 0], a[..., 1])
