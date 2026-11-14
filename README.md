@@ -24,7 +24,7 @@ pip install git+https://github.com/deepmind/distrax.git
 
 To run the tests or
 [examples](https://github.com/deepmind/distrax/tree/master/examples) you will
-need to install additional [requirements](https://github.com/deepmind/distrax/tree/master/requirements).
+need to install additional requirements.
 
 ## Design Principles
 
