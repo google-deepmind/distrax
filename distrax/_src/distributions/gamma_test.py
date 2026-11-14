@@ -21,6 +21,8 @@ import chex
 from distrax._src.distributions import gamma
 from distrax._src.utils import compat
 from distrax._src.utils import equivalence
+import jax
+from jax.experimental import checkify
 import jax.numpy as jnp
 import numpy as np
 
@@ -126,6 +128,56 @@ class GammaTest(equivalence.EquivalenceTest):
             dist_args=distr_params,
             call_args=(value,),
             assertion_fn=self.assertion_fn(rtol=2e-2))
+
+  @chex.all_variants(with_pmap=False)
+  @parameterized.named_parameters(
+      ('float32', jnp.float32, jnp.float32),
+      ('float64', jnp.float64, jnp.float64),
+      ('mixed_concentration', jnp.float32, jnp.float64),
+      ('mixed_rate', jnp.float64, jnp.float32))
+  def test_entropy_large_concentration(self, concentration_dtype, rate_dtype):
+    use_x64 = max(concentration_dtype.dtype.itemsize,
+                  rate_dtype.dtype.itemsize) == 8
+    with compat.enable_x64(use_x64):
+      concentration = jnp.array([192., 1e4, 1e6, 1e8],
+                                dtype=concentration_dtype)
+      rate = jnp.array([1., 100., 1000., 10000.], dtype=rate_dtype)
+      fn = jax.vmap(jax.value_and_grad(
+          lambda a, b: gamma.Gamma(a, b).entropy(), argnums=(0, 1)))
+      entropy, (grad_concentration, grad_rate) = self.variant(fn)(
+          concentration, rate)
+      # 90-digit references from the entropy formula and
+      # dH/da = 1 + (1-a) * polygamma(1, a), independent of the expansion.
+      expected_entropy = [4.045947845982426, 1.418905199037995,
+                          1.418938199871256, 1.4189385298713394]
+      expected_grad = [0.0026132324839514566, 5.000333350000333e-5,
+                       5.000003333335e-7,
+                       5.0000000333333335e-9]
+      dtype = jnp.result_type(concentration, rate)
+      tol = 2e-6 if dtype == jnp.float32 else 2e-12
+      grad_tol = 2e-6 if concentration_dtype == jnp.float32 else 2e-12
+      rate_tol = 2e-6 if rate_dtype == jnp.float32 else 2e-12
+      np.testing.assert_allclose(
+          entropy, expected_entropy,
+          rtol=tol if dtype == jnp.float32 else 0.,
+          atol=tol if dtype == jnp.float32 else 4e-15)
+      np.testing.assert_allclose(
+          grad_concentration, expected_grad, rtol=grad_tol, atol=0.)
+      np.testing.assert_allclose(grad_rate, -1. / rate, rtol=rate_tol, atol=0.)
+      self.assertEqual(entropy.dtype, dtype)
+
+  @chex.all_variants(with_pmap=False)
+  def test_entropy_inactive_branches_have_finite_gradients(self):
+    # Both extremes have finite entropies. Inactive branches must not
+    # contaminate derivatives with overflow from powers or special functions.
+    concentration = jnp.array([1e-12, 1e38], dtype=jnp.float32)
+    fn = jax.vmap(jax.value_and_grad(
+        lambda a: gamma.Gamma(a, jnp.float32(1.)).entropy()))
+    error, (entropy, gradient) = self.variant(
+        checkify.checkify(fn, errors=checkify.float_checks))(concentration)
+    error.throw()
+    self.assertTrue(np.all(np.isfinite(entropy)))
+    self.assertTrue(np.all(np.isfinite(gradient)))
 
   @chex.all_variants(with_pmap=False)
   @parameterized.named_parameters(

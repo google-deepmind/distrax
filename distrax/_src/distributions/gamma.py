@@ -92,13 +92,26 @@ class Gamma(distribution.Distribution):
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
-    log_rate = jnp.log(self._rate)
-    return (
-        self._concentration
-        - log_rate
-        + jax.lax.lgamma(self._concentration)
-        + (1.0 - self._concentration) * jax.lax.digamma(self._concentration)
-    )
+    dtype = jnp.result_type(self._concentration, self._rate)
+    concentration = jnp.asarray(self._concentration, dtype=dtype)
+    log_rate = jnp.log(jnp.asarray(self._rate, dtype=dtype))
+    # Combine the Stirling expansions before evaluating the cancelling terms.
+    # For a >= 2, the omitted terms are bounded by 1 / (126 * a**6).
+    cutoff = max(2., float(
+        (1. / (126. * float(jnp.finfo(dtype).eps))) ** (1. / 6.)))
+    use_expansion = concentration >= cutoff
+    # Mask both branches before arithmetic so inactive derivatives stay finite.
+    small = jnp.where(use_expansion, 1., concentration)
+    large = jnp.where(use_expansion, concentration, 1.)
+    regular = (small - log_rate + jax.lax.lgamma(small)
+               + (1. - small) * jax.lax.digamma(small))
+    inverse = 1. / large
+    correction = inverse * (-1. / 3. + inverse * (
+        -1. / 12. + inverse * (-1. / 90. + inverse * (
+            1. / 120. + inverse / 210.))))
+    expansion = (0.5 * jnp.log(large) - log_rate
+                 + 0.5 * (1. + jnp.log(2. * jnp.pi)) + correction)
+    return jnp.where(use_expansion, expansion, regular)
 
   def cdf(self, value: EventT) -> Array:
     """See `Distribution.cdf`."""
