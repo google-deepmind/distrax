@@ -101,7 +101,7 @@ class Gumbel(distribution.Distribution):
 
   def entropy(self) -> Array:
     """Calculates the Shannon entropy (in nats)."""
-    return jnp.log(self._scale) + 1. + jnp.euler_gamma
+    return jnp.log(self.scale) + 1. + jnp.euler_gamma
 
   def log_cdf(self, value: EventT) -> Array:
     """See `Distribution.log_cdf`."""
