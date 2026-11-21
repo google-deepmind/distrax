@@ -20,7 +20,9 @@ from distrax._src.bijectors import bijector as bjct_base
 from distrax._src.distributions import distribution as dist_base
 from distrax._src.utils import conversion
 import jax
+from jax.extend import core as jax_core
 import jax.numpy as jnp
+import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions
@@ -245,6 +247,58 @@ class Transformed(dist_base.Distribution):
           "constant.")
 
 
+def _jaxpr_constants(jaxpr):
+  """Yields constants in a program and any nested equation programs."""
+  yield from getattr(jaxpr, 'consts', ())
+  program = getattr(jaxpr, 'jaxpr', jaxpr)
+  for equation in program.eqns:
+    is_jaxpr = lambda p: isinstance(p, (jax_core.Jaxpr, jax_core.ClosedJaxpr))
+    for param in jax.tree_util.tree_leaves(equation.params, is_leaf=is_jaxpr):
+      if isinstance(param, (jax_core.Jaxpr, jax_core.ClosedJaxpr)):
+        yield from _jaxpr_constants(param)
+
+
+def _same_constant(const1, const2) -> bool:
+  """Proves equality of concrete representations or a shared binding."""
+  if const1 is const2:
+    return True
+  # Distinct outer tracers cannot be compared at Python tracing time.
+  if (isinstance(const1, jax.core.Tracer) or
+      isinstance(const2, jax.core.Tracer)):
+    return False
+  try:
+    dtype1 = getattr(const1, 'dtype', None)
+    dtype2 = getattr(const2, 'dtype', None)
+    if dtype1 != dtype2:
+      return False
+    if (dtype1 is not None and
+        jax.dtypes.issubdtype(dtype1, jax.dtypes.extended)):
+      if not jax.dtypes.issubdtype(dtype1, jax.dtypes.prng_key):
+        return False
+      # Preserve the PRNG implementation dtype before unwrapping key bits.
+      with jax.ensure_compile_time_eval():
+        const1 = jax.random.key_data(const1)
+        const2 = jax.random.key_data(const2)
+    array1, array2 = np.asarray(const1), np.asarray(const2)
+  except (TypeError, ValueError):
+    # Other extended dtypes may have no concrete NumPy representation.
+    return False
+  return (not array1.dtype.hasobject and not array2.dtype.hasobject and
+          array1.dtype == array2.dtype and array1.shape == array2.shape and
+          array1.tobytes(order='C') == array2.tobytes(order='C'))
+
+
+def _same_closed_jaxpr(jaxpr1, jaxpr2) -> bool:
+  """Checks program structure and proves equality of closed-over constants."""
+  if str(jaxpr1.jaxpr) != str(jaxpr2.jaxpr):
+    return False
+  constants1 = list(_jaxpr_constants(jaxpr1))
+  constants2 = list(_jaxpr_constants(jaxpr2))
+  if len(constants1) != len(constants2):
+    return False
+  return all(_same_constant(c1, c2) for c1, c2 in zip(constants1, constants2))
+
+
 def _kl_divergence_transformed_transformed(
     dist1: Union[Transformed, tfd.TransformedDistribution],
     dist2: Union[Transformed, tfd.TransformedDistribution],
@@ -262,9 +316,11 @@ def _kl_divergence_transformed_transformed(
     declared equal.
   - If not the same instance, we check if they are equal according to their
     `same_as` predicate.
-  - Otherwise, the string representation of the Jaxpr of the `forward` method
-    of each bijector is compared. If both string representations are equal, the
-    bijectors are declared equal.
+  - Otherwise, the Jaxpr of each `forward` method and its closed-over constants
+    are compared. Programs must have matching string representations, and their
+    constants must be the same objects or have equal concrete shapes, dtypes,
+    and byte representations (typed keys also require the same PRNG dtype).
+    Distinct traced constants cannot prove equality.
   - Otherwise, the bijectors cannot be guaranteed to be equal and an error is
     raised.
 
@@ -296,9 +352,9 @@ def _kl_divergence_transformed_transformed(
     if input_hint is None:
       input_hint = jnp.zeros(
           dist1.distribution.event_shape, dtype=dist1.distribution.dtype)
-    jaxpr_bij1 = jax.make_jaxpr(bij1.forward)(input_hint).jaxpr
-    jaxpr_bij2 = jax.make_jaxpr(bij2.forward)(input_hint).jaxpr
-    if str(jaxpr_bij1) != str(jaxpr_bij2):
+    jaxpr_bij1 = jax.make_jaxpr(bij1.forward)(input_hint)
+    jaxpr_bij2 = jax.make_jaxpr(bij2.forward)(input_hint)
+    if not _same_closed_jaxpr(jaxpr_bij1, jaxpr_bij2):
       raise NotImplementedError(
           f"The KL divergence cannot be obtained because it is not possible to "
           f"guarantee that the bijectors {dist1.bijector.name} and "
