@@ -65,7 +65,7 @@ class Quantized(
         broadcasting.
       eps: An optional gap to enforce between "big" and "small". Useful for
         avoiding NANs in computing log_probs, when "big" and "small"
-        are too close.
+        are too close. Can be a scalar or broadcastable to the batch shape.
     """
     self._dist: base_distribution.Distribution[Array, Tuple[
         int, ...], jnp.dtype] = conversion.as_distribution(distribution)
@@ -155,6 +155,9 @@ class Quantized(
     # which happens to the right of the median of the distribution.
     big = jnp.where(log_sf < log_cdf, log_sf_m1, log_cdf)
     small = jnp.where(log_sf < log_cdf, log_sf, log_cdf_m1)
+    if self._eps is not None:
+      big = jnp.where(big - small > self._eps, big,
+                      jax.lax.stop_gradient(small) + self._eps)
     log_probs = math.log_expbig_minus_expsmall(big, small)
     return samples, log_probs
 
@@ -332,4 +335,7 @@ class Quantized(
     low = None if self._low is None else self.low[index]
     # pyrefly: ignore[bad-index, unsupported-operation]
     high = None if self._high is None else self.high[index]
-    return Quantized(distribution=self.distribution[index], low=low, high=high)
+    eps = (None if self._eps is None else
+           jnp.broadcast_to(self._eps, self.batch_shape)[index])
+    return Quantized(
+        distribution=self.distribution[index], low=low, high=high, eps=eps)
