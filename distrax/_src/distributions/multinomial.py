@@ -26,6 +26,7 @@ from distrax._src.utils import math
 import jax
 from jax import lax
 import jax.numpy as jnp
+from jax.scipy import special
 from tensorflow_probability.substrates import jax as tfp
 
 
@@ -202,23 +203,23 @@ class Multinomial(distribution.Distribution):
     # Constant factors in the entropy.
     xi = jnp.arange(total_count + 1, dtype=probs.dtype)
     log_xi_factorial = lax.lgamma(xi + 1)
-    log_n_minus_xi_factorial = jnp.flip(log_xi_factorial, axis=-1)
     log_n_factorial = log_xi_factorial[..., -1]
+    # C(n, xi) = 1 / ((n + 1) * B(xi + 1, n - xi + 1)).
+    # betaln avoids subtracting three large log-factorials.
     log_comb_n_xi = (
-        log_n_factorial[..., None] - log_xi_factorial
-        - log_n_minus_xi_factorial)
-    comb_n_xi = jnp.round(jnp.exp(log_comb_n_xi))
-    chex.assert_shape(comb_n_xi, (total_count + 1,))
-
-    # pyrefly: ignore[bad-index]
-    likelihood1 = math.power_no_nan(probs[..., None], xi)
-    # pyrefly: ignore[bad-index]
-    likelihood2 = math.power_no_nan(1. - probs[..., None], total_count - xi)
-    chex.assert_shape(likelihood1, (probs.shape[-1], total_count + 1,))
-    chex.assert_shape(likelihood2, (probs.shape[-1], total_count + 1,))
-    likelihood = jnp.sum(likelihood1 * likelihood2, axis=-2)
-    chex.assert_shape(likelihood, (total_count + 1,))
-    comb_term = jnp.sum(comb_n_xi * log_xi_factorial * likelihood, axis=-1)
+        -special.betaln(xi + 1., total_count - xi + 1.)
+        - jnp.log(jnp.asarray(total_count + 1, dtype=probs.dtype)))
+    # Form the binomial probabilities in log space: the coefficient alone
+    # overflows long before the product with p**xi is unrepresentable.
+    log_likelihood = (
+        log_comb_n_xi
+        + special.xlogy(xi, probs[..., None])
+        + special.xlog1py(total_count - xi, -probs[..., None]))
+    likelihood = jnp.exp(log_likelihood)
+    # Each marginal PMF sums to one. Renormalize its floating-point mass so
+    # lgamma roundoff is not amplified by the O(n log n) factorial moment.
+    likelihood /= jnp.sum(likelihood, axis=-1, keepdims=True)
+    comb_term = jnp.sum(likelihood * log_xi_factorial)
     chex.assert_shape(comb_term, ())
 
     # Probs factors in the entropy.
@@ -237,26 +238,30 @@ class Multinomial(distribution.Distribution):
     log_n_factorial = lax.lgamma(jnp.asarray(total_count + 1, dtype=dtype))
 
     def cond_func(args):
-      xi, _ = args
+      xi, _, _ = args
       return jnp.less_equal(xi, total_count)  # pylint: disable=not-callable
 
     def body_func(args):
-      xi, accumulated_sum = args
+      xi, accumulated_sum, accumulated_mass = args
       xi_float = jnp.asarray(xi, dtype=dtype)
       log_xi_factorial = lax.lgamma(xi_float + 1.)
-      log_comb_n_xi = (log_n_factorial - log_xi_factorial
-                       - lax.lgamma(total_count - xi_float + 1.))
-      comb_n_xi = jnp.round(jnp.exp(log_comb_n_xi))
-      likelihood1 = math.power_no_nan(probs, xi)
-      likelihood2 = math.power_no_nan(1. - probs, total_count - xi)
-      likelihood = likelihood1 * likelihood2
-      comb_term = comb_n_xi * log_xi_factorial * likelihood  # [K]
+      log_comb_n_xi = (
+          -special.betaln(xi_float + 1., total_count - xi_float + 1.)
+          - jnp.log(jnp.asarray(total_count + 1, dtype=dtype)))
+      log_likelihood = (
+          log_comb_n_xi
+          + special.xlogy(xi_float, probs)
+          + special.xlog1py(total_count - xi_float, -probs))
+      likelihood = jnp.exp(log_likelihood)
+      comb_term = log_xi_factorial * likelihood  # [K]
       chex.assert_shape(comb_term, (probs.shape[-1],))
-      return xi + 1, accumulated_sum + comb_term
+      return (xi + 1, accumulated_sum + comb_term,
+              accumulated_mass + likelihood)
 
-    comb_term = jnp.sum(
-        lax.while_loop(cond_func, body_func, (0, jnp.zeros_like(probs)))[1],
-        axis=-1)
+    _, factorial_moment, probability_mass = lax.while_loop(
+        cond_func, body_func, (0, jnp.zeros_like(probs), jnp.zeros_like(probs)))
+    # As in _entropy_scalar, normalize the binomial marginal probabilities.
+    comb_term = jnp.sum(factorial_moment / probability_mass, axis=-1)
 
     n_probs_factor = jnp.sum(
         total_count * math.multiply_no_nan(log_of_probs, probs), axis=-1)
