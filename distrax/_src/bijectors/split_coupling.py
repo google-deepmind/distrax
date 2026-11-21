@@ -157,6 +157,11 @@ class SplitCoupling(base.Bijector):
     return x1, x2
 
   def _recombine(self, x1: Array, x2: Array) -> Array:
+    event_ndims = self.event_ndims_in
+    batch_shape = jnp.broadcast_shapes(
+        x1.shape[:-event_ndims], x2.shape[:-event_ndims])
+    x1 = jnp.broadcast_to(x1, batch_shape + x1.shape[-event_ndims:])
+    x2 = jnp.broadcast_to(x2, batch_shape + x2.shape[-event_ndims:])
     if self._swap:
       x1, x2 = x2, x1
     return jnp.concatenate([x1, x2], self._split_axis)
