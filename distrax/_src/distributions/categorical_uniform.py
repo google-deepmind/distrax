@@ -137,12 +137,17 @@ class CategoricalUniform(distribution.Distribution):
     limits = self._get_category_limits()
     domain_diff = jnp.diff(limits, axis=-1)
     quantile_diff = jnp.diff(quantile_limits, axis=-1)
-    slopes = domain_diff / quantile_diff
+    zero_mass = quantile_diff == 0
+    safe_quantile_diff = jnp.where(zero_mass, 1., quantile_diff)
     quantile_contributions = jnp.minimum(
         quantile_diff,
         jax.nn.relu(quantile[..., None] - quantile_limits[..., :-1]),
     )
-    return self.low + jnp.sum(slopes * quantile_contributions, axis=-1)
+    fractions = quantile_contributions / safe_quantile_diff
+    # Empty bins are inverse CDF jumps. Plateaus use the right edge.
+    fractions = jnp.where(
+        zero_mass, quantile[..., None] >= quantile_limits[..., :-1], fractions)
+    return self.low + jnp.sum(domain_diff * fractions, axis=-1)
 
   @property
   def low(self) -> Array:
