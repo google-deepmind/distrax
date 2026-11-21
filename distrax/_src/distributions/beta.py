@@ -129,8 +129,8 @@ class Beta(distribution.Distribution):
   def variance(self) -> Array:
     """Calculates the variance."""
     sum_alpha_beta = self._alpha + self._beta
-    return self._alpha * self._beta / (
-        jnp.square(sum_alpha_beta) * (sum_alpha_beta + 1.))
+    return ((self._alpha / sum_alpha_beta) * (self._beta / sum_alpha_beta)
+            / (sum_alpha_beta + 1.))
 
   def mode(self) -> Array:
     """Calculates the mode.
