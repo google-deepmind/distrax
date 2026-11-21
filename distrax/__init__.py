@@ -55,6 +55,7 @@ from distrax._src.distributions.gumbel import Gumbel
 from distrax._src.distributions.independent import Independent
 from distrax._src.distributions.joint import Joint
 from distrax._src.distributions.laplace import Laplace
+from distrax._src.distributions.log_normal import LogNormal
 from distrax._src.distributions.log_stddev_normal import LogStddevNormal
 from distrax._src.distributions.logistic import Logistic
 from distrax._src.distributions.mixture_of_two import MixtureOfTwo
@@ -123,6 +124,7 @@ __all__ = (
     "Lambda",
     "Laplace",
     "Linear",
+    "LogNormal",
     "Logistic",
     "LogStddevNormal",
     "LowerUpperTriangularAffine",
